@@ -1,0 +1,63 @@
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Modal } from '../../components/ui/Modal'
+import { Input } from '../../components/ui/Input'
+import { Button } from '../../components/ui/Button'
+import { createBarber, updateBarber } from '../../api/barbers.api'
+import type { Barber } from '../../types'
+
+interface Props {
+  open: boolean
+  onClose: () => void
+  barber?: Barber | null
+}
+
+interface FormData {
+  name: string
+  phone: string
+  email: string
+}
+
+export function BarberFormModal({ open, onClose, barber }: Props) {
+  const qc = useQueryClient()
+  const isEdit = !!barber
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>()
+
+  useEffect(() => {
+    if (barber) {
+      reset({ name: barber.name, phone: barber.phone || '', email: barber.email || '' })
+    } else {
+      reset({ name: '', phone: '', email: '' })
+    }
+  }, [barber, reset])
+
+  const mutation = useMutation({
+    mutationFn: (data: FormData) =>
+      isEdit ? updateBarber(barber!.id, data) : createBarber(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['barbers'] })
+      onClose()
+    },
+  })
+
+  return (
+    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar Barbeiro' : 'Novo Barbeiro'}>
+      <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
+        <Input label="Nome *" {...register('name', { required: 'Nome obrigatório' })} error={errors.name?.message} />
+        <Input label="Telefone" {...register('phone')} placeholder="(11) 99999-9999" />
+        <Input label="E-mail" type="email" {...register('email')} placeholder="barbeiro@email.com" />
+        {mutation.error && (
+          <p className="text-sm text-red-500">{(mutation.error as Error).message}</p>
+        )}
+        <div className="flex justify-end gap-2 pt-2">
+          <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button type="submit" loading={mutation.isPending}>
+            {isEdit ? 'Salvar' : 'Cadastrar'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
