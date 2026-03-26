@@ -37,11 +37,11 @@ export function LoginPage() {
         </div>
         <div>
           <h2 className="text-4xl font-bold text-white leading-tight mb-4">
-            Gestão completa<br />
-            <span className="text-amber-400">da sua barbearia.</span>
+            Não é só corte,<br />
+            <span className="text-amber-400">é cuidado.</span>
           </h2>
           <p className="text-zinc-400 text-lg leading-relaxed">
-            Agendamentos, clientes, barbeiros e financeiro em um único painel.
+            Na Barbearia do Rei, sua imagem é prioridade.
           </p>
         </div>
         <div className="flex gap-8">

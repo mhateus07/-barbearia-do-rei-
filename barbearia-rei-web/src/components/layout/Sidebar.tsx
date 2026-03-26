@@ -62,8 +62,10 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-4 border-t border-zinc-800/60">
-        <p className="text-[10px] text-zinc-600 text-center">v1.0.0 · 2026</p>
+      <div className="px-4 py-4 border-t border-zinc-800/60 space-y-1">
+        <p className="text-[10px] text-zinc-600 leading-snug">São João del Rei · MG</p>
+        <p className="text-[10px] text-zinc-600">(32) 99160-8852</p>
+        <p className="text-[10px] text-zinc-700">⭐ 5.0 · 32 avaliações</p>
       </div>
     </aside>
   )
