@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Plus, CalendarDays, ChevronRight, CheckCircle2, XCircle, PlayCircle } from 'lucide-react'
 import { listAppointments, updateAppointmentStatus, deleteAppointment } from '../../api/appointments.api'
-import { Table } from '../../components/ui/Table'
-import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { AppointmentFormModal } from './AppointmentFormModal'
 import type { Appointment, AppointmentStatus } from '../../types'
-import { formatDateTime, formatTime } from '../../utils/formatDate'
+import { formatTime } from '../../utils/formatDate'
 import { formatCurrency } from '../../utils/formatCurrency'
 
 const STATUS_OPTIONS: { value: AppointmentStatus | ''; label: string }[] = [
@@ -19,10 +18,10 @@ const STATUS_OPTIONS: { value: AppointmentStatus | ''; label: string }[] = [
   { value: 'NO_SHOW', label: 'Não compareceu' },
 ]
 
-const NEXT_STATUS: Partial<Record<AppointmentStatus, AppointmentStatus>> = {
-  SCHEDULED: 'CONFIRMED',
-  CONFIRMED: 'IN_PROGRESS',
-  IN_PROGRESS: 'COMPLETED',
+const NEXT_STATUS: Partial<Record<AppointmentStatus, { status: AppointmentStatus; label: string; icon: React.ElementType }>> = {
+  SCHEDULED: { status: 'CONFIRMED', label: 'Confirmar', icon: CheckCircle2 },
+  CONFIRMED: { status: 'IN_PROGRESS', label: 'Iniciar', icon: PlayCircle },
+  IN_PROGRESS: { status: 'COMPLETED', label: 'Concluir', icon: CheckCircle2 },
 }
 
 export function AppointmentsPage() {
@@ -50,98 +49,127 @@ export function AppointmentsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['appointments'] }),
   })
 
+  const appointments = data?.data ?? []
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-zinc-800">Agendamentos</h1>
-          <p className="text-sm text-zinc-500">{data?.meta.total ?? 0} resultado(s)</p>
+          <p className="text-sm text-zinc-500 mt-0.5">{data?.meta.total ?? 0} resultado(s)</p>
         </div>
-        <Button onClick={() => setModalOpen(true)}>+ Novo Agendamento</Button>
-      </div>
-
-      <div className="flex flex-wrap gap-3">
-        <input
-          type="date"
-          value={filterDate}
-          onChange={(e) => setFilterDate(e.target.value)}
-          className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-amber-500"
-        />
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value as AppointmentStatus | '')}
-          className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-amber-500"
+        <button
+          onClick={() => setModalOpen(true)}
+          className="flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2.5 text-sm font-semibold text-white transition-colors shadow-sm shadow-amber-500/25"
         >
-          {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+          <Plus className="h-4 w-4" />
+          Novo Agendamento
+        </button>
       </div>
 
-      <Table
-        loading={isLoading}
-        keyExtractor={(a) => a.id}
-        data={data?.data ?? []}
-        emptyMessage="Nenhum agendamento encontrado para os filtros selecionados."
-        columns={[
-          {
-            key: 'startsAt',
-            header: 'Horário',
-            render: (a: Appointment) => (
-              <div>
-                <p className="font-medium">{formatTime(a.startsAt)}</p>
-                <p className="text-xs text-zinc-400">{formatTime(a.endsAt)}</p>
-              </div>
-            ),
-          },
-          { key: 'client', header: 'Cliente', render: (a: Appointment) => a.client.name },
-          { key: 'barber', header: 'Barbeiro', render: (a: Appointment) => a.barber.name },
-          {
-            key: 'services',
-            header: 'Serviços',
-            render: (a: Appointment) => a.services.map((s) => s.service.name).join(', '),
-          },
-          {
-            key: 'totalPrice',
-            header: 'Valor',
-            render: (a: Appointment) => formatCurrency(Number(a.totalPrice)),
-          },
-          {
-            key: 'status',
-            header: 'Status',
-            render: (a: Appointment) => <Badge status={a.status} />,
-          },
-          {
-            key: 'actions',
-            header: 'Ações',
-            render: (a: Appointment) => {
-              const nextStatus = NEXT_STATUS[a.status]
-              return (
-                <div className="flex gap-1.5">
-                  {nextStatus && (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      loading={statusMutation.isPending}
-                      onClick={() => statusMutation.mutate({ id: a.id, status: nextStatus })}
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-4 w-4 text-zinc-400" />
+          <input
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {STATUS_OPTIONS.map((o) => (
+            <button
+              key={o.value}
+              onClick={() => setFilterStatus(o.value as AppointmentStatus | '')}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                filterStatus === o.value
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* List */}
+      {isLoading ? (
+        <div className="space-y-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-20 rounded-2xl bg-zinc-100 animate-pulse" />
+          ))}
+        </div>
+      ) : appointments.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 py-16 text-zinc-400">
+          <CalendarDays className="h-8 w-8 mb-3 text-zinc-300" />
+          <p className="font-medium">Nenhum agendamento encontrado</p>
+          <p className="text-sm mt-1">Tente mudar os filtros ou criar um novo agendamento</p>
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {appointments.map((a: Appointment) => {
+            const next = NEXT_STATUS[a.status]
+            const NextIcon = next?.icon
+            return (
+              <div key={a.id} className="flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white px-5 py-4 hover:shadow-sm transition-shadow">
+                {/* Time */}
+                <div className="text-center min-w-[52px]">
+                  <p className="text-lg font-bold text-amber-500 leading-none">{formatTime(a.startsAt)}</p>
+                  <p className="text-[10px] text-zinc-400 mt-0.5">{formatTime(a.endsAt)}</p>
+                </div>
+
+                <div className="h-10 w-px bg-zinc-100" />
+
+                {/* Client info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-amber-600 font-bold text-xs flex-shrink-0">
+                      {a.client.name.charAt(0).toUpperCase()}
+                    </div>
+                    <p className="font-semibold text-zinc-800 text-sm">{a.client.name}</p>
+                  </div>
+                  <p className="text-xs text-zinc-400 mt-1 ml-9">
+                    {a.services.map((s) => s.service.name).join(' + ')} · <span className="text-zinc-500">{a.barber.name}</span>
+                  </p>
+                </div>
+
+                {/* Price */}
+                <div className="text-right hidden sm:block">
+                  <p className="font-bold text-zinc-800 text-sm">{formatCurrency(Number(a.totalPrice))}</p>
+                </div>
+
+                {/* Status */}
+                <Badge status={a.status} />
+
+                {/* Actions */}
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {next && NextIcon && (
+                    <button
+                      onClick={() => statusMutation.mutate({ id: a.id, status: next.status })}
+                      className="flex items-center gap-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 text-xs font-medium text-white transition-colors"
                     >
-                      {nextStatus === 'CONFIRMED' ? 'Confirmar' : nextStatus === 'IN_PROGRESS' ? 'Iniciar' : 'Concluir'}
-                    </Button>
+                      <NextIcon className="h-3.5 w-3.5" />
+                      {next.label}
+                    </button>
                   )}
                   {(a.status === 'SCHEDULED' || a.status === 'CONFIRMED') && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      loading={statusMutation.isPending}
+                    <button
                       onClick={() => statusMutation.mutate({ id: a.id, status: 'CANCELLED' })}
+                      className="rounded-xl p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-colors"
                     >
-                      Cancelar
-                    </Button>
+                      <XCircle className="h-4 w-4" />
+                    </button>
                   )}
+                  <ChevronRight className="h-4 w-4 text-zinc-300" />
                 </div>
-              )
-            },
-          },
-        ]}
-      />
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       <AppointmentFormModal
         open={modalOpen}

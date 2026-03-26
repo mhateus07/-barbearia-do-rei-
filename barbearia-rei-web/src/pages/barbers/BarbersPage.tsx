@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Plus, Pencil, UserX, Scissors } from 'lucide-react'
 import { listBarbers, deleteBarber } from '../../api/barbers.api'
-import { Table } from '../../components/ui/Table'
-import { Button } from '../../components/ui/Button'
 import { BarberFormModal } from './BarberFormModal'
 import type { Barber } from '../../types'
 
@@ -32,59 +31,77 @@ export function BarbersPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-zinc-800">Barbeiros</h1>
-          <p className="text-sm text-zinc-500">{data.length} cadastrado(s)</p>
+          <p className="text-sm text-zinc-500 mt-0.5">{data.length} cadastrado(s)</p>
         </div>
-        <Button onClick={handleNew}>+ Novo Barbeiro</Button>
+        <button
+          onClick={handleNew}
+          className="flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2.5 text-sm font-semibold text-white transition-colors shadow-sm shadow-amber-500/25"
+        >
+          <Plus className="h-4 w-4" />
+          Novo Barbeiro
+        </button>
       </div>
 
-      <Table
-        loading={isLoading}
-        keyExtractor={(b) => b.id}
-        data={data}
-        columns={[
-          { key: 'name', header: 'Nome' },
-          { key: 'phone', header: 'Telefone', render: (b) => b.phone || '—' },
-          { key: 'email', header: 'E-mail', render: (b) => b.email || '—' },
-          {
-            key: 'isActive',
-            header: 'Status',
-            render: (b) => (
-              <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${b.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {b.isActive ? 'Ativo' : 'Inativo'}
-              </span>
-            ),
-          },
-          {
-            key: 'actions',
-            header: 'Ações',
-            render: (b) => (
-              <div className="flex gap-2">
-                <Button size="sm" variant="secondary" onClick={() => handleEdit(b)}>Editar</Button>
-                <Button
-                  size="sm"
-                  variant="danger"
-                  loading={deleteMutation.isPending}
-                  onClick={() => {
-                    if (confirm(`Desativar ${b.name}?`)) deleteMutation.mutate(b.id)
-                  }}
-                >
-                  Desativar
-                </Button>
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-40 rounded-2xl bg-zinc-100 animate-pulse" />
+          ))}
+        </div>
+      ) : data.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 py-16 text-zinc-400">
+          <Scissors className="h-8 w-8 mb-3 text-zinc-300" />
+          <p className="font-medium">Nenhum barbeiro cadastrado</p>
+          <p className="text-sm mt-1">Clique em "Novo Barbeiro" para começar</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {data.map((barber) => (
+            <div key={barber.id} className="rounded-2xl border border-zinc-200 bg-white p-5 hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 border border-amber-100">
+                    <Scissors className="h-5 w-5 text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-zinc-800">{barber.name}</p>
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${barber.isActive ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
+                      {barber.isActive ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </div>
+                </div>
               </div>
-            ),
-          },
-        ]}
-      />
+              <div className="space-y-1.5 text-sm text-zinc-500 mb-4">
+                {barber.phone && <p>{barber.phone}</p>}
+                {barber.email && <p className="truncate">{barber.email}</p>}
+                {!barber.phone && !barber.email && <p className="italic text-zinc-300">Sem contato cadastrado</p>}
+              </div>
+              <div className="flex gap-2 border-t border-zinc-100 pt-4">
+                <button
+                  onClick={() => handleEdit(barber)}
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 transition-colors"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Editar
+                </button>
+                <button
+                  onClick={() => { if (confirm(`Desativar ${barber.name}?`)) deleteMutation.mutate(barber.id) }}
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 transition-colors ml-auto"
+                >
+                  <UserX className="h-3.5 w-3.5" />
+                  Desativar
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-      <BarberFormModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        barber={editing}
-      />
+      <BarberFormModal open={modalOpen} onClose={() => setModalOpen(false)} barber={editing} />
     </div>
   )
 }
