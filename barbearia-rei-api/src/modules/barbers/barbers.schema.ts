@@ -5,6 +5,7 @@ export const createBarberSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
   avatarUrl: z.string().url().optional().or(z.literal('')),
+  commissionRate: z.number().min(0).max(100).optional(),
 })
 
 export const updateBarberSchema = createBarberSchema.partial().extend({

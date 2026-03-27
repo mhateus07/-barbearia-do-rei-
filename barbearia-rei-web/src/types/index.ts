@@ -19,8 +19,18 @@ export interface Barber {
   email?: string
   avatarUrl?: string
   isActive: boolean
+  commissionRate?: number
   createdAt: string
   updatedAt: string
+}
+
+export interface BarberCommission {
+  barberId: string
+  barberName: string
+  commissionRate: number
+  totalRevenue: number
+  commission: number
+  appointmentsCount: number
 }
 
 export interface Service {
@@ -79,4 +89,50 @@ export interface PaginatedResponse<T> {
     limit: number
     totalPages: number
   }
+}
+
+export type PaymentMethod = 'CASH' | 'PIX' | 'CREDIT_CARD' | 'DEBIT_CARD'
+export type ExpenseCategory = 'RENT' | 'UTILITIES' | 'SUPPLIES' | 'SALARY' | 'EQUIPMENT' | 'MARKETING' | 'OTHER'
+export type ExpenseStatus = 'PENDING' | 'PAID' | 'OVERDUE'
+
+export interface Payment {
+  id: string
+  amount: number
+  method: PaymentMethod
+  paidAt: string
+  notes?: string
+  appointmentId?: string
+  appointment?: {
+    id: string
+    startsAt: string
+    totalPrice: number
+    client: { id: string; name: string }
+    barber: { id: string; name: string }
+    services: { service: { id: string; name: string } }[]
+  }
+  createdAt: string
+}
+
+export interface Expense {
+  id: string
+  description: string
+  amount: number
+  category: ExpenseCategory
+  dueDate: string
+  paidAt?: string
+  status: ExpenseStatus
+  notes?: string
+  createdAt: string
+}
+
+export interface FinancialSummary {
+  totalIncome: number
+  totalExpenses: number
+  balance: number
+  totalPending: number
+  totalOverdue: number
+  incomeByMethod: Record<string, number>
+  expensesByCategory: Record<string, number>
+  cashFlowByDay: { date: string; income: number; expenses: number; balance: number }[]
+  period: { from: string; to: string }
 }

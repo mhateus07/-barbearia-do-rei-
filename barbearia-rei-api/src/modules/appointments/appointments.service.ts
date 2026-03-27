@@ -31,11 +31,11 @@ export async function listAppointments(filters: {
   const where: Record<string, unknown> = {}
 
   if (date) {
-    const start = new Date(date)
+    const start = new Date(`${date}T00:00:00`)
     start.setHours(0, 0, 0, 0)
-    const end = new Date(date)
+    const end = new Date(`${date}T00:00:00`)
     end.setHours(23, 59, 59, 999)
-    where.startsAt = { gte: start, lte: end }
+where.startsAt = { gte: start, lte: end }
   } else if (from || to) {
     where.startsAt = {
       ...(from ? { gte: new Date(from) } : {}),

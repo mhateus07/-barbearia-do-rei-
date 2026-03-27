@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, CalendarDays, ChevronRight, CheckCircle2, XCircle, PlayCircle } from 'lucide-react'
-import { listAppointments, updateAppointmentStatus, deleteAppointment } from '../../api/appointments.api'
+import { Plus, CalendarDays, ChevronRight, CheckCircle2, XCircle, PlayCircle, Pencil } from 'lucide-react'
+import { listAppointments, updateAppointmentStatus } from '../../api/appointments.api'
 import { Badge } from '../../components/ui/Badge'
 import { AppointmentFormModal } from './AppointmentFormModal'
 import type { Appointment, AppointmentStatus } from '../../types'
@@ -27,6 +27,7 @@ const NEXT_STATUS: Partial<Record<AppointmentStatus, { status: AppointmentStatus
 export function AppointmentsPage() {
   const qc = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0])
   const [filterStatus, setFilterStatus] = useState<AppointmentStatus | ''>('')
 
@@ -44,10 +45,6 @@ export function AppointmentsPage() {
     },
   })
 
-  const deleteMutation = useMutation({
-    mutationFn: deleteAppointment,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['appointments'] }),
-  })
 
   const appointments = data?.data ?? []
 
@@ -156,12 +153,22 @@ export function AppointmentsPage() {
                     </button>
                   )}
                   {(a.status === 'SCHEDULED' || a.status === 'CONFIRMED') && (
-                    <button
-                      onClick={() => statusMutation.mutate({ id: a.id, status: 'CANCELLED' })}
-                      className="rounded-xl p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-colors"
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </button>
+                    <>
+                      <button
+                        onClick={() => { setEditingAppointment(a); setModalOpen(true) }}
+                        className="rounded-xl p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors"
+                        title="Editar"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => statusMutation.mutate({ id: a.id, status: 'CANCELLED' })}
+                        className="rounded-xl p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                        title="Cancelar"
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </button>
+                    </>
                   )}
                   <ChevronRight className="h-4 w-4 text-zinc-300" />
                 </div>
@@ -173,8 +180,9 @@ export function AppointmentsPage() {
 
       <AppointmentFormModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => { setModalOpen(false); setEditingAppointment(null) }}
         defaultDate={`${filterDate}T08:00`}
+        appointment={editingAppointment}
       />
     </div>
   )

@@ -7,6 +7,8 @@ import { BarbersPage } from '../pages/barbers/BarbersPage'
 import { ServicesPage } from '../pages/services/ServicesPage'
 import { ClientsPage } from '../pages/clients/ClientsPage'
 import { AppointmentsPage } from '../pages/appointments/AppointmentsPage'
+import { FinancesPage } from '../pages/finances/FinancesPage'
+import { ShowcasePage } from '../pages/showcase/ShowcasePage'
 
 export function AppRouter() {
   return (
@@ -21,6 +23,8 @@ export function AppRouter() {
             <Route path="/servicos" element={<ServicesPage />} />
             <Route path="/clientes" element={<ClientsPage />} />
             <Route path="/agendamentos" element={<AppointmentsPage />} />
+            <Route path="/financeiro" element={<FinancesPage />} />
+            <Route path="/vitrine" element={<ShowcasePage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

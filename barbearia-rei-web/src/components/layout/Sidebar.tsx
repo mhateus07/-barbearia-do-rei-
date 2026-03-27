@@ -5,25 +5,31 @@ import {
   Users,
   Scissors,
   Sparkles,
+  Wallet,
+  ImageIcon,
 } from 'lucide-react'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/agendamentos', label: 'Agendamentos', icon: CalendarDays },
+  { to: '/financeiro', label: 'Financeiro', icon: Wallet },
   { to: '/clientes', label: 'Clientes', icon: Users },
   { to: '/barbeiros', label: 'Barbeiros', icon: Scissors },
   { to: '/servicos', label: 'Serviços', icon: Sparkles },
+  { to: '/vitrine', label: 'Vitrine', icon: ImageIcon },
 ]
 
 export function Sidebar() {
   return (
     <aside className="flex h-screen w-64 flex-col bg-zinc-950 border-r border-zinc-800/60">
       {/* Logo */}
-      <div className="px-6 py-6 border-b border-zinc-800/60">
+      <div className="px-6 py-5 border-b border-zinc-800/60">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 shadow-lg shadow-amber-500/30">
-            <Scissors className="h-5 w-5 text-white" strokeWidth={2.5} />
-          </div>
+          <img
+            src="/logo.jpeg"
+            alt="Barbearia do Rei"
+            className="h-10 w-10 rounded-xl object-cover shadow-lg shadow-amber-500/20"
+          />
           <div>
             <p className="font-bold text-white text-sm leading-tight">Barbearia do Rei</p>
             <p className="text-[11px] text-zinc-500 leading-tight">Painel Administrativo</p>

@@ -4,15 +4,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Modal } from '../../components/ui/Modal'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
-import { createAppointment } from '../../api/appointments.api'
+import { createAppointment, updateAppointment } from '../../api/appointments.api'
 import { listBarbers } from '../../api/barbers.api'
 import { listServices } from '../../api/services.api'
 import { listClients } from '../../api/clients.api'
+import type { Appointment } from '../../types'
 
 interface Props {
   open: boolean
   onClose: () => void
   defaultDate?: string
+  appointment?: Appointment | null
 }
 
 interface FormData {
@@ -23,8 +25,15 @@ interface FormData {
   notes: string
 }
 
-export function AppointmentFormModal({ open, onClose, defaultDate }: Props) {
+function toDatetimeLocal(iso: string) {
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+export function AppointmentFormModal({ open, onClose, defaultDate, appointment }: Props) {
   const qc = useQueryClient()
+  const isEdit = !!appointment
 
   const { data: barbers = [] } = useQuery({ queryKey: ['barbers'], queryFn: () => listBarbers(true) })
   const { data: services = [] } = useQuery({ queryKey: ['services'], queryFn: () => listServices(true) })
@@ -34,11 +43,24 @@ export function AppointmentFormModal({ open, onClose, defaultDate }: Props) {
   const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormData>()
 
   useEffect(() => {
-    reset({ clientId: '', barberId: '', serviceIds: [], startsAt: defaultDate || '', notes: '' })
-  }, [open, defaultDate, reset])
+    if (appointment) {
+      reset({
+        clientId: appointment.client.id,
+        barberId: appointment.barber.id,
+        serviceIds: appointment.services.map((s) => s.service.id),
+        startsAt: toDatetimeLocal(appointment.startsAt),
+        notes: appointment.notes || '',
+      })
+    } else {
+      reset({ clientId: '', barberId: '', serviceIds: [], startsAt: defaultDate || '', notes: '' })
+    }
+  }, [open, appointment, defaultDate, reset])
 
   const mutation = useMutation({
-    mutationFn: createAppointment,
+    mutationFn: (d: FormData) =>
+      isEdit
+        ? updateAppointment(appointment!.id, d)
+        : createAppointment(d),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['appointments'] })
       qc.invalidateQueries({ queryKey: ['dashboard-summary'] })
@@ -47,7 +69,7 @@ export function AppointmentFormModal({ open, onClose, defaultDate }: Props) {
   })
 
   return (
-    <Modal open={open} onClose={onClose} title="Novo Agendamento" size="lg">
+    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar Agendamento' : 'Novo Agendamento'} size="lg">
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
@@ -120,7 +142,7 @@ export function AppointmentFormModal({ open, onClose, defaultDate }: Props) {
 
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" loading={mutation.isPending}>Agendar</Button>
+          <Button type="submit" loading={mutation.isPending}>{isEdit ? 'Salvar' : 'Agendar'}</Button>
         </div>
       </form>
     </Modal>

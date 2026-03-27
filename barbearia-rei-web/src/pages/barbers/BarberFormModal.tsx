@@ -17,6 +17,7 @@ interface FormData {
   name: string
   phone: string
   email: string
+  commissionRate: string
 }
 
 export function BarberFormModal({ open, onClose, barber }: Props) {
@@ -27,15 +28,17 @@ export function BarberFormModal({ open, onClose, barber }: Props) {
 
   useEffect(() => {
     if (barber) {
-      reset({ name: barber.name, phone: barber.phone || '', email: barber.email || '' })
+      reset({ name: barber.name, phone: barber.phone || '', email: barber.email || '', commissionRate: barber.commissionRate != null ? String(barber.commissionRate) : '' })
     } else {
-      reset({ name: '', phone: '', email: '' })
+      reset({ name: '', phone: '', email: '', commissionRate: '' })
     }
   }, [barber, reset])
 
   const mutation = useMutation({
-    mutationFn: (data: FormData) =>
-      isEdit ? updateBarber(barber!.id, data) : createBarber(data),
+    mutationFn: (data: FormData) => {
+      const payload = { ...data, commissionRate: data.commissionRate !== '' ? Number(data.commissionRate) : undefined }
+      return isEdit ? updateBarber(barber!.id, payload) : createBarber(payload)
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['barbers'] })
       onClose()
@@ -48,6 +51,15 @@ export function BarberFormModal({ open, onClose, barber }: Props) {
         <Input label="Nome *" {...register('name', { required: 'Nome obrigatório' })} error={errors.name?.message} />
         <Input label="Telefone" {...register('phone')} placeholder="(11) 99999-9999" />
         <Input label="E-mail" type="email" {...register('email')} placeholder="barbeiro@email.com" />
+        <Input
+          label="Comissão (%)"
+          type="number"
+          min="0"
+          max="100"
+          step="0.5"
+          {...register('commissionRate')}
+          placeholder="Ex: 40 (para 40%)"
+        />
         {mutation.error && (
           <p className="text-sm text-red-500">{(mutation.error as Error).message}</p>
         )}

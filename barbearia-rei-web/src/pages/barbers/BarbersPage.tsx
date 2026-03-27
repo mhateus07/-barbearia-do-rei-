@@ -79,6 +79,11 @@ export function BarbersPage() {
                 {barber.phone && <p>{barber.phone}</p>}
                 {barber.email && <p className="truncate">{barber.email}</p>}
                 {!barber.phone && !barber.email && <p className="italic text-zinc-300">Sem contato cadastrado</p>}
+                {barber.commissionRate != null && (
+                  <p className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-100">
+                    Comissão: {barber.commissionRate}%
+                  </p>
+                )}
               </div>
               <div className="flex gap-2 border-t border-zinc-100 pt-4">
                 <button

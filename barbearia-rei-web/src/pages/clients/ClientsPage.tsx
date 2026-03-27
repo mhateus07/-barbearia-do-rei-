@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Pencil, Trash2, Users, Search, Phone, Mail } from 'lucide-react'
+import { Plus, Pencil, Trash2, Users, Search, Phone, Mail, History } from 'lucide-react'
 import { listClients, deleteClient } from '../../api/clients.api'
 import { ClientFormModal } from './ClientFormModal'
+import { ClientHistoryModal } from './ClientHistoryModal'
 import type { Client } from '../../types'
 
 export function ClientsPage() {
@@ -10,6 +11,7 @@ export function ClientsPage() {
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Client | null>(null)
+  const [historyClient, setHistoryClient] = useState<Client | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['clients', search],
@@ -101,10 +103,13 @@ export function ClientsPage() {
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => { setEditing(client); setModalOpen(true) }} className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors">
+                      <button onClick={() => setHistoryClient(client)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-amber-50 hover:text-amber-600 transition-colors" title="Histórico">
+                        <History className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => { setEditing(client); setModalOpen(true) }} className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors" title="Editar">
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
-                      <button onClick={() => { if (confirm(`Excluir ${client.name}?`)) deleteMutation.mutate(client.id) }} className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-colors">
+                      <button onClick={() => { if (confirm(`Excluir ${client.name}?`)) deleteMutation.mutate(client.id) }} className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-colors" title="Excluir">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -117,6 +122,7 @@ export function ClientsPage() {
       )}
 
       <ClientFormModal open={modalOpen} onClose={() => setModalOpen(false)} client={editing} />
+      <ClientHistoryModal open={!!historyClient} onClose={() => setHistoryClient(null)} client={historyClient} />
     </div>
   )
 }

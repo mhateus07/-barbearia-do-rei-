@@ -2,7 +2,7 @@ import { AppointmentStatus } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
 
 export async function getDashboardSummary(date?: string) {
-  const targetDate = date ? new Date(date) : new Date()
+  const targetDate = date ? new Date(`${date}T00:00:00`) : new Date()
   const start = new Date(targetDate)
   start.setHours(0, 0, 0, 0)
   const end = new Date(targetDate)

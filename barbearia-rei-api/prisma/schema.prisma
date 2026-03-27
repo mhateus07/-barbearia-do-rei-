@@ -23,9 +23,10 @@ model Barber {
   phone        String?
   email        String?       @unique
   avatarUrl    String?
-  isActive     Boolean       @default(true)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  isActive       Boolean       @default(true)
+  commissionRate Decimal?      @db.Decimal(5, 2)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   appointments Appointment[]
 
@@ -88,6 +89,7 @@ model Appointment {
   barberId String
 
   services AppointmentService[]
+  payment  Payment?
 
   @@index([startsAt])
   @@index([barberId, startsAt])
@@ -108,4 +110,59 @@ model AppointmentService {
 
   @@unique([appointmentId, serviceId])
   @@map("appointment_services")
+}
+
+enum PaymentMethod {
+  CASH
+  PIX
+  CREDIT_CARD
+  DEBIT_CARD
+}
+
+enum ExpenseCategory {
+  RENT
+  UTILITIES
+  SUPPLIES
+  SALARY
+  EQUIPMENT
+  MARKETING
+  OTHER
+}
+
+enum ExpenseStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  amount        Decimal       @db.Decimal(10, 2)
+  method        PaymentMethod
+  paidAt        DateTime      @default(now())
+  notes         String?
+  appointmentId String?       @unique
+  appointment   Appointment?  @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([paidAt])
+  @@map("payments")
+}
+
+model Expense {
+  id          String          @id @default(uuid())
+  description String
+  amount      Decimal         @db.Decimal(10, 2)
+  category    ExpenseCategory
+  dueDate     DateTime
+  paidAt      DateTime?
+  status      ExpenseStatus   @default(PENDING)
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([dueDate])
+  @@index([status])
+  @@map("expenses")
 }
