@@ -9,6 +9,7 @@ import { ClientsPage } from '../pages/clients/ClientsPage'
 import { AppointmentsPage } from '../pages/appointments/AppointmentsPage'
 import { FinancesPage } from '../pages/finances/FinancesPage'
 import { ShowcasePage } from '../pages/showcase/ShowcasePage'
+import { SettingsPage } from '../pages/settings/SettingsPage'
 
 export function AppRouter() {
   return (
@@ -25,6 +26,7 @@ export function AppRouter() {
             <Route path="/agendamentos" element={<AppointmentsPage />} />
             <Route path="/financeiro" element={<FinancesPage />} />
             <Route path="/vitrine" element={<ShowcasePage />} />
+            <Route path="/configuracoes" element={<SettingsPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

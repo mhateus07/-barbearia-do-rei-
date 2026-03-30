@@ -7,6 +7,8 @@ import {
   Sparkles,
   Wallet,
   ImageIcon,
+  Settings,
+  X,
 } from 'lucide-react'
 
 const navItems = [
@@ -17,11 +19,24 @@ const navItems = [
   { to: '/barbeiros', label: 'Barbeiros', icon: Scissors },
   { to: '/servicos', label: 'Serviços', icon: Sparkles },
   { to: '/vitrine', label: 'Vitrine', icon: ImageIcon },
+  { to: '/configuracoes', label: 'Configurações', icon: Settings },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  open: boolean
+  onClose: () => void
+}
+
+export function Sidebar({ open, onClose }: SidebarProps) {
   return (
-    <aside className="flex h-screen w-64 flex-col bg-zinc-950 border-r border-zinc-800/60">
+    <aside
+      className={`
+        fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-col bg-zinc-950 border-r border-zinc-800/60
+        transition-transform duration-300 ease-in-out
+        ${open ? 'translate-x-0' : '-translate-x-full'}
+        md:relative md:translate-x-0 md:z-auto
+      `}
+    >
       {/* Logo */}
       <div className="px-6 py-5 border-b border-zinc-800/60">
         <div className="flex items-center gap-3">
@@ -30,21 +45,29 @@ export function Sidebar() {
             alt="Barbearia do Rei"
             className="h-10 w-10 rounded-xl object-cover shadow-lg shadow-amber-500/20"
           />
-          <div>
+          <div className="flex-1">
             <p className="font-bold text-white text-sm leading-tight">Barbearia do Rei</p>
             <p className="text-[11px] text-zinc-500 leading-tight">Painel Administrativo</p>
           </div>
+          {/* Botão fechar no mobile */}
+          <button
+            onClick={onClose}
+            className="md:hidden rounded-lg p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon
           return (
             <NavLink
               key={item.to}
               to={item.to}
+              onClick={onClose}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                   isActive

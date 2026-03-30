@@ -168,17 +168,51 @@ export async function updateAppointment(id: string, input: UpdateAppointmentInpu
 }
 
 export async function updateAppointmentStatus(id: string, input: UpdateStatusInput) {
-  await getAppointmentById(id)
-  return prisma.appointment.update({
+  const appointment = await getAppointmentById(id)
+
+  const updated = await prisma.appointment.update({
     where: { id },
     data: { status: input.status },
     include: appointmentInclude,
   })
+
+  // Ao concluir, credita pontos de fidelidade ao cliente
+  if (input.status === AppointmentStatus.COMPLETED) {
+    try {
+      const settingRow = await prisma.settings.findUnique({ where: { key: 'loyalty_enabled' } })
+      const loyaltyEnabled = settingRow?.value ?? 'true'
+
+      if (loyaltyEnabled === 'true') {
+        const pointsRow = await prisma.settings.findUnique({ where: { key: 'loyalty_points_per_visit' } })
+        const points = Number(pointsRow?.value ?? '10')
+
+        await prisma.loyaltyCard.upsert({
+          where: { clientId: appointment.clientId },
+          create: {
+            clientId: appointment.clientId,
+            visitCount: 1,
+            pointsBalance: points,
+            pointsEarned: points,
+            pointsRedeemed: 0,
+          },
+          update: {
+            visitCount: { increment: 1 },
+            pointsBalance: { increment: points },
+            pointsEarned: { increment: points },
+          },
+        })
+      }
+    } catch {
+      // Não falha o update de status se fidelidade der erro
+    }
+  }
+
+  return updated
 }
 
 export async function deleteAppointment(id: string) {
   const appointment = await getAppointmentById(id)
-  const allowed = [AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED]
+  const allowed: AppointmentStatus[] = [AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED]
   if (!allowed.includes(appointment.status)) {
     throw new Error('Apenas agendamentos com status SCHEDULED ou CONFIRMED podem ser excluídos')
   }

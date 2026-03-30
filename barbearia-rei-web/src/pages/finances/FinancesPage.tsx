@@ -18,8 +18,10 @@ import {
   payExpense,
   deleteExpense,
   getCommissions,
+  payCommission,
+  listCommissionPayments,
 } from '../../api/finances.api'
-import type { PaymentMethod, ExpenseCategory } from '../../types'
+import type { PaymentMethod, ExpenseCategory, CommissionPayment } from '../../types'
 import { Modal } from '../../components/ui/Modal'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
@@ -360,60 +362,62 @@ function PaymentsTab() {
         </div>
       ) : (
         <div className="rounded-2xl border border-zinc-200 bg-white overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-zinc-100 bg-zinc-50">
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Data</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Descrição</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Forma</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide">Valor</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {data!.data.map((p) => (
-                <tr key={p.id} className="hover:bg-zinc-50 transition-colors">
-                  <td className="px-4 py-3 text-zinc-500 whitespace-nowrap">{formatDate(p.paidAt)}</td>
-                  <td className="px-4 py-3 text-zinc-800">
-                    {p.appointment
-                      ? `Agendamento — ${p.appointment.client.name}`
-                      : p.notes || 'Pagamento avulso'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                      style={{
-                        backgroundColor: `${METHOD_COLORS[p.method]}20`,
-                        color: METHOD_COLORS[p.method],
-                      }}
-                    >
-                      {METHOD_LABELS[p.method]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-emerald-600">
-                    {formatCurrency(Number(p.amount))}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => {
-                        if (confirm('Remover este pagamento?')) deleteMutation.mutate(p.id)
-                      }}
-                      className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[500px]">
+              <thead>
+                <tr className="border-b border-zinc-100 bg-zinc-50">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Data</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Descrição</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Forma</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide">Valor</th>
+                  <th className="px-4 py-3" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {data!.data.map((p) => (
+                  <tr key={p.id} className="hover:bg-zinc-50 transition-colors">
+                    <td className="px-4 py-3 text-zinc-500 whitespace-nowrap">{formatDate(p.paidAt)}</td>
+                    <td className="px-4 py-3 text-zinc-800">
+                      {p.appointment
+                        ? `Agendamento — ${p.appointment.client.name}`
+                        : p.notes || 'Pagamento avulso'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap"
+                        style={{
+                          backgroundColor: `${METHOD_COLORS[p.method]}20`,
+                          color: METHOD_COLORS[p.method],
+                        }}
+                      >
+                        {METHOD_LABELS[p.method]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right font-semibold text-emerald-600 whitespace-nowrap">
+                      {formatCurrency(Number(p.amount))}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => {
+                          if (confirm('Remover este pagamento?')) deleteMutation.mutate(p.id)
+                        }}
+                        className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* Modal */}
       <Modal open={showModal} onClose={() => setShowModal(false)} title="Registrar Pagamento">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-zinc-600">Valor (R$)</label>
               <Input
@@ -605,7 +609,8 @@ function ExpensesTab() {
         </div>
       ) : (
         <div className="rounded-2xl border border-zinc-200 bg-white overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[560px]">
             <thead>
               <tr className="border-b border-zinc-100 bg-zinc-50">
                 <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Descrição</th>
@@ -661,6 +666,7 @@ function ExpensesTab() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -676,7 +682,7 @@ function ExpensesTab() {
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-zinc-600">Valor (R$)</label>
               <Input
@@ -741,21 +747,63 @@ function ExpensesTab() {
 // ─── TAB: COMISSÕES ───────────────────────────────────────────────────────────
 
 function CommissionsTab({ from, to }: { from: string; to: string }) {
+  const qc = useQueryClient()
+  const [showPayModal, setShowPayModal] = useState(false)
+  const [selectedBarber, setSelectedBarber] = useState<{ barberId: string; barberName: string; totalRevenue: number; commission: number; commissionRate: number } | null>(null)
+  const [payNotes, setPayNotes] = useState('')
+  const [showHistory, setShowHistory] = useState(false)
+
   const { data, isLoading } = useQuery({
     queryKey: ['finances-commissions', from, to],
     queryFn: () => getCommissions(from, to),
   })
 
+  const { data: paymentsHistory } = useQuery({
+    queryKey: ['commission-payments', from, to],
+    queryFn: () => listCommissionPayments({ from, to }),
+  })
+
+  const payMutation = useMutation({
+    mutationFn: payCommission,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['commission-payments'] })
+      setShowPayModal(false)
+      setPayNotes('')
+      setSelectedBarber(null)
+    },
+  })
+
   const totalCommissions = (data ?? []).reduce((sum, b) => sum + b.commission, 0)
   const totalRevenue = (data ?? []).reduce((sum, b) => sum + b.totalRevenue, 0)
+  const totalPaid = (paymentsHistory ?? []).reduce((sum: number, p: CommissionPayment) => sum + Number(p.commissionAmount), 0)
 
   if (isLoading) return <div className="flex h-40 items-center justify-center"><Spinner size="lg" /></div>
 
+  function openPayModal(b: typeof selectedBarber) {
+    setSelectedBarber(b)
+    setPayNotes('')
+    setShowPayModal(true)
+  }
+
+  function handlePay() {
+    if (!selectedBarber) return
+    payMutation.mutate({
+      barberId: selectedBarber.barberId,
+      periodFrom: from,
+      periodTo: to,
+      totalRevenue: selectedBarber.totalRevenue,
+      commissionAmount: selectedBarber.commission,
+      commissionRate: selectedBarber.commissionRate,
+      notes: payNotes || undefined,
+    })
+  }
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <StatCard title="Receita Total (Concluídos)" value={formatCurrency(totalRevenue)} icon={TrendingUp} variant="income" />
         <StatCard title="Total de Comissões" value={formatCurrency(totalCommissions)} icon={Scissors} variant="warning" />
+        <StatCard title="Comissões Pagas (período)" value={formatCurrency(totalPaid)} icon={CheckCircle2} variant="default" />
       </div>
 
       {(data?.length ?? 0) === 0 ? (
@@ -764,7 +812,8 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
         </div>
       ) : (
         <div className="rounded-2xl border border-zinc-200 bg-white overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[560px]">
             <thead>
               <tr className="border-b border-zinc-100 bg-zinc-50">
                 <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Barbeiro</th>
@@ -772,6 +821,7 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
                 <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide">Receita Gerada</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-zinc-500 uppercase tracking-wide">Taxa</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide">Comissão</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide">Ação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -797,6 +847,17 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
                     )}
                   </td>
                   <td className="px-4 py-3 text-right font-bold text-zinc-800">{formatCurrency(b.commission)}</td>
+                  <td className="px-4 py-3 text-right">
+                    {b.commission > 0 && (
+                      <button
+                        onClick={() => openPayModal(b)}
+                        className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 text-xs font-medium text-emerald-700 transition-colors"
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                        Pagar
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -806,15 +867,106 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
                 <td className="px-4 py-3 text-right font-bold text-emerald-600">{formatCurrency(totalRevenue)}</td>
                 <td />
                 <td className="px-4 py-3 text-right font-bold text-zinc-800">{formatCurrency(totalCommissions)}</td>
+                <td />
               </tr>
             </tfoot>
           </table>
+          </div>
+        </div>
+      )}
+
+      {/* Histórico de pagamentos */}
+      {(paymentsHistory?.length ?? 0) > 0 && (
+        <div>
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="flex items-center gap-2 text-sm font-medium text-zinc-600 hover:text-zinc-800"
+          >
+            <ChevronDown className={`h-4 w-4 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
+            Histórico de pagamentos ({paymentsHistory!.length})
+          </button>
+          {showHistory && (
+            <div className="mt-3 rounded-2xl border border-zinc-200 bg-white overflow-hidden">
+              <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[500px]">
+                <thead>
+                  <tr className="border-b border-zinc-100 bg-zinc-50">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Barbeiro</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Período</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase">Comissão Paga</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Data Pagamento</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Obs</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {paymentsHistory!.map((p: CommissionPayment) => (
+                    <tr key={p.id} className="hover:bg-zinc-50">
+                      <td className="px-4 py-2.5 font-medium text-zinc-800">{p.barber.name}</td>
+                      <td className="px-4 py-2.5 text-xs text-zinc-500">
+                        {formatDate(p.periodFrom)} – {formatDate(p.periodTo)}
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-bold text-emerald-600">{formatCurrency(Number(p.commissionAmount))}</td>
+                      <td className="px-4 py-2.5 text-xs text-zinc-500">{formatDate(p.paidAt)}</td>
+                      <td className="px-4 py-2.5 text-xs text-zinc-400">{p.notes ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       <p className="text-xs text-zinc-400 text-center">
         Configure a taxa de comissão de cada barbeiro na tela de Barbeiros (botão Editar).
       </p>
+
+      {/* Modal pagar comissão */}
+      <Modal open={showPayModal} onClose={() => setShowPayModal(false)} title="Registrar Pagamento de Comissão">
+        {selectedBarber && (
+          <div className="space-y-4">
+            <div className="rounded-xl bg-zinc-50 border border-zinc-200 px-4 py-3 space-y-1">
+              <p className="text-sm font-semibold text-zinc-800">{selectedBarber.barberName}</p>
+              <div className="flex items-center justify-between text-sm text-zinc-600">
+                <span>Receita gerada:</span>
+                <span className="font-medium text-emerald-600">{formatCurrency(selectedBarber.totalRevenue)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm text-zinc-600">
+                <span>Taxa de comissão:</span>
+                <span className="font-medium">{selectedBarber.commissionRate}%</span>
+              </div>
+              <div className="flex items-center justify-between text-sm font-bold text-zinc-800 border-t border-zinc-200 pt-2 mt-2">
+                <span>Valor a pagar:</span>
+                <span className="text-amber-600">{formatCurrency(selectedBarber.commission)}</span>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-zinc-600">Período</label>
+              <p className="text-sm text-zinc-700">{formatDate(from)} a {formatDate(to)}</p>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-zinc-600">Observações (opcional)</label>
+              <input
+                type="text"
+                placeholder="Ex: Pago em dinheiro, transferência..."
+                value={payNotes}
+                onChange={(e) => setPayNotes(e.target.value)}
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+            </div>
+            {payMutation.isError && (
+              <p className="text-sm text-red-500">{(payMutation.error as Error).message}</p>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="secondary" onClick={() => setShowPayModal(false)}>Cancelar</Button>
+              <Button onClick={handlePay} disabled={payMutation.isPending}>
+                {payMutation.isPending ? 'Salvando...' : `Confirmar Pagamento de ${formatCurrency(selectedBarber.commission)}`}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }
@@ -929,11 +1081,11 @@ export function FinancesPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-4 md:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-800">Financeiro</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-zinc-800">Financeiro</h1>
           <p className="text-sm text-zinc-500 mt-0.5">Controle de receitas, despesas e fluxo de caixa</p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
@@ -963,7 +1115,8 @@ export function FinancesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-xl bg-zinc-100 p-1 w-fit">
+      <div className="overflow-x-auto pb-1">
+      <div className="flex gap-1 rounded-xl bg-zinc-100 p-1 w-fit min-w-full sm:min-w-0">
         {TABS.map((tab) => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
@@ -971,7 +1124,7 @@ export function FinancesPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-150 ${
+              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-all duration-150 whitespace-nowrap flex-1 justify-center sm:flex-none sm:justify-start sm:px-4 ${
                 isActive
                   ? 'bg-white text-zinc-800 shadow-sm'
                   : 'text-zinc-500 hover:text-zinc-700'
@@ -982,6 +1135,7 @@ export function FinancesPage() {
             </button>
           )
         })}
+      </div>
       </div>
 
       {/* Content */}

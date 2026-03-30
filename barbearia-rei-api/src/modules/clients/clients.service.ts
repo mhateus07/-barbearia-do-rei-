@@ -70,3 +70,52 @@ export async function getClientAppointments(id: string) {
     orderBy: { startsAt: 'desc' },
   })
 }
+
+export async function getClientLoyalty(clientId: string) {
+  await getClientById(clientId)
+  const card = await prisma.loyaltyCard.findUnique({ where: { clientId } })
+  if (!card) {
+    return { clientId, visitCount: 0, pointsBalance: 0, pointsEarned: 0, pointsRedeemed: 0 }
+  }
+  return card
+}
+
+export async function redeemLoyaltyPoints(clientId: string, points: number) {
+  await getClientById(clientId)
+
+  const card = await prisma.loyaltyCard.findUnique({ where: { clientId } })
+  if (!card) throw new Error('Cliente ainda não tem cartão fidelidade')
+  if (card.pointsBalance < points) throw new Error(`Pontos insuficientes. Saldo: ${card.pointsBalance}`)
+
+  return prisma.loyaltyCard.update({
+    where: { clientId },
+    data: {
+      pointsBalance: { decrement: points },
+      pointsRedeemed: { increment: points },
+    },
+  })
+}
+
+export async function listClientsWithLoyalty(search?: string, page = 1, limit = 20) {
+  const where = search
+    ? {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' as const } },
+          { phone: { contains: search } },
+        ],
+      }
+    : {}
+
+  const [data, total] = await Promise.all([
+    prisma.client.findMany({
+      where,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { name: 'asc' },
+      include: { loyaltyCard: true },
+    }),
+    prisma.client.count({ where }),
+  ])
+
+  return { data, total, page, limit }
+}

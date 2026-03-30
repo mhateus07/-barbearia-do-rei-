@@ -3,16 +3,21 @@ import { AuthRequest } from '../../middlewares/auth.middleware'
 import { success, paginate, apiError } from '../../utils/response'
 import {
   listClients,
+  listClientsWithLoyalty,
   getClientById,
   createClient,
   updateClient,
   deleteClient,
   getClientAppointments,
+  getClientLoyalty,
+  redeemLoyaltyPoints,
 } from './clients.service'
 
 export async function list(req: AuthRequest, res: Response) {
-  const { search, page = '1', limit = '20' } = req.query as Record<string, string>
-  const result = await listClients(search, Number(page), Number(limit))
+  const { search, page = '1', limit = '20', withLoyalty } = req.query as Record<string, string>
+  const result = withLoyalty === 'true'
+    ? await listClientsWithLoyalty(search, Number(page), Number(limit))
+    : await listClients(search, Number(page), Number(limit))
   return paginate(res, result.data, { total: result.total, page: result.page, limit: result.limit })
 }
 
@@ -54,5 +59,23 @@ export async function clientAppointments(req: AuthRequest, res: Response) {
     return success(res, await getClientAppointments(req.params.id))
   } catch (err) {
     return apiError(res, (err as Error).message, 404)
+  }
+}
+
+export async function clientLoyalty(req: AuthRequest, res: Response) {
+  try {
+    return success(res, await getClientLoyalty(req.params.id))
+  } catch (err) {
+    return apiError(res, (err as Error).message, 404)
+  }
+}
+
+export async function redeemLoyalty(req: AuthRequest, res: Response) {
+  try {
+    const { points } = req.body
+    if (!points || points <= 0) return apiError(res, 'Informe a quantidade de pontos a resgatar', 400)
+    return success(res, await redeemLoyaltyPoints(req.params.id, Number(points)))
+  } catch (err) {
+    return apiError(res, (err as Error).message, 400)
   }
 }

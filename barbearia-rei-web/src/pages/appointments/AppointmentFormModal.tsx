@@ -71,7 +71,7 @@ export function AppointmentFormModal({ open, onClose, defaultDate, appointment }
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? 'Editar Agendamento' : 'Novo Agendamento'} size="lg">
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-zinc-700">Cliente *</label>
             <select {...register('clientId', { required: 'Obrigatório' })}

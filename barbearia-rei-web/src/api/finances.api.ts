@@ -1,5 +1,5 @@
 import { api } from './axios'
-import type { Payment, Expense, FinancialSummary, BarberCommission, PaginatedResponse, PaymentMethod, ExpenseCategory } from '../types'
+import type { Payment, Expense, FinancialSummary, BarberCommission, CommissionPayment, PaginatedResponse, PaymentMethod, ExpenseCategory } from '../types'
 
 // ─── SUMMARY ─────────────────────────────────────────────────────────────────
 
@@ -86,5 +86,28 @@ export async function deleteExpense(id: string): Promise<void> {
 
 export async function getCommissions(from?: string, to?: string): Promise<BarberCommission[]> {
   const { data } = await api.get('/finances/commissions', { params: { from, to } })
+  return data.data
+}
+
+export async function payCommission(input: {
+  barberId: string
+  periodFrom: string
+  periodTo: string
+  totalRevenue: number
+  commissionAmount: number
+  commissionRate: number
+  notes?: string
+  paidAt?: string
+}): Promise<CommissionPayment> {
+  const { data } = await api.post('/finances/commissions/pay', input)
+  return data.data
+}
+
+export async function listCommissionPayments(params: {
+  barberId?: string
+  from?: string
+  to?: string
+} = {}): Promise<CommissionPayment[]> {
+  const { data } = await api.get('/finances/commissions/payments', { params })
   return data.data
 }

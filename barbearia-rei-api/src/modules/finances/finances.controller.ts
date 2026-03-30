@@ -13,6 +13,8 @@ import {
   deleteExpense,
   getFinancialSummary,
   getCommissions,
+  payCommission,
+  listCommissionPayments,
 } from './finances.service'
 
 // ─── PAYMENTS ────────────────────────────────────────────────────────────────
@@ -100,4 +102,17 @@ export async function summaryHandler(req: AuthRequest, res: Response) {
 export async function commissionsHandler(req: AuthRequest, res: Response) {
   const { from, to } = req.query as Record<string, string>
   return success(res, await getCommissions(from, to))
+}
+
+export async function payCommissionHandler(req: AuthRequest, res: Response) {
+  try {
+    return success(res, await payCommission(req.body), 201)
+  } catch (err) {
+    return apiError(res, (err as Error).message, 400)
+  }
+}
+
+export async function listCommissionPaymentsHandler(req: AuthRequest, res: Response) {
+  const { barberId, from, to } = req.query as Record<string, string>
+  return success(res, await listCommissionPayments(barberId, from, to))
 }

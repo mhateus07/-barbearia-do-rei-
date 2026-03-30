@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { verifyToken } from '../config/jwt'
 
-export interface AuthRequest extends Request {
+export interface AuthRequest extends Request<Record<string, string>> {
   adminId?: string
   adminEmail?: string
 }

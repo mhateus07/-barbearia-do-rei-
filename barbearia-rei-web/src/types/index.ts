@@ -125,6 +125,53 @@ export interface Expense {
   createdAt: string
 }
 
+export interface LoyaltyCard {
+  id?: string
+  clientId: string
+  visitCount: number
+  pointsBalance: number
+  pointsEarned: number
+  pointsRedeemed: number
+}
+
+export interface ClientWithLoyalty extends Client {
+  loyaltyCard?: LoyaltyCard | null
+}
+
+export interface CommissionPayment {
+  id: string
+  barberId: string
+  barber: { id: string; name: string }
+  periodFrom: string
+  periodTo: string
+  totalRevenue: number
+  commissionAmount: number
+  commissionRate: number
+  notes?: string
+  paidAt: string
+  createdAt: string
+}
+
+export type NotificationStatus = 'PENDING' | 'SENT' | 'FAILED'
+export type NotificationType =
+  | 'APPOINTMENT_CONFIRMATION'
+  | 'APPOINTMENT_REMINDER'
+  | 'APPOINTMENT_CANCELLATION'
+  | 'CUSTOM'
+
+export interface NotificationLog {
+  id: string
+  type: NotificationType
+  phone: string
+  message: string
+  status: NotificationStatus
+  error?: string
+  sentAt?: string
+  createdAt: string
+  client?: { id: string; name: string } | null
+  appointment?: { id: string; startsAt: string } | null
+}
+
 export interface FinancialSummary {
   totalIncome: number
   totalExpenses: number

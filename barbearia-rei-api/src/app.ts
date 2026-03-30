@@ -11,6 +11,8 @@ import clientRoutes from './modules/clients/clients.routes'
 import appointmentRoutes from './modules/appointments/appointments.routes'
 import dashboardRoutes from './modules/dashboard/dashboard.routes'
 import financesRoutes from './modules/finances/finances.routes'
+import settingsRoutes from './modules/settings/settings.routes'
+import notificationsRoutes from './modules/notifications/notifications.routes'
 
 const app = express()
 
@@ -34,6 +36,8 @@ app.use('/api/v1/clients', authMiddleware, clientRoutes)
 app.use('/api/v1/appointments', authMiddleware, appointmentRoutes)
 app.use('/api/v1/dashboard', authMiddleware, dashboardRoutes)
 app.use('/api/v1/finances', authMiddleware, financesRoutes)
+app.use('/api/v1/settings', authMiddleware, settingsRoutes)
+app.use('/api/v1/notifications', authMiddleware, notificationsRoutes)
 
 app.use(errorMiddleware)
 

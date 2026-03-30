@@ -5,6 +5,7 @@ import {
   createExpenseSchema,
   updateExpenseSchema,
   payExpenseSchema,
+  payCommissionSchema,
 } from './finances.schema'
 import {
   listPaymentsHandler,
@@ -17,6 +18,8 @@ import {
   deleteExpenseHandler,
   summaryHandler,
   commissionsHandler,
+  payCommissionHandler,
+  listCommissionPaymentsHandler,
 } from './finances.controller'
 
 const router = Router()
@@ -24,6 +27,8 @@ const router = Router()
 // Summary & commissions
 router.get('/summary', summaryHandler)
 router.get('/commissions', commissionsHandler)
+router.post('/commissions/pay', validate(payCommissionSchema), payCommissionHandler)
+router.get('/commissions/payments', listCommissionPaymentsHandler)
 
 // Payments
 router.get('/payments', listPaymentsHandler)

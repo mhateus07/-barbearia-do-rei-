@@ -5,6 +5,7 @@ import {
   CreateExpenseInput,
   UpdateExpenseInput,
   PayExpenseInput,
+  PayCommissionInput,
 } from './finances.schema'
 
 // ─── PAYMENTS ────────────────────────────────────────────────────────────────
@@ -214,6 +215,46 @@ export async function getCommissions(from?: string, to?: string) {
       commission,
       appointmentsCount: barberAppointments.length,
     }
+  })
+}
+
+// ─── COMMISSION PAYMENTS ─────────────────────────────────────────────────────
+
+export async function payCommission(input: PayCommissionInput) {
+  const barber = await prisma.barber.findUnique({ where: { id: input.barberId } })
+  if (!barber) throw new Error('Barbeiro não encontrado')
+
+  return prisma.commissionPayment.create({
+    data: {
+      barberId: input.barberId,
+      periodFrom: new Date(`${input.periodFrom}T00:00:00`),
+      periodTo: new Date(`${input.periodTo}T23:59:59`),
+      totalRevenue: input.totalRevenue,
+      commissionAmount: input.commissionAmount,
+      commissionRate: input.commissionRate,
+      notes: input.notes,
+      paidAt: input.paidAt ? new Date(input.paidAt) : new Date(),
+    },
+    include: {
+      barber: { select: { id: true, name: true } },
+    },
+  })
+}
+
+export async function listCommissionPayments(barberId?: string, from?: string, to?: string) {
+  const where: Record<string, unknown> = {}
+  if (barberId) where.barberId = barberId
+  if (from || to) {
+    where.paidAt = {
+      ...(from ? { gte: new Date(from) } : {}),
+      ...(to ? { lte: new Date(`${to}T23:59:59`) } : {}),
+    }
+  }
+
+  return prisma.commissionPayment.findMany({
+    where,
+    include: { barber: { select: { id: true, name: true } } },
+    orderBy: { paidAt: 'desc' },
   })
 }
 

@@ -30,7 +30,19 @@ export const payExpenseSchema = z.object({
   paidAt: z.string().min(1).optional(),
 })
 
+export const payCommissionSchema = z.object({
+  barberId: z.string().uuid('ID do barbeiro inválido'),
+  periodFrom: z.string().min(1, 'Data inicial obrigatória'),
+  periodTo: z.string().min(1, 'Data final obrigatória'),
+  totalRevenue: z.number().nonnegative(),
+  commissionAmount: z.number().nonnegative(),
+  commissionRate: z.number().min(0).max(100),
+  notes: z.string().optional(),
+  paidAt: z.string().optional(),
+})
+
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>
 export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>
 export type PayExpenseInput = z.infer<typeof payExpenseSchema>
+export type PayCommissionInput = z.infer<typeof payCommissionSchema>

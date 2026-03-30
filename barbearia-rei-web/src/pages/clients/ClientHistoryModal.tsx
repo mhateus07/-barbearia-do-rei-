@@ -1,15 +1,20 @@
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Modal } from '../../components/ui/Modal'
 import { Spinner } from '../../components/ui/Spinner'
 import { Badge } from '../../components/ui/Badge'
+import { Button } from '../../components/ui/Button'
 import { listAppointments } from '../../api/appointments.api'
+import { getClientLoyalty, redeemLoyaltyPoints } from '../../api/clients.api'
+import { getSettings } from '../../api/settings.api'
 import { formatCurrency } from '../../utils/formatCurrency'
-import type { Client } from '../../types'
+import { Star, Gift } from 'lucide-react'
+import type { ClientWithLoyalty } from '../../types'
 
 interface Props {
   open: boolean
   onClose: () => void
-  client: Client | null
+  client: ClientWithLoyalty | null
 }
 
 function formatDate(iso: string) {
@@ -21,15 +26,59 @@ function formatTime(iso: string) {
 }
 
 export function ClientHistoryModal({ open, onClose, client }: Props) {
-  const { data, isLoading } = useQuery({
+  const qc = useQueryClient()
+  const [redeemPoints, setRedeemPoints] = useState('')
+  const [redeemMsg, setRedeemMsg] = useState('')
+
+  const { data: appointmentsData, isLoading } = useQuery({
     queryKey: ['client-history', client?.id],
     queryFn: () => listAppointments({ clientId: client!.id, limit: 100 }),
     enabled: open && !!client,
   })
 
-  const appointments = data?.data ?? []
+  const { data: loyalty, isLoading: loyaltyLoading } = useQuery({
+    queryKey: ['client-loyalty', client?.id],
+    queryFn: () => getClientLoyalty(client!.id),
+    enabled: open && !!client,
+  })
+
+  const { data: settings } = useQuery({
+    queryKey: ['settings'],
+    queryFn: getSettings,
+    enabled: open,
+  })
+
+  const redeemMutation = useMutation({
+    mutationFn: (points: number) => redeemLoyaltyPoints(client!.id, points),
+    onSuccess: (updated) => {
+      qc.invalidateQueries({ queryKey: ['client-loyalty', client?.id] })
+      qc.invalidateQueries({ queryKey: ['clients'] })
+      setRedeemMsg(`✅ ${redeemPoints} pontos resgatados! Novo saldo: ${updated.pointsBalance} pts`)
+      setRedeemPoints('')
+    },
+    onError: (err) => setRedeemMsg(`❌ ${(err as Error).message}`),
+  })
+
+  const appointments = appointmentsData?.data ?? []
   const completed = appointments.filter((a) => a.status === 'COMPLETED')
   const totalSpent = completed.reduce((sum, a) => sum + Number(a.totalPrice), 0)
+
+  const redemptionPoints = Number(settings?.loyalty_redemption_points ?? 100)
+  const redemptionValue = Number(settings?.loyalty_redemption_value ?? 10)
+  const loyaltyEnabled = settings?.loyalty_enabled === 'true'
+  const balance = loyalty?.pointsBalance ?? 0
+  const canRedeem = balance >= redemptionPoints
+
+  function handleRedeem() {
+    const pts = Number(redeemPoints)
+    if (!pts || pts <= 0) return
+    if (pts > balance) {
+      setRedeemMsg(`❌ Saldo insuficiente (${balance} pts disponíveis)`)
+      return
+    }
+    setRedeemMsg('')
+    redeemMutation.mutate(pts)
+  }
 
   return (
     <Modal open={open} onClose={onClose} title={`Histórico — ${client?.name ?? ''}`} size="lg">
@@ -38,7 +87,7 @@ export function ClientHistoryModal({ open, onClose, client }: Props) {
       ) : (
         <div className="space-y-4">
           {/* Resumo */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
             <div className="rounded-xl bg-amber-50 border border-amber-100 p-3 text-center">
               <p className="text-2xl font-bold text-amber-600">{appointments.length}</p>
               <p className="text-xs text-amber-700 mt-0.5">Agendamentos</p>
@@ -53,11 +102,73 @@ export function ClientHistoryModal({ open, onClose, client }: Props) {
             </div>
           </div>
 
-          {/* Lista */}
+          {/* Fidelidade */}
+          {loyaltyEnabled && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  <span className="text-sm font-semibold text-amber-800">Cartão Fidelidade</span>
+                </div>
+                {loyaltyLoading ? <Spinner /> : (
+                  <div className="text-right">
+                    <p className="text-xl font-bold text-amber-700">{balance} pts</p>
+                    <p className="text-[11px] text-amber-600">{loyalty?.visitCount ?? 0} visitas · {loyalty?.pointsEarned ?? 0} ganhos · {loyalty?.pointsRedeemed ?? 0} resgatados</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Barra de progresso */}
+              {redemptionPoints > 0 && (
+                <div>
+                  <div className="flex justify-between text-[11px] text-amber-700 mb-1">
+                    <span>{balance} pts</span>
+                    <span>Meta: {redemptionPoints} pts = R$ {redemptionValue}</span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-amber-200">
+                    <div
+                      className="h-2 rounded-full bg-amber-500 transition-all"
+                      style={{ width: `${Math.min(100, (balance / redemptionPoints) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Resgate */}
+              {canRedeem && (
+                <div className="flex items-center gap-2 pt-1">
+                  <Gift className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                  <input
+                    type="number"
+                    min={redemptionPoints}
+                    step={redemptionPoints}
+                    max={balance}
+                    placeholder={`Ex: ${redemptionPoints}`}
+                    value={redeemPoints}
+                    onChange={(e) => setRedeemPoints(e.target.value)}
+                    className="w-24 rounded-lg border border-amber-300 px-2 py-1 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                  <span className="text-xs text-amber-700">pontos</span>
+                  <Button
+                    onClick={handleRedeem}
+                    disabled={redeemMutation.isPending || !redeemPoints}
+                    className="!py-1.5 !px-3 !text-xs"
+                  >
+                    Resgatar
+                  </Button>
+                </div>
+              )}
+              {redeemMsg && (
+                <p className="text-xs text-amber-800 font-medium">{redeemMsg}</p>
+              )}
+            </div>
+          )}
+
+          {/* Lista de agendamentos */}
           {appointments.length === 0 ? (
             <p className="py-8 text-center text-sm text-zinc-400">Nenhum atendimento registrado.</p>
           ) : (
-            <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
+            <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
               {appointments.map((a) => (
                 <div key={a.id} className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3">
                   <div className="min-w-[80px]">

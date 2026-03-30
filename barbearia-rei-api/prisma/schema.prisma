@@ -18,17 +18,18 @@ model Admin {
 }
 
 model Barber {
-  id           String        @id @default(uuid())
-  name         String
-  phone        String?
-  email        String?       @unique
-  avatarUrl    String?
-  isActive       Boolean       @default(true)
-  commissionRate Decimal?      @db.Decimal(5, 2)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id             String    @id @default(uuid())
+  name           String
+  phone          String?
+  email          String?   @unique
+  avatarUrl      String?
+  isActive       Boolean   @default(true)
+  commissionRate Decimal?  @db.Decimal(5, 2)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  appointments Appointment[]
+  appointments       Appointment[]
+  commissionPayments CommissionPayment[]
 
   @@map("barbers")
 }
@@ -58,7 +59,9 @@ model Client {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  appointments Appointment[]
+  appointments     Appointment[]
+  loyaltyCard      LoyaltyCard?
+  notificationLogs NotificationLog[]
 
   @@map("clients")
 }
@@ -88,8 +91,9 @@ model Appointment {
   barber   Barber @relation(fields: [barberId], references: [id])
   barberId String
 
-  services AppointmentService[]
-  payment  Payment?
+  services         AppointmentService[]
+  payment          Payment?
+  notificationLogs NotificationLog[]
 
   @@index([startsAt])
   @@index([barberId, startsAt])
@@ -165,4 +169,87 @@ model Expense {
   @@index([dueDate])
   @@index([status])
   @@map("expenses")
+}
+
+// ─── SETTINGS ────────────────────────────────────────────────────────────────
+
+model Settings {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+// ─── LOYALTY ─────────────────────────────────────────────────────────────────
+
+model LoyaltyCard {
+  id             String   @id @default(uuid())
+  visitCount     Int      @default(0)
+  pointsBalance  Int      @default(0)
+  pointsEarned   Int      @default(0)
+  pointsRedeemed Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId String @unique
+
+  @@map("loyalty_cards")
+}
+
+// ─── COMMISSION PAYMENTS ─────────────────────────────────────────────────────
+
+model CommissionPayment {
+  id               String   @id @default(uuid())
+  periodFrom       DateTime
+  periodTo         DateTime
+  totalRevenue     Decimal  @db.Decimal(10, 2)
+  commissionAmount Decimal  @db.Decimal(10, 2)
+  commissionRate   Decimal  @db.Decimal(5, 2)
+  notes            String?
+  paidAt           DateTime @default(now())
+  createdAt        DateTime @default(now())
+
+  barber   Barber @relation(fields: [barberId], references: [id])
+  barberId String
+
+  @@index([barberId])
+  @@map("commission_payments")
+}
+
+// ─── NOTIFICATION LOGS ───────────────────────────────────────────────────────
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum NotificationType {
+  APPOINTMENT_CONFIRMATION
+  APPOINTMENT_REMINDER
+  APPOINTMENT_CANCELLATION
+  CUSTOM
+}
+
+model NotificationLog {
+  id      String             @id @default(uuid())
+  type    NotificationType
+  phone   String
+  message String
+  status  NotificationStatus @default(PENDING)
+  error   String?
+  sentAt  DateTime?
+  createdAt DateTime         @default(now())
+
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  @@map("notification_logs")
 }
