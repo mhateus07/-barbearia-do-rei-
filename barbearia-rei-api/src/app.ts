@@ -13,6 +13,7 @@ import dashboardRoutes from './modules/dashboard/dashboard.routes'
 import financesRoutes from './modules/finances/finances.routes'
 import settingsRoutes from './modules/settings/settings.routes'
 import notificationsRoutes from './modules/notifications/notifications.routes'
+import publicRoutes from './modules/public/public.routes'
 
 const app = express()
 
@@ -28,6 +29,7 @@ app.use(express.json())
 // Rotas públicas
 app.get('/health', (_req, res) => res.json({ ok: true, time: new Date().toISOString() }))
 app.use('/api/v1/auth', authRoutes)
+app.use('/api/v1/public', publicRoutes)
 
 // Rotas protegidas
 app.use('/api/v1/barbers', authMiddleware, barberRoutes)

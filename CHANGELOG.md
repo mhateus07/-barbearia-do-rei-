@@ -1,5 +1,37 @@
 # Changelog — Barbearia do Rei
 
+## [31/03/2026] — Sessão de desenvolvimento
+
+### Agendamento Online pelo Cliente (link público)
+- Nova página pública `/agendar` sem necessidade de login
+- Wizard em 5 passos: Serviços → Barbeiro → Data & Hora → Seus Dados → Confirmar
+- Tela de sucesso com resumo do agendamento após confirmação
+- Design próprio (tema escuro premium, botões âmbar) — independente do painel admin
+- Cliente pode selecionar múltiplos serviços com cálculo automático de duração e valor total
+- Opção "Sem preferência" de barbeiro: sistema escolhe automaticamente o primeiro disponível
+- Slots de horário gerados com base nos horários de funcionamento cadastrados nas configurações
+- Slots já ocupados são filtrados automaticamente (sem sobreposição de agendamentos)
+- Horários passados (antes do momento atual) não são exibidos
+- Clientes novos são criados automaticamente pelo telefone; clientes existentes são identificados sem duplicar cadastro
+
+### API Pública (sem autenticação)
+- `GET /api/v1/public/info` — informações da barbearia e horários de funcionamento
+- `GET /api/v1/public/services` — serviços ativos com preço e duração
+- `GET /api/v1/public/barbers` — barbeiros ativos
+- `GET /api/v1/public/barbers/:id/slots?date=&duration=` — horários disponíveis no dia para um barbeiro
+- `POST /api/v1/public/appointments` — cria cliente (se novo) + agendamento
+
+### Botão de compartilhamento no Sidebar
+- Card "Agendamento Online" no rodapé do menu lateral do painel admin
+- Botão "Copiar link" copia a URL de agendamento para o clipboard (com feedback "Copiado!")
+- Botão de ícone abre a página `/agendar` em nova aba
+
+### Correções
+- Import de interfaces TypeScript alterado para `import type` na BookingPage (compatibilidade com `verbatimModuleSyntax`)
+- Cast explícito com `String()` nos parâmetros de query do controller público (compatibilidade com Express 5 types)
+
+---
+
 ## [26/03/2026] — Sessão de desenvolvimento
 
 ### Módulo Financeiro

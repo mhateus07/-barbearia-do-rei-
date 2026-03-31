@@ -10,12 +10,14 @@ import { AppointmentsPage } from '../pages/appointments/AppointmentsPage'
 import { FinancesPage } from '../pages/finances/FinancesPage'
 import { ShowcasePage } from '../pages/showcase/ShowcasePage'
 import { SettingsPage } from '../pages/settings/SettingsPage'
+import { BookingPage } from '../pages/booking/BookingPage'
 
 export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/agendar" element={<BookingPage />} />
         <Route element={<PrivateRoute />}>
           <Route element={<AdminLayout />}>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />

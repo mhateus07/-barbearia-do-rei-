@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -9,7 +10,12 @@ import {
   ImageIcon,
   Settings,
   X,
+  Link2,
+  Check,
+  ExternalLink,
 } from 'lucide-react'
+
+const BOOKING_URL = `${window.location.origin}/agendar`
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -28,6 +34,14 @@ interface SidebarProps {
 }
 
 export function Sidebar({ open, onClose }: SidebarProps) {
+  const [copied, setCopied] = useState(false)
+
+  function copyLink() {
+    navigator.clipboard.writeText(BOOKING_URL)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   return (
     <aside
       className={`
@@ -89,6 +103,30 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           )
         })}
       </nav>
+
+      {/* Agendamento Online */}
+      <div className="px-3 pb-3">
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+          <p className="text-[11px] font-semibold text-amber-400 mb-2 uppercase tracking-wide">Agendamento Online</p>
+          <div className="flex gap-1.5">
+            <button
+              onClick={copyLink}
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 py-1.5 text-xs font-medium transition-colors"
+            >
+              {copied ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
+              {copied ? 'Copiado!' : 'Copiar link'}
+            </button>
+            <a
+              href={BOOKING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 px-2.5 transition-colors"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
+        </div>
+      </div>
 
       {/* Footer */}
       <div className="px-4 py-4 border-t border-zinc-800/60 space-y-1">
