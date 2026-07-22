@@ -4,6 +4,7 @@ import { env } from './env'
 interface TokenPayload {
   sub: string
   email: string
+  tenantId: string
 }
 
 export function signToken(payload: TokenPayload): string {

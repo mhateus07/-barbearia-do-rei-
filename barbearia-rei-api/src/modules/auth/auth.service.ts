@@ -4,7 +4,7 @@ import { signToken } from '../../config/jwt'
 import { LoginInput } from './auth.schema'
 
 export async function loginService(input: LoginInput) {
-  const admin = await prisma.admin.findUnique({ where: { email: input.email } })
+  const admin = await prisma.admin.findFirst({ where: { email: input.email } })
 
   if (!admin) {
     throw new Error('Credenciais inválidas')
@@ -15,7 +15,7 @@ export async function loginService(input: LoginInput) {
     throw new Error('Credenciais inválidas')
   }
 
-  const token = signToken({ sub: admin.id, email: admin.email })
+  const token = signToken({ sub: admin.id, email: admin.email, tenantId: admin.tenantId })
 
   return {
     token,

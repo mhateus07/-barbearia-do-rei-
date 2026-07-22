@@ -7,6 +7,11 @@ vi.mock('../../../lib/prisma', () => ({
   prisma: mockDeep<PrismaClient>(),
 }))
 
+vi.mock('../../../lib/tenant-context', () => ({
+  getTenantId: vi.fn(() => 'tenant-1'),
+  runWithTenant: (_tenantId: string, fn: () => unknown) => fn(),
+}))
+
 const { prisma } = await import('../../../lib/prisma')
 const { loginService, getMeService } = await import('../auth.service')
 
@@ -20,11 +25,12 @@ describe('auth.service', () => {
   describe('loginService', () => {
     it('returns a token and admin data on valid credentials', async () => {
       const passwordHash = await hashPassword('admin123')
-      prismaMock.admin.findUnique.mockResolvedValue({
+      prismaMock.admin.findFirst.mockResolvedValue({
         id: 'admin-1',
         name: 'Administrador',
         email: 'admin@barbeariadorei.com',
         passwordHash,
+        tenantId: 'tenant-1',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -40,7 +46,7 @@ describe('auth.service', () => {
     })
 
     it('rejects when the email does not exist', async () => {
-      prismaMock.admin.findUnique.mockResolvedValue(null)
+      prismaMock.admin.findFirst.mockResolvedValue(null)
 
       await expect(
         loginService({ email: 'nao-existe@example.com', password: 'admin123' })
@@ -49,11 +55,12 @@ describe('auth.service', () => {
 
     it('rejects when the password is wrong', async () => {
       const passwordHash = await hashPassword('admin123')
-      prismaMock.admin.findUnique.mockResolvedValue({
+      prismaMock.admin.findFirst.mockResolvedValue({
         id: 'admin-1',
         name: 'Administrador',
         email: 'admin@barbeariadorei.com',
         passwordHash,
+        tenantId: 'tenant-1',
         createdAt: new Date(),
         updatedAt: new Date(),
       })

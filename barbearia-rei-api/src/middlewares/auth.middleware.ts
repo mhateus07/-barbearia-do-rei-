@@ -1,9 +1,11 @@
 import { Request, Response, NextFunction } from 'express'
 import { verifyToken } from '../config/jwt'
+import { runWithTenant } from '../lib/tenant-context'
 
 export interface AuthRequest extends Request<Record<string, string>> {
   adminId?: string
   adminEmail?: string
+  tenantId?: string
 }
 
 export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
@@ -19,7 +21,8 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
     const payload = verifyToken(token)
     req.adminId = payload.sub
     req.adminEmail = payload.email
-    return next()
+    req.tenantId = payload.tenantId
+    runWithTenant(payload.tenantId, next)
   } catch {
     return res.status(401).json({ error: { message: 'Token inválido ou expirado' } })
   }

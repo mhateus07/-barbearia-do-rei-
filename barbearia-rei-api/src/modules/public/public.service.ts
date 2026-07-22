@@ -1,4 +1,5 @@
 import { prisma } from '../../lib/prisma'
+import { getTenantId } from '../../lib/tenant-context'
 import { getSettings } from '../settings/settings.service'
 
 export async function getPublicInfo() {
@@ -123,11 +124,12 @@ export async function createPublicAppointment(data: {
   time: string
   notes?: string
 }) {
-  let client = await prisma.client.findUnique({ where: { phone: data.clientPhone } })
+  let client = await prisma.client.findFirst({ where: { phone: data.clientPhone } })
 
   if (!client) {
     client = await prisma.client.create({
       data: {
+        tenantId: getTenantId(),
         name: data.clientName,
         phone: data.clientPhone,
         ...(data.clientEmail ? { email: data.clientEmail } : {}),
@@ -191,6 +193,7 @@ export async function createPublicAppointment(data: {
   return prisma.$transaction(async (tx) => {
     return tx.appointment.create({
       data: {
+        tenantId: getTenantId(),
         clientId: client!.id,
         barberId,
         startsAt,

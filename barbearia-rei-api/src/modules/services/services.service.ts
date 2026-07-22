@@ -1,4 +1,5 @@
 import { prisma } from '../../lib/prisma'
+import { getTenantId } from '../../lib/tenant-context'
 import { CreateServiceInput, UpdateServiceInput } from './services.schema'
 
 export async function listServices(isActive?: boolean) {
@@ -15,7 +16,7 @@ export async function getServiceById(id: string) {
 }
 
 export async function createService(input: CreateServiceInput) {
-  return prisma.service.create({ data: input })
+  return prisma.service.create({ data: { ...input, tenantId: getTenantId() } })
 }
 
 export async function updateService(id: string, input: UpdateServiceInput) {

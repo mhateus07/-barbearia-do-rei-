@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import { authMiddleware } from './middlewares/auth.middleware'
+import { tenantMiddleware } from './middlewares/tenant.middleware'
 import { errorMiddleware } from './middlewares/error.middleware'
 import { env } from './config/env'
 
@@ -30,7 +31,7 @@ app.use(express.json())
 // Rotas públicas
 app.get('/health', (_req, res) => res.json({ ok: true, time: new Date().toISOString() }))
 app.use('/api/v1/auth', authRoutes)
-app.use('/api/v1/public', publicRoutes)
+app.use('/api/v1/public', tenantMiddleware, publicRoutes)
 
 // Rotas protegidas
 app.use('/api/v1/barbers', authMiddleware, barberRoutes)

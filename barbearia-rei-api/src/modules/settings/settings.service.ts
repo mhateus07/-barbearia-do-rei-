@@ -1,4 +1,5 @@
 import { prisma } from '../../lib/prisma'
+import { getTenantId } from '../../lib/tenant-context'
 import { SETTING_DEFAULTS, UpdateSettingsInput } from './settings.schema'
 
 export async function getSettings(): Promise<Record<string, string>> {
@@ -9,15 +10,16 @@ export async function getSettings(): Promise<Record<string, string>> {
 }
 
 export async function getSetting(key: string): Promise<string> {
-  const row = await prisma.settings.findUnique({ where: { key } })
+  const row = await prisma.settings.findFirst({ where: { key } })
   return row?.value ?? SETTING_DEFAULTS[key] ?? ''
 }
 
 export async function updateSettings(input: UpdateSettingsInput): Promise<Record<string, string>> {
+  const tenantId = getTenantId()
   const ops = Object.entries(input.settings).map(([key, value]) =>
     prisma.settings.upsert({
-      where: { key },
-      create: { key, value },
+      where: { tenantId_key: { tenantId, key } },
+      create: { tenantId, key, value },
       update: { value },
     }),
   )

@@ -1,5 +1,6 @@
 import { AppointmentStatus } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
+import { getTenantId } from '../../lib/tenant-context'
 import {
   CreateAppointmentInput,
   UpdateAppointmentInput,
@@ -105,6 +106,7 @@ export async function createAppointment(input: CreateAppointmentInput) {
   return prisma.$transaction(async (tx) => {
     const appointment = await tx.appointment.create({
       data: {
+        tenantId: getTenantId(),
         clientId: input.clientId,
         barberId: input.barberId,
         startsAt,
@@ -179,16 +181,17 @@ export async function updateAppointmentStatus(id: string, input: UpdateStatusInp
   // Ao concluir, credita pontos de fidelidade ao cliente
   if (input.status === AppointmentStatus.COMPLETED) {
     try {
-      const settingRow = await prisma.settings.findUnique({ where: { key: 'loyalty_enabled' } })
+      const settingRow = await prisma.settings.findFirst({ where: { key: 'loyalty_enabled' } })
       const loyaltyEnabled = settingRow?.value ?? 'true'
 
       if (loyaltyEnabled === 'true') {
-        const pointsRow = await prisma.settings.findUnique({ where: { key: 'loyalty_points_per_visit' } })
+        const pointsRow = await prisma.settings.findFirst({ where: { key: 'loyalty_points_per_visit' } })
         const points = Number(pointsRow?.value ?? '10')
 
         await prisma.loyaltyCard.upsert({
           where: { clientId: appointment.clientId },
           create: {
+            tenantId: getTenantId(),
             clientId: appointment.clientId,
             visitCount: 1,
             pointsBalance: points,

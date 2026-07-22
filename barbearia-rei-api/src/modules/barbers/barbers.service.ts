@@ -1,4 +1,5 @@
 import { prisma } from '../../lib/prisma'
+import { getTenantId } from '../../lib/tenant-context'
 import { CreateBarberInput, UpdateBarberInput } from './barbers.schema'
 
 export async function listBarbers(isActive?: boolean) {
@@ -15,7 +16,7 @@ export async function getBarberById(id: string) {
 }
 
 export async function createBarber(input: CreateBarberInput) {
-  return prisma.barber.create({ data: input })
+  return prisma.barber.create({ data: { ...input, tenantId: getTenantId() } })
 }
 
 export async function updateBarber(id: string, input: UpdateBarberInput) {

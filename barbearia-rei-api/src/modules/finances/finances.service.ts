@@ -1,5 +1,6 @@
 import { ExpenseStatus } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
+import { getTenantId } from '../../lib/tenant-context'
 import {
   CreatePaymentInput,
   CreateExpenseInput,
@@ -70,6 +71,7 @@ export async function createPayment(input: CreatePaymentInput) {
 
   return prisma.payment.create({
     data: {
+      tenantId: getTenantId(),
       amount: input.amount,
       method: input.method,
       paidAt: input.paidAt ? new Date(input.paidAt) : new Date(),
@@ -137,6 +139,7 @@ export async function listExpenses(filters: {
 export async function createExpense(input: CreateExpenseInput) {
   return prisma.expense.create({
     data: {
+      tenantId: getTenantId(),
       description: input.description,
       amount: input.amount,
       category: input.category,
@@ -226,6 +229,7 @@ export async function payCommission(input: PayCommissionInput) {
 
   return prisma.commissionPayment.create({
     data: {
+      tenantId: getTenantId(),
       barberId: input.barberId,
       periodFrom: new Date(`${input.periodFrom}T00:00:00`),
       periodTo: new Date(`${input.periodTo}T23:59:59`),

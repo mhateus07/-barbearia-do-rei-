@@ -1,4 +1,5 @@
 import { prisma } from '../../lib/prisma'
+import { getTenantId } from '../../lib/tenant-context'
 import { CreateClientInput, UpdateClientInput } from './clients.schema'
 
 export async function listClients(search?: string, page = 1, limit = 20) {
@@ -33,6 +34,7 @@ export async function getClientById(id: string) {
 export async function createClient(input: CreateClientInput) {
   return prisma.client.create({
     data: {
+      tenantId: getTenantId(),
       ...input,
       birthDate: input.birthDate ? new Date(input.birthDate) : undefined,
       email: input.email || undefined,

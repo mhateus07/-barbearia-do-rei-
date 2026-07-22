@@ -1,5 +1,6 @@
 import { NotificationType, NotificationStatus } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
+import { getTenantId } from '../../lib/tenant-context'
 import { getSetting } from '../settings/settings.service'
 
 // ─── ENVIO WHATSAPP ───────────────────────────────────────────────────────────
@@ -55,6 +56,7 @@ export async function sendAndLog(params: {
 }) {
   const log = await prisma.notificationLog.create({
     data: {
+      tenantId: getTenantId(),
       type: params.type,
       phone: params.phone,
       message: params.message,

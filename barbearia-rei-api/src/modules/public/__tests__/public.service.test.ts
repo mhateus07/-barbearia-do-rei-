@@ -10,6 +10,11 @@ vi.mock('../../settings/settings.service', () => ({
   getSettings: vi.fn(),
 }))
 
+vi.mock('../../../lib/tenant-context', () => ({
+  getTenantId: vi.fn(() => 'tenant-1'),
+  runWithTenant: (_tenantId: string, fn: () => unknown) => fn(),
+}))
+
 const { prisma } = await import('../../../lib/prisma')
 const { getSettings } = await import('../../settings/settings.service')
 const { getAvailableSlots, createPublicAppointment } = await import('../public.service')
@@ -88,7 +93,7 @@ describe('public.service', () => {
   describe('createPublicAppointment', () => {
     it('throws when the chosen slot conflicts with an existing appointment', async () => {
       const date = nextMonday()
-      prismaMock.client.findUnique.mockResolvedValue({ id: 'client-1' } as never)
+      prismaMock.client.findFirst.mockResolvedValue({ id: 'client-1' } as never)
       prismaMock.service.findMany.mockResolvedValue([
         { id: 'service-1', price: 40, durationMin: 30 } as never,
       ])
@@ -108,7 +113,7 @@ describe('public.service', () => {
 
     it('rejects when a requested service is inactive or missing', async () => {
       const date = nextMonday()
-      prismaMock.client.findUnique.mockResolvedValue({ id: 'client-1' } as never)
+      prismaMock.client.findFirst.mockResolvedValue({ id: 'client-1' } as never)
       prismaMock.service.findMany.mockResolvedValue([])
 
       await expect(

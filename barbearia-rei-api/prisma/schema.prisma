@@ -6,27 +6,66 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── TENANTS ─────────────────────────────────────────────────────────────────
+
+enum TenantStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  SUSPENDED
+}
+
+model Tenant {
+  id        String       @id @default(uuid())
+  slug      String       @unique
+  name      String
+  status    TenantStatus @default(TRIAL)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  admins             Admin[]
+  barbers            Barber[]
+  services           Service[]
+  clients            Client[]
+  appointments       Appointment[]
+  payments           Payment[]
+  expenses           Expense[]
+  settings           Settings[]
+  loyaltyCards       LoyaltyCard[]
+  commissionPayments CommissionPayment[]
+  notificationLogs   NotificationLog[]
+
+  @@map("tenants")
+}
+
 model Admin {
   id           String   @id @default(uuid())
   name         String
-  email        String   @unique
+  email        String
   passwordHash String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  @@unique([tenantId, email])
   @@map("admins")
 }
 
 model Barber {
-  id             String    @id @default(uuid())
+  id             String   @id @default(uuid())
   name           String
   phone          String?
-  email          String?   @unique
+  email          String?  @unique
   avatarUrl      String?
-  isActive       Boolean   @default(true)
-  commissionRate Decimal?  @db.Decimal(5, 2)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  isActive       Boolean  @default(true)
+  commissionRate Decimal? @db.Decimal(5, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
 
   appointments       Appointment[]
   commissionPayments CommissionPayment[]
@@ -44,6 +83,9 @@ model Service {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
   appointmentServices AppointmentService[]
 
   @@map("services")
@@ -52,17 +94,22 @@ model Service {
 model Client {
   id        String    @id @default(uuid())
   name      String
-  phone     String    @unique
-  email     String?   @unique
+  phone     String
+  email     String?
   birthDate DateTime?
   notes     String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
   appointments     Appointment[]
   loyaltyCard      LoyaltyCard?
   notificationLogs NotificationLog[]
 
+  @@unique([tenantId, phone])
+  @@unique([tenantId, email])
   @@map("clients")
 }
 
@@ -91,6 +138,9 @@ model Appointment {
   barber   Barber @relation(fields: [barberId], references: [id])
   barberId String
 
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
   services         AppointmentService[]
   payment          Payment?
   notificationLogs NotificationLog[]
@@ -98,6 +148,7 @@ model Appointment {
   @@index([startsAt])
   @@index([barberId, startsAt])
   @@index([status])
+  @@index([tenantId, startsAt])
   @@map("appointments")
 }
 
@@ -150,7 +201,11 @@ model Payment {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
   @@index([paidAt])
+  @@index([tenantId, paidAt])
   @@map("payments")
 }
 
@@ -166,8 +221,12 @@ model Expense {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
   @@index([dueDate])
   @@index([status])
+  @@index([tenantId, dueDate])
   @@map("expenses")
 }
 
@@ -175,11 +234,15 @@ model Expense {
 
 model Settings {
   id        String   @id @default(uuid())
-  key       String   @unique
+  key       String
   value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  @@unique([tenantId, key])
   @@map("settings")
 }
 
@@ -196,6 +259,9 @@ model LoyaltyCard {
 
   client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId String @unique
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
 
   @@map("loyalty_cards")
 }
@@ -215,6 +281,9 @@ model CommissionPayment {
 
   barber   Barber @relation(fields: [barberId], references: [id])
   barberId String
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
 
   @@index([barberId])
   @@map("commission_payments")
@@ -236,20 +305,23 @@ enum NotificationType {
 }
 
 model NotificationLog {
-  id      String             @id @default(uuid())
-  type    NotificationType
-  phone   String
-  message String
-  status  NotificationStatus @default(PENDING)
-  error   String?
-  sentAt  DateTime?
-  createdAt DateTime         @default(now())
+  id        String             @id @default(uuid())
+  type      NotificationType
+  phone     String
+  message   String
+  status    NotificationStatus @default(PENDING)
+  error     String?
+  sentAt    DateTime?
+  createdAt DateTime           @default(now())
 
   appointmentId String?
   appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
 
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
 
   @@map("notification_logs")
 }
