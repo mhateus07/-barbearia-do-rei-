@@ -8,7 +8,6 @@
 # apps desse VPS usam.
 services:
   api:
-    ports: []
     networks:
       - default
       - easypanel

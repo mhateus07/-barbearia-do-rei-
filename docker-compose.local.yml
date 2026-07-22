@@ -1,0 +1,9 @@
+# Overlay pra dev/teste local (não usar em produção):
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+#
+# Publica a porta 3333 no host, já que localmente não existe Traefik pra
+# rotear pra dentro da rede Docker.
+services:
+  api:
+    ports:
+      - "3333:3333"

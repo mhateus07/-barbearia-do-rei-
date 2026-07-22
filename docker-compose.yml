@@ -26,9 +26,12 @@ services:
       retries: 10
 
   # API + front estático servidos pelo mesmo container (ver Dockerfile na
-  # raiz). Porta exposta direto no host — útil pra dev/teste local. Em
-  # produção, docker-compose.prod.yml adiciona o Traefik do VPS por cima
-  # (ver esse arquivo para os labels de roteamento).
+  # raiz). Sem porta publicada aqui de propósito — Compose não confiavelmente
+  # limpa uma lista `ports` de um service via override (testado: `ports: []`
+  # no arquivo de prod NÃO removia o mapeamento, deixando a porta 3333
+  # acessível direto da internet por fora do Traefik). Pra dev/teste local,
+  # use docker-compose.local.yml; em produção, docker-compose.prod.yml
+  # adiciona o Traefik do VPS (ver esse arquivo pros labels de roteamento).
   api:
     build:
       context: .
@@ -42,8 +45,6 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-barbearia}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-barbearia_rei}
       REDIS_URL: redis://redis:6379
-    ports:
-      - "3333:3333"
     volumes:
       - uploads:/app/uploads
     command: sh -c "npx prisma migrate deploy && node dist/server.js"
