@@ -11,6 +11,8 @@ const envSchema = z.object({
   BASE_DOMAIN: z.string().default('app.impulsiodigital.com'),
   // Fallback de slug para ambientes sem subdomínio real (dev local em localhost).
   TENANT_DEV_SLUG: z.string().optional(),
+  // Redis para as filas de jobs em background (lembretes de WhatsApp, etc).
+  REDIS_URL: z.string().default('redis://localhost:6379'),
 })
 
 const parsed = envSchema.safeParse(process.env)
