@@ -25,8 +25,13 @@ services:
       timeout: 5s
       retries: 10
 
+  # API + front estático servidos pelo mesmo container (ver Dockerfile na
+  # raiz). Porta exposta direto no host — útil pra dev/teste local. Em
+  # produção, docker-compose.prod.yml adiciona o Traefik do VPS por cima
+  # (ver esse arquivo para os labels de roteamento).
   api:
-    build: ./barbearia-rei-api
+    build:
+      context: .
     restart: unless-stopped
     depends_on:
       postgres:
@@ -44,7 +49,8 @@ services:
     command: sh -c "npx prisma migrate deploy && node dist/server.js"
 
   worker:
-    build: ./barbearia-rei-api
+    build:
+      context: .
     restart: unless-stopped
     depends_on:
       postgres:
@@ -60,16 +66,6 @@ services:
     volumes:
       - uploads:/app/uploads
     command: node dist/worker.js
-
-  # Não é um serviço de longa duração — builda o front e escreve o resultado
-  # no volume bind-mount ./barbearia-rei-web/dist, pra um nginx (do host ou
-  # outro container) servir como estático. Rodar com:
-  #   docker compose --profile build run --rm web
-  web:
-    build: ./barbearia-rei-web
-    profiles: ["build"]
-    volumes:
-      - ./barbearia-rei-web/dist:/app/dist
 
 volumes:
   pgdata:

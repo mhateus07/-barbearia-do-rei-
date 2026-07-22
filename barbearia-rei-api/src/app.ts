@@ -1,6 +1,8 @@
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
+import path from 'node:path'
+import fs from 'node:fs'
 import { authMiddleware } from './middlewares/auth.middleware'
 import { tenantMiddleware } from './middlewares/tenant.middleware'
 import { errorMiddleware } from './middlewares/error.middleware'
@@ -56,6 +58,18 @@ app.use('/api/v1/finances', authMiddleware, financesRoutes)
 app.use('/api/v1/settings', authMiddleware, settingsRoutes)
 app.use('/api/v1/notifications', authMiddleware, notificationsRoutes)
 app.use('/api/v1/media', authMiddleware, mediaRoutes)
+
+// Front-end (build do barbearia-rei-web), servido pela própria API — mesmo
+// container, mesmo domínio. Só existe quando WEB_DIST_DIR aponta pra uma
+// pasta com o build (produção/Docker); em dev local o Vite serve o front
+// separadamente na porta 5173, então isso fica um no-op silencioso.
+const WEB_DIST_DIR = process.env.WEB_DIST_DIR || path.resolve(process.cwd(), 'web-dist')
+if (fs.existsSync(WEB_DIST_DIR)) {
+  app.use(express.static(WEB_DIST_DIR))
+  app.get(/^(?!\/api\/|\/uploads\/|\/health$).*/, (_req, res) => {
+    res.sendFile(path.join(WEB_DIST_DIR, 'index.html'))
+  })
+}
 
 app.use(errorMiddleware)
 
