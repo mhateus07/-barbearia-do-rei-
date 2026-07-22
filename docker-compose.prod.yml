@@ -14,6 +14,7 @@ services:
       - easypanel
     labels:
       - traefik.enable=true
+      - traefik.docker.network=easypanel
       - traefik.http.routers.barbearia-saas.rule=Host(`${APP_DOMAIN:-saas.impulsiodigital.com}`)
       - traefik.http.routers.barbearia-saas.entrypoints=https
       - traefik.http.routers.barbearia-saas.tls.certresolver=letsencrypt
