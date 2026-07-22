@@ -6,12 +6,15 @@ export const updateSettingsSchema = z.object({
 
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>
 
-// Valores padrão das configurações
+// Valores padrão das configurações — genéricos, para um tenant recém-criado
+// que ainda não configurou sua própria identidade em /configuracoes.
 export const SETTING_DEFAULTS: Record<string, string> = {
-  shop_name: 'Barbearia do Rei',
-  shop_phone: '(32) 99160-8852',
-  shop_address: 'Rua Jose Narcisio Silva 1003, Fabricas, São João del Rei, MG',
-  shop_instagram: '@opedro.seubarbeiro',
+  shop_name: 'Minha Barbearia',
+  shop_phone: '',
+  shop_address: '',
+  shop_instagram: '',
+  logo_url: '',
+  portfolio_images: '[]',
   hours_monday: '08:00-19:00',
   hours_tuesday: '08:00-19:00',
   hours_wednesday: '08:00-19:00',

@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/auth-context'
+import { useBranding } from '../contexts/branding-context'
 import { Scissors, Mail, Lock, ArrowRight } from 'lucide-react'
 
 export function LoginPage() {
   const { login } = useAuth()
+  const { branding } = useBranding()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -33,7 +35,7 @@ export function LoginPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 shadow-lg shadow-amber-500/30">
             <Scissors className="h-5 w-5 text-white" strokeWidth={2.5} />
           </div>
-          <span className="text-white font-bold text-lg">Barbearia do Rei</span>
+          <span className="text-white font-bold text-lg">{branding.shopName}</span>
         </div>
         <div>
           <h2 className="text-4xl font-bold text-white leading-tight mb-4">
@@ -41,7 +43,7 @@ export function LoginPage() {
             <span className="text-amber-400">é cuidado.</span>
           </h2>
           <p className="text-zinc-400 text-lg leading-relaxed">
-            Na Barbearia do Rei, sua imagem é prioridade.
+            Gestão completa para a sua barbearia, num só lugar.
           </p>
         </div>
         <div className="flex gap-8">
@@ -78,7 +80,7 @@ export function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@barbeariadorei.com"
+                  placeholder="seu@email.com"
                   required
                   className="w-full rounded-xl bg-zinc-800/80 border border-zinc-700 pl-10 pr-4 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
                 />

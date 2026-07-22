@@ -49,11 +49,11 @@ function InfoTab({ settings, onSave }: { settings: Record<string, string>; onSav
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5 col-span-2">
           <label className="text-xs font-medium text-zinc-600">Nome da Barbearia</label>
-          <Input value={form.shop_name} onChange={(e) => setForm({ ...form, shop_name: e.target.value })} placeholder="Barbearia do Rei" />
+          <Input value={form.shop_name} onChange={(e) => setForm({ ...form, shop_name: e.target.value })} placeholder="Minha Barbearia" />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-zinc-600">Telefone / WhatsApp</label>
-          <Input value={form.shop_phone} onChange={(e) => setForm({ ...form, shop_phone: e.target.value })} placeholder="(32) 99160-8852" />
+          <Input value={form.shop_phone} onChange={(e) => setForm({ ...form, shop_phone: e.target.value })} placeholder="(11) 99999-9999" />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-zinc-600">Instagram</label>
@@ -260,7 +260,7 @@ function WhatsAppTab({ settings, onSave }: { settings: Record<string, string>; o
   })
 
   const [testPhone, setTestPhone] = useState('')
-  const [testMsg, setTestMsg] = useState('Olá! Esta é uma mensagem de teste da Barbearia do Rei 💈')
+  const [testMsg, setTestMsg] = useState(`Olá! Esta é uma mensagem de teste da ${settings.shop_name || 'sua barbearia'} 💈`)
   const [testResult, setTestResult] = useState<{ sent: boolean; error?: string } | null>(null)
   const [testLoading, setTestLoading] = useState(false)
 

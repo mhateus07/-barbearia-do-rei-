@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useBranding } from '../../contexts/branding-context'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
@@ -979,7 +980,7 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
 
 // ─── PDF EXPORT ───────────────────────────────────────────────────────────────
 
-async function exportPDF(from: string, to: string) {
+async function exportPDF(from: string, to: string, shopName: string) {
   const { default: jsPDF } = await import('jspdf')
   const { default: autoTable } = await import('jspdf-autotable')
 
@@ -995,7 +996,7 @@ async function exportPDF(from: string, to: string) {
   // Header
   doc.setFontSize(18)
   doc.setFont('helvetica', 'bold')
-  doc.text('Barbearia do Rei', 14, 18)
+  doc.text(shopName, 14, 18)
   doc.setFontSize(11)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(100)
@@ -1072,6 +1073,7 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 ]
 
 export function FinancesPage() {
+  const { branding } = useBranding()
   const [activeTab, setActiveTab] = useState<Tab>('summary')
   const [from, setFrom] = useState(getFirstDayOfMonth())
   const [to, setTo] = useState(today())
@@ -1080,7 +1082,7 @@ export function FinancesPage() {
   async function handleExportPDF() {
     setExporting(true)
     try {
-      await exportPDF(from, to)
+      await exportPDF(from, to, branding.shopName)
     } finally {
       setExporting(false)
     }

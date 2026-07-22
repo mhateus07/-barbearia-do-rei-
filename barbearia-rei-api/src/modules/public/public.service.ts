@@ -4,11 +4,22 @@ import { getSettings } from '../settings/settings.service'
 
 export async function getPublicInfo() {
   const settings = await getSettings()
+
+  let portfolioImages: string[] = []
+  try {
+    const parsed = JSON.parse(settings.portfolio_images || '[]')
+    if (Array.isArray(parsed)) portfolioImages = parsed
+  } catch {
+    portfolioImages = []
+  }
+
   return {
     shopName: settings.shop_name,
     shopPhone: settings.shop_phone,
     shopAddress: settings.shop_address,
     shopInstagram: settings.shop_instagram,
+    logoUrl: settings.logo_url || null,
+    portfolioImages,
     hours: {
       sunday: settings.hours_sunday,
       monday: settings.hours_monday,

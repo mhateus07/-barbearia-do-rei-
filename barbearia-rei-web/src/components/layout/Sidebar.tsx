@@ -14,6 +14,7 @@ import {
   Check,
   ExternalLink,
 } from 'lucide-react'
+import { useBranding } from '../../contexts/branding-context'
 
 const BOOKING_URL = `${window.location.origin}/agendar`
 
@@ -35,6 +36,7 @@ interface SidebarProps {
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const [copied, setCopied] = useState(false)
+  const { branding } = useBranding()
 
   function copyLink() {
     navigator.clipboard.writeText(BOOKING_URL)
@@ -54,13 +56,19 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       {/* Logo */}
       <div className="px-6 py-5 border-b border-zinc-800/60">
         <div className="flex items-center gap-3">
-          <img
-            src="/logo.jpeg"
-            alt="Barbearia do Rei"
-            className="h-10 w-10 rounded-xl object-cover shadow-lg shadow-amber-500/20"
-          />
+          {branding.logoUrl ? (
+            <img
+              src={branding.logoUrl}
+              alt={branding.shopName}
+              className="h-10 w-10 rounded-xl object-cover shadow-lg shadow-amber-500/20"
+            />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 shadow-lg shadow-amber-500/20">
+              <Scissors className="h-5 w-5 text-amber-400" />
+            </div>
+          )}
           <div className="flex-1">
-            <p className="font-bold text-white text-sm leading-tight">Barbearia do Rei</p>
+            <p className="font-bold text-white text-sm leading-tight">{branding.shopName}</p>
             <p className="text-[11px] text-zinc-500 leading-tight">Painel Administrativo</p>
           </div>
           {/* Botão fechar no mobile */}
@@ -129,11 +137,12 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-4 border-t border-zinc-800/60 space-y-1">
-        <p className="text-[10px] text-zinc-600 leading-snug">São João del Rei · MG</p>
-        <p className="text-[10px] text-zinc-600">(32) 99160-8852</p>
-        <p className="text-[10px] text-zinc-700">⭐ 5.0 · 32 avaliações</p>
-      </div>
+      {(branding.shopAddress || branding.shopPhone) && (
+        <div className="px-4 py-4 border-t border-zinc-800/60 space-y-1">
+          {branding.shopAddress && <p className="text-[10px] text-zinc-600 leading-snug">{branding.shopAddress}</p>}
+          {branding.shopPhone && <p className="text-[10px] text-zinc-600">{branding.shopPhone}</p>}
+        </div>
+      )}
     </aside>
   )
 }

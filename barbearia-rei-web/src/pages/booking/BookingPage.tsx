@@ -164,14 +164,19 @@ export function BookingPage() {
       {/* Header */}
       <header className="border-b border-zinc-800 bg-zinc-900">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <img src="/logo.jpeg" alt="Barbearia do Rei" className="h-10 w-10 rounded-xl object-cover" />
+          {info?.logoUrl ? (
+            <img src={info.logoUrl} alt={info.shopName} className="h-10 w-10 rounded-xl object-cover" />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15">
+              <Scissors className="h-5 w-5 text-amber-400" />
+            </div>
+          )}
           <div>
-            <p className="font-bold text-white leading-tight">{info?.shopName ?? 'Barbearia do Rei'}</p>
+            <p className="font-bold text-white leading-tight">{info?.shopName ?? 'Minha Barbearia'}</p>
             <div className="flex items-center gap-1 mt-0.5">
               {[...Array(5)].map((_, i) => (
                 <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />
               ))}
-              <span className="text-xs text-amber-400 font-semibold ml-1">5.0</span>
             </div>
           </div>
         </div>

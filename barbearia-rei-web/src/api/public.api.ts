@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3333/api/v1'
+const BASE = import.meta.env.VITE_API_URL || '/api/v1'
 const api = axios.create({ baseURL: `${BASE}/public` })
 
 export interface PublicService {
@@ -22,6 +22,8 @@ export interface PublicInfo {
   shopPhone: string
   shopAddress: string
   shopInstagram: string
+  logoUrl: string | null
+  portfolioImages: string[]
   hours: Record<string, string>
 }
 
