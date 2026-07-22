@@ -14,11 +14,11 @@ services:
       - easypanel
     labels:
       - traefik.enable=true
-      - traefik.http.routers.barbearia-saas.rule=Host(`${APP_DOMAIN:-app.impulsiodigital.com}`)
+      - traefik.http.routers.barbearia-saas.rule=Host(`${APP_DOMAIN:-saas.impulsiodigital.com}`)
       - traefik.http.routers.barbearia-saas.entrypoints=https
       - traefik.http.routers.barbearia-saas.tls.certresolver=letsencrypt
       - traefik.http.services.barbearia-saas.loadbalancer.server.port=3333
-      - traefik.http.routers.barbearia-saas-http.rule=Host(`${APP_DOMAIN:-app.impulsiodigital.com}`)
+      - traefik.http.routers.barbearia-saas-http.rule=Host(`${APP_DOMAIN:-saas.impulsiodigital.com}`)
       - traefik.http.routers.barbearia-saas-http.entrypoints=http
       - traefik.http.routers.barbearia-saas-http.middlewares=redirect-to-https@file
 

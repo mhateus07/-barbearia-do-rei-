@@ -6,9 +6,10 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3333),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   FRONTEND_URL: z.string().optional(),
-  // Domínio base para resolução de tenant por subdomínio (ex: "app.impulsiodigital.com"
-  // resolve "barbeariadorei.app.impulsiodigital.com" como slug "barbeariadorei").
-  BASE_DOMAIN: z.string().default('app.impulsiodigital.com'),
+  // Domínio base — usado hoje só como fallback de subdomínio em
+  // tenant.middleware.ts (a resolução principal é por slug no path,
+  // ver docs/decisão em tenant.middleware.ts).
+  BASE_DOMAIN: z.string().default('saas.impulsiodigital.com'),
   // Fallback de slug para ambientes sem subdomínio real (dev local em localhost).
   TENANT_DEV_SLUG: z.string().optional(),
   // Redis para as filas de jobs em background (lembretes de WhatsApp, etc).

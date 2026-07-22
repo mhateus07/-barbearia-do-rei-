@@ -122,7 +122,7 @@ export function SignupPage() {
                   className="w-full rounded-xl bg-zinc-800/80 border border-zinc-700 pl-10 pr-4 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
                 />
               </div>
-              {slug && <p className="text-xs text-zinc-500">app.impulsiodigital.com/{slug}/agendar</p>}
+              {slug && <p className="text-xs text-zinc-500">saas.impulsiodigital.com/{slug}/agendar</p>}
             </div>
 
             <div className="space-y-1.5">
