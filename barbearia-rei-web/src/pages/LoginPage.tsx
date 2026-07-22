@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/auth-context'
 import { useBranding } from '../contexts/branding-context'
 import { Scissors, Mail, Lock, ArrowRight } from 'lucide-react'
@@ -122,6 +122,13 @@ export function LoginPage() {
                 </>
               )}
             </button>
+
+            <p className="text-center text-sm text-zinc-500 pt-2">
+              Ainda não tem conta?{' '}
+              <Link to="/signup" className="text-amber-400 hover:text-amber-300 font-medium">
+                Criar barbearia grátis
+              </Link>
+            </p>
           </form>
         </div>
       </div>

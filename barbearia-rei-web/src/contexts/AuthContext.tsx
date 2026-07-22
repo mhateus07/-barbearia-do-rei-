@@ -16,12 +16,16 @@ function getStoredAdmin(): Admin | null {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [admin, setAdmin] = useState<Admin | null>(getStoredAdmin)
 
+  const setSession = useCallback((token: string, admin: Admin) => {
+    localStorage.setItem('token', token)
+    localStorage.setItem('admin', JSON.stringify(admin))
+    setAdmin(admin)
+  }, [])
+
   const login = useCallback(async (email: string, password: string) => {
     const result = await loginApi(email, password)
-    localStorage.setItem('token', result.token)
-    localStorage.setItem('admin', JSON.stringify(result.admin))
-    setAdmin(result.admin)
-  }, [])
+    setSession(result.token, result.admin)
+  }, [setSession])
 
   const logout = useCallback(() => {
     localStorage.removeItem('token')
@@ -30,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ admin, isAuthenticated: !!admin, login, logout }}>
+    <AuthContext.Provider value={{ admin, isAuthenticated: !!admin, login, logout, setSession }}>
       {children}
     </AuthContext.Provider>
   )

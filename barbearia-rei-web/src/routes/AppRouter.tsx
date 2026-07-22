@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { PrivateRoute } from './PrivateRoute'
 import { AdminLayout } from '../components/layout/AdminLayout'
 import { LoginPage } from '../pages/LoginPage'
+import { SignupPage } from '../pages/SignupPage'
 import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { BarbersPage } from '../pages/barbers/BarbersPage'
 import { ServicesPage } from '../pages/services/ServicesPage'
@@ -17,6 +18,7 @@ export function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
         <Route path="/agendar" element={<BookingPage />} />
         <Route element={<PrivateRoute />}>
           <Route element={<AdminLayout />}>

@@ -19,6 +19,7 @@ import settingsRoutes from './modules/settings/settings.routes'
 import notificationsRoutes from './modules/notifications/notifications.routes'
 import publicRoutes from './modules/public/public.routes'
 import mediaRoutes from './modules/media/media.routes'
+import onboardingRoutes from './modules/onboarding/onboarding.routes'
 
 const app = express()
 
@@ -43,6 +44,7 @@ app.use('/uploads', (_req, res, next) => {
 app.get('/health', (_req, res) => res.json({ ok: true, time: new Date().toISOString() }))
 app.use('/api/v1/auth', authRoutes)
 app.use('/api/v1/public', tenantMiddleware, publicRoutes)
+app.use('/api/v1/onboarding', onboardingRoutes)
 
 // Rotas protegidas
 app.use('/api/v1/barbers', authMiddleware, barberRoutes)
