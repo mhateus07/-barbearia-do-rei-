@@ -33,7 +33,7 @@ export async function signupTenant(input: SignupInput) {
       },
     })
 
-    const token = signToken({ sub: admin.id, email: admin.email, tenantId: tenant.id })
+    const token = signToken({ sub: admin.id, email: admin.email, tenantId: tenant.id, tenantSlug: tenant.slug })
 
     return {
       token,

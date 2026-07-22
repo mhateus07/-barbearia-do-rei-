@@ -3,10 +3,11 @@ import type { Admin } from '../types'
 
 export interface AuthContextValue {
   admin: Admin | null
+  tenantSlug: string | null
   isAuthenticated: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (slug: string, email: string, password: string) => Promise<void>
   logout: () => void
-  setSession: (token: string, admin: Admin) => void
+  setSession: (token: string, admin: Admin, tenantSlug: string) => void
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)

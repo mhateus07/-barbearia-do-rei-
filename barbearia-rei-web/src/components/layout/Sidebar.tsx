@@ -15,8 +15,7 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { useBranding } from '../../contexts/branding-context'
-
-const BOOKING_URL = `${window.location.origin}/agendar`
+import { useAuth } from '../../contexts/auth-context'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -37,9 +36,11 @@ interface SidebarProps {
 export function Sidebar({ open, onClose }: SidebarProps) {
   const [copied, setCopied] = useState(false)
   const { branding } = useBranding()
+  const { tenantSlug } = useAuth()
+  const bookingUrl = `${window.location.origin}/${tenantSlug}/agendar`
 
   function copyLink() {
-    navigator.clipboard.writeText(BOOKING_URL)
+    navigator.clipboard.writeText(bookingUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -125,7 +126,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               {copied ? 'Copiado!' : 'Copiar link'}
             </button>
             <a
-              href={BOOKING_URL}
+              href={bookingUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 px-2.5 transition-colors"

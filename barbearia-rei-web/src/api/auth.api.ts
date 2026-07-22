@@ -1,8 +1,14 @@
 import { api } from './axios'
 import type { Admin } from '../types'
 
-export async function login(email: string, password: string): Promise<{ token: string; admin: Admin }> {
-  const { data } = await api.post('/auth/login', { email, password })
+export interface LoginResult {
+  token: string
+  admin: Admin
+  tenant: { id: string; slug: string; name: string }
+}
+
+export async function login(slug: string, email: string, password: string): Promise<LoginResult> {
+  const { data } = await api.post('/auth/login', { slug, email, password })
   return data.data
 }
 

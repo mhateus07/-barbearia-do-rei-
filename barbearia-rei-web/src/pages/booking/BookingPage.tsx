@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
 import axios from 'axios'
 import {
   Scissors, User, Calendar, Clock, CheckCircle2, ChevronLeft,
@@ -45,6 +46,7 @@ function formatDateBR(dateStr: string) {
 }
 
 export function BookingPage() {
+  const { tenantSlug = '' } = useParams<{ tenantSlug: string }>()
   const [step, setStep] = useState<Step>(1)
   const [info, setInfo] = useState<PublicInfo | null>(null)
   const [services, setServices] = useState<PublicService[]>([])
@@ -68,14 +70,14 @@ export function BookingPage() {
   const [appointment, setAppointment] = useState<PublicAppointmentResult | null>(null)
 
   useEffect(() => {
-    Promise.all([getPublicInfo(), getPublicServices(), getPublicBarbers()])
+    Promise.all([getPublicInfo(tenantSlug), getPublicServices(tenantSlug), getPublicBarbers(tenantSlug)])
       .then(([i, s, b]) => {
         setInfo(i)
         setServices(s)
         setBarbers(b)
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [tenantSlug])
 
   const totalDuration = selectedServices.reduce((sum, id) => {
     const s = services.find((sv) => sv.id === id)
@@ -107,7 +109,7 @@ export function BookingPage() {
     if (!date || !selectedBarber) return
     setLoadingSlots(true)
     try {
-      const result = await getAvailableSlots(selectedBarber, date, totalDuration)
+      const result = await getAvailableSlots(tenantSlug, selectedBarber, date, totalDuration)
       setSlots(result)
     } catch {
       setSlots([])
@@ -120,7 +122,7 @@ export function BookingPage() {
     setSubmitting(true)
     setSubmitError('')
     try {
-      const result = await createPublicAppointment({
+      const result = await createPublicAppointment(tenantSlug, {
         clientName,
         clientPhone,
         clientEmail: clientEmail || undefined,

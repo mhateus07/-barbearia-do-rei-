@@ -12,13 +12,17 @@ function extractSlugFromHostname(hostname: string): string | null {
 }
 
 /**
- * Resolve o tenant a partir do subdomínio (`<slug>.app.impulsiodigital.com`)
- * para rotas que ainda não têm um JWT (login, agendamento público). Em dev
- * local (sem subdomínio real), usa o header `x-tenant-slug` ou a env
- * `TENANT_DEV_SLUG` como fallback.
+ * Resolve o tenant para as rotas públicas (agendamento online). Prioridade:
+ * 1) slug no path (`/api/v1/public/:tenantSlug/...`) — modelo atual, um
+ *    domínio único pra toda a SaaS, sem depender de DNS/certificado por
+ *    tenant.
+ * 2) subdomínio (`<slug>.app.impulsiodigital.com`) — mantido como fallback
+ *    caso um dia haja certificado wildcard e se volte a usar subdomínios.
+ * 3) header x-tenant-slug / env TENANT_DEV_SLUG — conveniência de dev local.
  */
 export async function tenantMiddleware(req: Request, res: Response, next: NextFunction) {
   const slug =
+    (req.params.tenantSlug as string | undefined) ||
     extractSlugFromHostname(req.hostname) ||
     (req.headers['x-tenant-slug'] as string | undefined) ||
     env.TENANT_DEV_SLUG

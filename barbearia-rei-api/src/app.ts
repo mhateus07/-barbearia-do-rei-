@@ -43,7 +43,7 @@ app.use('/uploads', (_req, res, next) => {
 // Rotas públicas
 app.get('/health', (_req, res) => res.json({ ok: true, time: new Date().toISOString() }))
 app.use('/api/v1/auth', authRoutes)
-app.use('/api/v1/public', tenantMiddleware, publicRoutes)
+app.use('/api/v1/public/:tenantSlug', tenantMiddleware, publicRoutes)
 app.use('/api/v1/onboarding', onboardingRoutes)
 
 // Rotas protegidas
