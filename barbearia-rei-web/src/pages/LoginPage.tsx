@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../contexts/auth-context'
 import { Scissors, Mail, Lock, ArrowRight } from 'lucide-react'
 
 export function LoginPage() {

@@ -3,6 +3,7 @@ import cors from 'cors'
 import helmet from 'helmet'
 import { authMiddleware } from './middlewares/auth.middleware'
 import { errorMiddleware } from './middlewares/error.middleware'
+import { env } from './config/env'
 
 import authRoutes from './modules/auth/auth.routes'
 import barberRoutes from './modules/barbers/barbers.routes'
@@ -19,8 +20,8 @@ const app = express()
 
 app.use(helmet())
 app.use(cors({
-  origin: process.env.FRONTEND_URL
-    ? process.env.FRONTEND_URL.split(',')
+  origin: env.FRONTEND_URL
+    ? env.FRONTEND_URL.split(',')
     : ['http://localhost:5173', 'http://localhost:4173'],
   credentials: true,
 }))

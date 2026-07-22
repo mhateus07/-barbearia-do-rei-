@@ -1,5 +1,5 @@
 import { LogOut, User, Menu } from 'lucide-react'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/auth-context'
 
 interface HeaderProps {
   onMenuClick: () => void

@@ -117,12 +117,18 @@ function StatCard({
 
 // ─── CUSTOM TOOLTIP ──────────────────────────────────────────────────────────
 
-const CashFlowTooltip = ({ active, payload, label }: any) => {
+interface CashFlowTooltipProps {
+  active?: boolean
+  payload?: { name: string; value: number; color: string }[]
+  label?: string
+}
+
+const CashFlowTooltip = ({ active, payload, label }: CashFlowTooltipProps) => {
   if (active && payload?.length) {
     return (
       <div className="rounded-xl bg-zinc-900 border border-zinc-700 px-3 py-2 shadow-xl text-xs space-y-1">
         <p className="text-zinc-400 mb-1">{label}</p>
-        {payload.map((p: any) => (
+        {payload.map((p) => (
           <p key={p.name} style={{ color: p.color }} className="font-medium">
             {p.name === 'income' ? 'Receita' : p.name === 'expenses' ? 'Despesas' : 'Saldo'}: {formatCurrency(p.value)}
           </p>
@@ -1033,7 +1039,7 @@ async function exportPDF(from: string, to: string) {
   })
 
   // Commissions table
-  const afterCashFlow = (doc as any).lastAutoTable?.finalY ?? 120
+  const afterCashFlow = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 120
   doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
   doc.text('Comissões dos Barbeiros', 14, afterCashFlow + 10)

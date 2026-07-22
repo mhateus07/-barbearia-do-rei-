@@ -45,6 +45,16 @@ export async function getAvailableSlots(barberId: string, date: string, duration
   return data.slots
 }
 
+export interface PublicAppointmentResult {
+  id: string
+  startsAt: string
+  endsAt: string
+  totalPrice: number
+  client: { id: string; name: string; phone: string }
+  barber: { id: string; name: string }
+  services: { service: { id: string; name: string } }[]
+}
+
 export async function createPublicAppointment(payload: {
   clientName: string
   clientPhone: string
@@ -54,7 +64,7 @@ export async function createPublicAppointment(payload: {
   date: string
   time: string
   notes?: string
-}) {
+}): Promise<PublicAppointmentResult> {
   const { data } = await api.post('/appointments', payload)
   return data
 }

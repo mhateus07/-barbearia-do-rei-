@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import axios from 'axios'
 import {
   Scissors, User, Calendar, Clock, CheckCircle2, ChevronLeft,
   ChevronRight, Loader2, Phone, Mail, MessageSquare, Star, MapPin,
@@ -10,7 +11,7 @@ import {
   getAvailableSlots,
   createPublicAppointment,
 } from '../../api/public.api'
-import type { PublicService, PublicBarber, PublicInfo } from '../../api/public.api'
+import type { PublicService, PublicBarber, PublicInfo, PublicAppointmentResult } from '../../api/public.api'
 import { formatCurrency } from '../../utils/formatCurrency'
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6
@@ -64,7 +65,7 @@ export function BookingPage() {
 
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
-  const [appointment, setAppointment] = useState<any>(null)
+  const [appointment, setAppointment] = useState<PublicAppointmentResult | null>(null)
 
   useEffect(() => {
     Promise.all([getPublicInfo(), getPublicServices(), getPublicBarbers()])
@@ -131,8 +132,9 @@ export function BookingPage() {
       })
       setAppointment(result)
       setStep(6)
-    } catch (err: any) {
-      setSubmitError(err.response?.data?.message || 'Erro ao criar agendamento. Tente novamente.')
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined
+      setSubmitError(message || 'Erro ao criar agendamento. Tente novamente.')
     } finally {
       setSubmitting(false)
     }
@@ -193,7 +195,7 @@ export function BookingPage() {
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wide">Serviços</p>
                   <p className="text-white font-medium">
-                    {appointment.services.map((s: any) => s.service.name).join(', ')}
+                    {appointment.services.map((s) => s.service.name).join(', ')}
                   </p>
                 </div>
               </div>
