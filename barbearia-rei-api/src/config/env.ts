@@ -13,6 +13,9 @@ const envSchema = z.object({
   TENANT_DEV_SLUG: z.string().optional(),
   // Redis para as filas de jobs em background (lembretes de WhatsApp, etc).
   REDIS_URL: z.string().default('redis://localhost:6379'),
+  // Diretório onde uploads (logo/portfólio) são salvos em disco, e o prefixo
+  // de URL público sob o qual eles são servidos (ver app.ts).
+  UPLOADS_DIR: z.string().default('uploads'),
 })
 
 const parsed = envSchema.safeParse(process.env)

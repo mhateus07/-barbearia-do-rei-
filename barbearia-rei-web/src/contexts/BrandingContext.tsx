@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { getPublicInfo } from '../api/public.api'
 import { BrandingContext, FALLBACK_BRANDING } from './branding-context'
@@ -7,8 +7,8 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   const [branding, setBranding] = useState(FALLBACK_BRANDING)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    getPublicInfo()
+  const fetchBranding = useCallback(() => {
+    return getPublicInfo()
       .then((info) => {
         setBranding(info)
         document.title = info.shopName
@@ -17,5 +17,13 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false))
   }, [])
 
-  return <BrandingContext.Provider value={{ branding, loading }}>{children}</BrandingContext.Provider>
+  useEffect(() => {
+    fetchBranding()
+  }, [fetchBranding])
+
+  return (
+    <BrandingContext.Provider value={{ branding, loading, refetch: fetchBranding }}>
+      {children}
+    </BrandingContext.Provider>
+  )
 }

@@ -14,11 +14,13 @@ export const FALLBACK_BRANDING: PublicInfo = {
 export interface BrandingContextValue {
   branding: PublicInfo
   loading: boolean
+  refetch: () => void
 }
 
 export const BrandingContext = createContext<BrandingContextValue>({
   branding: FALLBACK_BRANDING,
   loading: true,
+  refetch: () => {},
 })
 
 export function useBranding() {

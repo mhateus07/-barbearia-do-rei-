@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Settings, Clock, Star, MessageCircle, Save, RefreshCw,
-  CheckCircle2, AlertCircle, Send, Loader2,
+  CheckCircle2, AlertCircle, Send, Loader2, Upload, Trash2, ImageOff,
 } from 'lucide-react'
 import { getSettings, updateSettings } from '../../api/settings.api'
+import { uploadLogo, uploadPortfolioImage, deletePortfolioImage } from '../../api/media.api'
+import { useBranding } from '../../contexts/branding-context'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Spinner } from '../../components/ui/Spinner'
@@ -36,6 +38,116 @@ function parseHours(value: string): { open: string; close: string; closed: boole
 
 // ─── TAB: INFORMAÇÕES ────────────────────────────────────────────────────────
 
+function LogoUploader({ logoUrl }: { logoUrl: string }) {
+  const qc = useQueryClient()
+  const { refetch: refetchBranding } = useBranding()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setUploading(true)
+    setError('')
+    try {
+      await uploadLogo(file)
+      await qc.invalidateQueries({ queryKey: ['settings'] })
+      refetchBranding()
+    } catch {
+      setError('Não foi possível enviar a imagem. Tente um arquivo menor (até 5MB).')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5 col-span-2">
+      <label className="text-xs font-medium text-zinc-600">Logo</label>
+      <div className="flex items-center gap-4">
+        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
+          {logoUrl ? (
+            <img src={logoUrl} alt="Logo" className="h-full w-full object-cover" />
+          ) : (
+            <ImageOff className="h-5 w-5 text-zinc-300" />
+          )}
+        </div>
+        <div>
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelected} />
+          <Button type="button" variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+            {uploading ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Upload className="h-4 w-4 mr-1.5" />}
+            {uploading ? 'Enviando...' : 'Enviar logo'}
+          </Button>
+          {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PortfolioManager({ portfolioImages }: { portfolioImages: string[] }) {
+  const qc = useQueryClient()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setUploading(true)
+    setError('')
+    try {
+      await uploadPortfolioImage(file)
+      await qc.invalidateQueries({ queryKey: ['settings'] })
+    } catch {
+      setError('Não foi possível enviar a imagem. Tente um arquivo menor (até 5MB).')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  async function handleDelete(url: string) {
+    await deletePortfolioImage(url)
+    qc.invalidateQueries({ queryKey: ['settings'] })
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-zinc-600">Portfólio (vitrine pública)</label>
+        <div>
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelected} />
+          <Button type="button" variant="secondary" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+            {uploading ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Upload className="h-4 w-4 mr-1.5" />}
+            {uploading ? 'Enviando...' : 'Adicionar foto'}
+          </Button>
+        </div>
+      </div>
+      {error && <p className="text-xs text-red-500">{error}</p>}
+      {portfolioImages.length === 0 ? (
+        <p className="text-sm text-zinc-400">Nenhuma foto ainda. Adicione fotos do seu trabalho pra exibir na vitrine.</p>
+      ) : (
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+          {portfolioImages.map((url) => (
+            <div key={url} className="group relative aspect-square overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
+              <img src={url} alt="" className="h-full w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => handleDelete(url)}
+                className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/40 group-hover:opacity-100"
+              >
+                <Trash2 className="h-4 w-4 text-white" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function InfoTab({ settings, onSave }: { settings: Record<string, string>; onSave: (s: Record<string, string>) => void }) {
   const [form, setForm] = useState({
     shop_name: settings.shop_name ?? '',
@@ -44,9 +156,18 @@ function InfoTab({ settings, onSave }: { settings: Record<string, string>; onSav
     shop_instagram: settings.shop_instagram ?? '',
   })
 
+  let portfolioImages: string[] = []
+  try {
+    const parsed = JSON.parse(settings.portfolio_images || '[]')
+    if (Array.isArray(parsed)) portfolioImages = parsed
+  } catch {
+    portfolioImages = []
+  }
+
   return (
-    <div className="space-y-5 max-w-xl">
+    <div className="space-y-8 max-w-xl">
       <div className="grid grid-cols-2 gap-4">
+        <LogoUploader logoUrl={settings.logo_url ?? ''} />
         <div className="flex flex-col gap-1.5 col-span-2">
           <label className="text-xs font-medium text-zinc-600">Nome da Barbearia</label>
           <Input value={form.shop_name} onChange={(e) => setForm({ ...form, shop_name: e.target.value })} placeholder="Minha Barbearia" />
@@ -69,6 +190,10 @@ function InfoTab({ settings, onSave }: { settings: Record<string, string>; onSav
           <Save className="h-4 w-4 mr-1.5" />
           Salvar Informações
         </Button>
+      </div>
+
+      <div className="border-t border-zinc-100 pt-6">
+        <PortfolioManager portfolioImages={portfolioImages} />
       </div>
     </div>
   )
