@@ -1,10 +1,5 @@
 export type AppointmentStatus =
-  | 'SCHEDULED'
-  | 'CONFIRMED'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'CANCELLED'
-  | 'NO_SHOW'
+  'SCHEDULED' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
 
 export interface Admin {
   id: string
@@ -92,7 +87,8 @@ export interface PaginatedResponse<T> {
 }
 
 export type PaymentMethod = 'CASH' | 'PIX' | 'CREDIT_CARD' | 'DEBIT_CARD'
-export type ExpenseCategory = 'RENT' | 'UTILITIES' | 'SUPPLIES' | 'SALARY' | 'EQUIPMENT' | 'MARKETING' | 'OTHER'
+export type ExpenseCategory =
+  'RENT' | 'UTILITIES' | 'SUPPLIES' | 'SALARY' | 'EQUIPMENT' | 'MARKETING' | 'OTHER'
 export type ExpenseStatus = 'PENDING' | 'PAID' | 'OVERDUE'
 
 export interface Payment {
@@ -154,10 +150,7 @@ export interface CommissionPayment {
 
 export type NotificationStatus = 'PENDING' | 'SENT' | 'FAILED'
 export type NotificationType =
-  | 'APPOINTMENT_CONFIRMATION'
-  | 'APPOINTMENT_REMINDER'
-  | 'APPOINTMENT_CANCELLATION'
-  | 'CUSTOM'
+  'APPOINTMENT_CONFIRMATION' | 'APPOINTMENT_REMINDER' | 'APPOINTMENT_CANCELLATION' | 'CUSTOM'
 
 export interface NotificationLog {
   id: string

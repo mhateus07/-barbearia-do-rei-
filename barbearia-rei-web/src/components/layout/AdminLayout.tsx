@@ -10,10 +10,7 @@ export function AdminLayout() {
     <div className="flex h-screen overflow-hidden bg-zinc-50">
       {/* Overlay mobile */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />

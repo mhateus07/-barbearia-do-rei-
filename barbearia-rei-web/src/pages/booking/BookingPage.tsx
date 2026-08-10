@@ -2,8 +2,19 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import axios from 'axios'
 import {
-  Scissors, User, Calendar, Clock, CheckCircle2, ChevronLeft,
-  ChevronRight, Loader2, Phone, Mail, MessageSquare, Star, MapPin,
+  Scissors,
+  User,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Phone,
+  Mail,
+  MessageSquare,
+  Star,
+  MapPin,
 } from 'lucide-react'
 import {
   getPublicInfo,
@@ -90,9 +101,7 @@ export function BookingPage() {
   }, 0)
 
   function toggleService(id: string) {
-    setSelectedServices((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
-    )
+    setSelectedServices((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]))
   }
 
   function handleBarberSelect(id: string) {
@@ -144,9 +153,7 @@ export function BookingPage() {
 
   const today = new Date().toISOString().split('T')[0]
   const barberName =
-    selectedBarber === 'any'
-      ? 'Sem preferência'
-      : barbers.find((b) => b.id === selectedBarber)?.name ?? ''
+    selectedBarber === 'any' ? 'Sem preferência' : (barbers.find((b) => b.id === selectedBarber)?.name ?? '')
 
   const canNextStep1 = selectedServices.length > 0
   const canNextStep2 = selectedBarber !== ''
@@ -194,7 +201,9 @@ export function BookingPage() {
               </div>
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">Agendamento confirmado!</h2>
-            <p className="text-zinc-400 mb-8">Até logo, {appointment.client.name.split(' ')[0]}! Te esperamos na barbearia.</p>
+            <p className="text-zinc-400 mb-8">
+              Até logo, {appointment.client.name.split(' ')[0]}! Te esperamos na barbearia.
+            </p>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-left space-y-4 mb-8">
               <div className="flex items-center gap-3 pb-4 border-b border-zinc-800">
@@ -265,8 +274,8 @@ export function BookingPage() {
                         s < step
                           ? 'bg-amber-500 text-zinc-900'
                           : s === step
-                          ? 'bg-amber-500 text-zinc-900 ring-2 ring-amber-500/30'
-                          : 'bg-zinc-800 text-zinc-500'
+                            ? 'bg-amber-500 text-zinc-900 ring-2 ring-amber-500/30'
+                            : 'bg-zinc-800 text-zinc-500'
                       }`}
                     >
                       {s < step ? <CheckCircle2 className="h-4 w-4" /> : s}
@@ -311,9 +320,7 @@ export function BookingPage() {
                           <div className="flex-1 min-w-0 mr-4">
                             <div className="flex items-center gap-2">
                               <p className="font-semibold text-white">{service.name}</p>
-                              {selected && (
-                                <CheckCircle2 className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                              )}
+                              {selected && <CheckCircle2 className="h-4 w-4 text-amber-500 flex-shrink-0" />}
                             </div>
                             {service.description && (
                               <p className="text-sm text-zinc-400 mt-0.5 truncate">{service.description}</p>
@@ -374,9 +381,7 @@ export function BookingPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-white">Sem preferência</p>
-                          {selectedBarber === 'any' && (
-                            <CheckCircle2 className="h-4 w-4 text-amber-500" />
-                          )}
+                          {selectedBarber === 'any' && <CheckCircle2 className="h-4 w-4 text-amber-500" />}
                         </div>
                         <p className="text-sm text-zinc-400">Qualquer barbeiro disponível</p>
                       </div>
@@ -427,13 +432,17 @@ export function BookingPage() {
               <div className="space-y-6">
                 <div className="mb-6">
                   <h2 className="text-xl font-bold text-white">Escolha a data</h2>
-                  <p className="text-zinc-400 text-sm mt-1">Selecione o dia para ver os horários disponíveis</p>
+                  <p className="text-zinc-400 text-sm mt-1">
+                    Selecione o dia para ver os horários disponíveis
+                  </p>
                 </div>
 
                 {/* Horários de funcionamento */}
                 {info && (
                   <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-                    <p className="text-xs text-zinc-500 uppercase tracking-wide mb-3 font-medium">Horários de funcionamento</p>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wide mb-3 font-medium">
+                      Horários de funcionamento
+                    </p>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
                       {Object.entries(info.hours).map(([day, hours]) => (
                         <div key={day} className="flex justify-between text-sm">
@@ -591,7 +600,9 @@ export function BookingPage() {
                           return s ? (
                             <div key={id} className="flex justify-between text-sm">
                               <span className="text-white">{s.name}</span>
-                              <span className="text-amber-400 font-medium">{formatCurrency(Number(s.price))}</span>
+                              <span className="text-amber-400 font-medium">
+                                {formatCurrency(Number(s.price))}
+                              </span>
                             </div>
                           ) : null
                         })}

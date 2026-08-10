@@ -15,7 +15,13 @@ interface TableProps<T> {
   keyExtractor: (row: T) => string
 }
 
-export function Table<T>({ columns, data, loading, emptyMessage = 'Nenhum registro encontrado.', keyExtractor }: TableProps<T>) {
+export function Table<T>({
+  columns,
+  data,
+  loading,
+  emptyMessage = 'Nenhum registro encontrado.',
+  keyExtractor,
+}: TableProps<T>) {
   return (
     <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
       <table className="w-full text-sm">

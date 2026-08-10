@@ -25,10 +25,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTenantSlug(tenantSlug)
   }, [])
 
-  const login = useCallback(async (slug: string, email: string, password: string) => {
-    const result = await loginApi(slug, email, password)
-    setSession(result.token, result.admin, result.tenant.slug)
-  }, [setSession])
+  const login = useCallback(
+    async (slug: string, email: string, password: string) => {
+      const result = await loginApi(slug, email, password)
+      setSession(result.token, result.admin, result.tenant.slug)
+    },
+    [setSession],
+  )
 
   const logout = useCallback(() => {
     localStorage.removeItem('token')

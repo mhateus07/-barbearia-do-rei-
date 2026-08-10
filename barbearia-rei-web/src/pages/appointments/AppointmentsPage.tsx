@@ -18,7 +18,9 @@ const STATUS_OPTIONS: { value: AppointmentStatus | ''; label: string }[] = [
   { value: 'NO_SHOW', label: 'Não compareceu' },
 ]
 
-const NEXT_STATUS: Partial<Record<AppointmentStatus, { status: AppointmentStatus; label: string; icon: React.ElementType }>> = {
+const NEXT_STATUS: Partial<
+  Record<AppointmentStatus, { status: AppointmentStatus; label: string; icon: React.ElementType }>
+> = {
   SCHEDULED: { status: 'CONFIRMED', label: 'Confirmar', icon: CheckCircle2 },
   CONFIRMED: { status: 'IN_PROGRESS', label: 'Iniciar', icon: PlayCircle },
   IN_PROGRESS: { status: 'COMPLETED', label: 'Concluir', icon: CheckCircle2 },
@@ -44,7 +46,6 @@ export function AppointmentsPage() {
       qc.invalidateQueries({ queryKey: ['dashboard-summary'] })
     },
   })
-
 
   const appointments = data?.data ?? []
 
@@ -112,11 +113,16 @@ export function AppointmentsPage() {
             const next = NEXT_STATUS[a.status]
             const NextIcon = next?.icon
             return (
-              <div key={a.id} className="rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 hover:shadow-sm transition-shadow">
+              <div
+                key={a.id}
+                className="rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 hover:shadow-sm transition-shadow"
+              >
                 {/* Linha superior: hora + cliente + ações */}
                 <div className="flex items-center gap-3">
                   <div className="text-center min-w-[46px]">
-                    <p className="text-base font-bold text-amber-500 leading-none">{formatTime(a.startsAt)}</p>
+                    <p className="text-base font-bold text-amber-500 leading-none">
+                      {formatTime(a.startsAt)}
+                    </p>
                     <p className="text-[10px] text-zinc-400 mt-0.5">{formatTime(a.endsAt)}</p>
                   </div>
 
@@ -153,9 +159,13 @@ export function AppointmentsPage() {
                     {(a.status === 'SCHEDULED' || a.status === 'CONFIRMED') && (
                       <>
                         <button
-                          onClick={() => { setEditingAppointment(a); setModalOpen(true) }}
+                          onClick={() => {
+                            setEditingAppointment(a)
+                            setModalOpen(true)
+                          }}
                           className="rounded-xl p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors"
                           title="Editar"
+                          aria-label={`Editar agendamento de ${a.client.name}`}
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
@@ -163,6 +173,7 @@ export function AppointmentsPage() {
                           onClick={() => statusMutation.mutate({ id: a.id, status: 'CANCELLED' })}
                           className="rounded-xl p-2 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-colors"
                           title="Cancelar"
+                          aria-label={`Cancelar agendamento de ${a.client.name}`}
                         >
                           <XCircle className="h-4 w-4" />
                         </button>
@@ -178,7 +189,10 @@ export function AppointmentsPage() {
 
       <AppointmentFormModal
         open={modalOpen}
-        onClose={() => { setModalOpen(false); setEditingAppointment(null) }}
+        onClose={() => {
+          setModalOpen(false)
+          setEditingAppointment(null)
+        }}
         defaultDate={`${filterDate}T08:00`}
         appointment={editingAppointment}
       />

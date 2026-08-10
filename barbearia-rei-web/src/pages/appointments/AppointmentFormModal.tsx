@@ -40,7 +40,13 @@ export function AppointmentFormModal({ open, onClose, defaultDate, appointment }
   const { data: clientsData } = useQuery({ queryKey: ['clients', ''], queryFn: () => listClients() })
   const clients = clientsData?.data ?? []
 
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormData>()
+  const {
+    register,
+    handleSubmit,
+    reset,
+    control,
+    formState: { errors },
+  } = useForm<FormData>()
 
   useEffect(() => {
     if (appointment) {
@@ -57,10 +63,7 @@ export function AppointmentFormModal({ open, onClose, defaultDate, appointment }
   }, [open, appointment, defaultDate, reset])
 
   const mutation = useMutation({
-    mutationFn: (d: FormData) =>
-      isEdit
-        ? updateAppointment(appointment!.id, d)
-        : createAppointment(d),
+    mutationFn: (d: FormData) => (isEdit ? updateAppointment(appointment!.id, d) : createAppointment(d)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['appointments'] })
       qc.invalidateQueries({ queryKey: ['dashboard-summary'] })
@@ -74,20 +77,32 @@ export function AppointmentFormModal({ open, onClose, defaultDate, appointment }
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-zinc-700">Cliente *</label>
-            <select {...register('clientId', { required: 'Obrigatório' })}
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-amber-500">
+            <select
+              {...register('clientId', { required: 'Obrigatório' })}
+              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-amber-500"
+            >
               <option value="">Selecione...</option>
-              {clients.map((c) => <option key={c.id} value={c.id}>{c.name} — {c.phone}</option>)}
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} — {c.phone}
+                </option>
+              ))}
             </select>
             {errors.clientId && <span className="text-xs text-red-500">{errors.clientId.message}</span>}
           </div>
 
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-zinc-700">Barbeiro *</label>
-            <select {...register('barberId', { required: 'Obrigatório' })}
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-amber-500">
+            <select
+              {...register('barberId', { required: 'Obrigatório' })}
+              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-amber-500"
+            >
               <option value="">Selecione...</option>
-              {barbers.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+              {barbers.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
             </select>
             {errors.barberId && <span className="text-xs text-red-500">{errors.barberId.message}</span>}
           </div>
@@ -110,7 +125,10 @@ export function AppointmentFormModal({ open, onClose, defaultDate, appointment }
               render={({ field }) => (
                 <>
                   {services.map((s) => (
-                    <label key={s.id} className="flex items-center gap-2 rounded px-2 py-1 hover:bg-zinc-50 cursor-pointer text-sm">
+                    <label
+                      key={s.id}
+                      className="flex items-center gap-2 rounded px-2 py-1 hover:bg-zinc-50 cursor-pointer text-sm"
+                    >
                       <input
                         type="checkbox"
                         value={s.id}
@@ -118,7 +136,9 @@ export function AppointmentFormModal({ open, onClose, defaultDate, appointment }
                         onChange={(e) => {
                           const val = e.target.value
                           const current = field.value || []
-                          field.onChange(e.target.checked ? [...current, val] : current.filter((v) => v !== val))
+                          field.onChange(
+                            e.target.checked ? [...current, val] : current.filter((v) => v !== val),
+                          )
                         }}
                         className="accent-amber-500"
                       />
@@ -134,15 +154,22 @@ export function AppointmentFormModal({ open, onClose, defaultDate, appointment }
 
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-zinc-700">Observações</label>
-          <textarea {...register('notes')} rows={2}
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-amber-500" />
+          <textarea
+            {...register('notes')}
+            rows={2}
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-amber-500"
+          />
         </div>
 
         {mutation.error && <p className="text-sm text-red-500">{(mutation.error as Error).message}</p>}
 
         <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" loading={mutation.isPending}>{isEdit ? 'Salvar' : 'Agendar'}</Button>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" loading={mutation.isPending}>
+            {isEdit ? 'Salvar' : 'Agendar'}
+          </Button>
         </div>
       </form>
     </Modal>

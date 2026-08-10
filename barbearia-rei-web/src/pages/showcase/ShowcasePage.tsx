@@ -41,7 +41,11 @@ export function ShowcasePage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         {branding.logoUrl ? (
-          <img src={branding.logoUrl} alt={branding.shopName} className="h-14 w-14 rounded-2xl object-cover shadow-md" />
+          <img
+            src={branding.logoUrl}
+            alt={branding.shopName}
+            className="h-14 w-14 rounded-2xl object-cover shadow-md"
+          />
         ) : (
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 shadow-md">
             <Scissors className="h-6 w-6 text-amber-500" />
@@ -54,9 +58,7 @@ export function ShowcasePage() {
               <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
             ))}
           </div>
-          <p className="text-sm text-zinc-500 mt-0.5 italic">
-            "Não é só corte, é cuidado."
-          </p>
+          <p className="text-sm text-zinc-500 mt-0.5 italic">"Não é só corte, é cuidado."</p>
         </div>
       </div>
 
@@ -103,14 +105,18 @@ export function ShowcasePage() {
           )}
 
           <div className="rounded-xl bg-zinc-50 border border-zinc-100 p-4">
-            <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-2">Horários de Funcionamento</p>
+            <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-2">
+              Horários de Funcionamento
+            </p>
             <div className="space-y-1">
               {DAY_RANGES.map((range) => {
                 const horario = formatHours(branding.hours[range.days[0]])
                 return (
                   <div key={range.label} className="flex items-center justify-between">
                     <span className="text-sm text-zinc-600">{range.label}</span>
-                    <span className={`text-sm font-medium ${horario === 'Fechado' ? 'text-red-400' : 'text-zinc-800'}`}>
+                    <span
+                      className={`text-sm font-medium ${horario === 'Fechado' ? 'text-red-400' : 'text-zinc-800'}`}
+                    >
                       {horario}
                     </span>
                   </div>
@@ -143,30 +149,30 @@ export function ShowcasePage() {
 
       {/* Portfolio */}
       {photos.length > 0 && (
-      <div>
-        <div className="mb-4">
-          <h2 className="text-lg font-bold text-zinc-800">Portfólio</h2>
-          <p className="text-sm text-zinc-400 mt-0.5">{photos.length} trabalhos · Clique para ampliar</p>
-        </div>
+        <div>
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-zinc-800">Portfólio</h2>
+            <p className="text-sm text-zinc-400 mt-0.5">{photos.length} trabalhos · Clique para ampliar</p>
+          </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {photos.map((photo, index) => (
-            <button
-              key={photo}
-              onClick={() => openLightbox(index)}
-              className="group relative aspect-square overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
-            >
-              <img
-                src={photo}
-                alt={`Trabalho ${index + 1}`}
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 rounded-xl" />
-            </button>
-          ))}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {photos.map((photo, index) => (
+              <button
+                key={photo}
+                onClick={() => openLightbox(index)}
+                className="group relative aspect-square overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              >
+                <img
+                  src={photo}
+                  alt={`Trabalho ${index + 1}`}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 rounded-xl" />
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
       )}
 
       {/* Lightbox */}
@@ -178,6 +184,7 @@ export function ShowcasePage() {
           {/* Close */}
           <button
             onClick={closeLightbox}
+            aria-label="Fechar"
             className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
           >
             <X className="h-5 w-5" />
@@ -185,7 +192,11 @@ export function ShowcasePage() {
 
           {/* Prev */}
           <button
-            onClick={(e) => { e.stopPropagation(); prev() }}
+            onClick={(e) => {
+              e.stopPropagation()
+              prev()
+            }}
+            aria-label="Foto anterior"
             className="absolute left-4 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 transition-colors"
           >
             <ChevronLeft className="h-6 w-6" />
@@ -201,7 +212,11 @@ export function ShowcasePage() {
 
           {/* Next */}
           <button
-            onClick={(e) => { e.stopPropagation(); next() }}
+            onClick={(e) => {
+              e.stopPropagation()
+              next()
+            }}
+            aria-label="Próxima foto"
             className="absolute right-4 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 transition-colors"
           >
             <ChevronRight className="h-6 w-6" />

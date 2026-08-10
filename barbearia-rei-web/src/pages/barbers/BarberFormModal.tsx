@@ -24,11 +24,21 @@ export function BarberFormModal({ open, onClose, barber }: Props) {
   const qc = useQueryClient()
   const isEdit = !!barber
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>()
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<FormData>()
 
   useEffect(() => {
     if (barber) {
-      reset({ name: barber.name, phone: barber.phone || '', email: barber.email || '', commissionRate: barber.commissionRate != null ? String(barber.commissionRate) : '' })
+      reset({
+        name: barber.name,
+        phone: barber.phone || '',
+        email: barber.email || '',
+        commissionRate: barber.commissionRate != null ? String(barber.commissionRate) : '',
+      })
     } else {
       reset({ name: '', phone: '', email: '', commissionRate: '' })
     }
@@ -36,7 +46,10 @@ export function BarberFormModal({ open, onClose, barber }: Props) {
 
   const mutation = useMutation({
     mutationFn: (data: FormData) => {
-      const payload = { ...data, commissionRate: data.commissionRate !== '' ? Number(data.commissionRate) : undefined }
+      const payload = {
+        ...data,
+        commissionRate: data.commissionRate !== '' ? Number(data.commissionRate) : undefined,
+      }
       return isEdit ? updateBarber(barber!.id, payload) : createBarber(payload)
     },
     onSuccess: () => {
@@ -48,7 +61,11 @@ export function BarberFormModal({ open, onClose, barber }: Props) {
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? 'Editar Barbeiro' : 'Novo Barbeiro'}>
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
-        <Input label="Nome *" {...register('name', { required: 'Nome obrigatório' })} error={errors.name?.message} />
+        <Input
+          label="Nome *"
+          {...register('name', { required: 'Nome obrigatório' })}
+          error={errors.name?.message}
+        />
         <Input label="Telefone" {...register('phone')} placeholder="(11) 99999-9999" />
         <Input label="E-mail" type="email" {...register('email')} placeholder="barbeiro@email.com" />
         <Input
@@ -60,11 +77,11 @@ export function BarberFormModal({ open, onClose, barber }: Props) {
           {...register('commissionRate')}
           placeholder="Ex: 40 (para 40%)"
         />
-        {mutation.error && (
-          <p className="text-sm text-red-500">{(mutation.error as Error).message}</p>
-        )}
+        {mutation.error && <p className="text-sm text-red-500">{(mutation.error as Error).message}</p>}
         <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
           <Button type="submit" loading={mutation.isPending}>
             {isEdit ? 'Salvar' : 'Cadastrar'}
           </Button>

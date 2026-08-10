@@ -1,7 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from 'recharts'
 import { CalendarDays, CheckCircle2, XCircle, DollarSign, TrendingUp, Clock } from 'lucide-react'
 import { getDashboardSummary, getDashboardStats } from '../../api/dashboard.api'
@@ -13,7 +22,11 @@ import { formatTime } from '../../utils/formatDate'
 const STATUS_COLORS = ['#f59e0b', '#10b981', '#ef4444', '#6b7280', '#3b82f6', '#8b5cf6']
 
 function StatCard({
-  title, value, sub, icon: Icon, accent = false,
+  title,
+  value,
+  sub,
+  icon: Icon,
+  accent = false,
 }: {
   title: string
   value: string | number
@@ -22,15 +35,17 @@ function StatCard({
   accent?: boolean
 }) {
   return (
-    <div className={`rounded-2xl border p-5 ${accent ? 'bg-amber-500 border-amber-400' : 'bg-white border-zinc-200'}`}>
+    <div
+      className={`rounded-2xl border p-5 ${accent ? 'bg-amber-500 border-amber-400' : 'bg-white border-zinc-200'}`}
+    >
       <div className="flex items-start justify-between">
         <div>
-          <p className={`text-xs font-medium uppercase tracking-wide ${accent ? 'text-amber-100' : 'text-zinc-500'}`}>
+          <p
+            className={`text-xs font-medium uppercase tracking-wide ${accent ? 'text-amber-100' : 'text-zinc-500'}`}
+          >
             {title}
           </p>
-          <p className={`mt-2 text-3xl font-bold ${accent ? 'text-white' : 'text-zinc-800'}`}>
-            {value}
-          </p>
+          <p className={`mt-2 text-3xl font-bold ${accent ? 'text-white' : 'text-zinc-800'}`}>{value}</p>
           {sub && <p className={`mt-1 text-xs ${accent ? 'text-amber-200' : 'text-zinc-400'}`}>{sub}</p>}
         </div>
         <div className={`rounded-xl p-2.5 ${accent ? 'bg-amber-400/40' : 'bg-zinc-100'}`}>
@@ -81,15 +96,17 @@ export function DashboardPage() {
     )
   }
 
-  const revenueData = stats?.revenueByDay?.slice(-7).map((d) => ({
-    name: new Date(d.date).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }),
-    value: d.total,
-  })) ?? []
+  const revenueData =
+    stats?.revenueByDay?.slice(-7).map((d) => ({
+      name: new Date(d.date).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }),
+      value: d.total,
+    })) ?? []
 
-  const statusData = stats?.appointmentsByStatus?.map((s) => ({
-    name: s.status,
-    value: s.count,
-  })) ?? []
+  const statusData =
+    stats?.appointmentsByStatus?.map((s) => ({
+      name: s.status,
+      value: s.count,
+    })) ?? []
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -97,14 +114,29 @@ export function DashboardPage() {
       <div>
         <h1 className="text-2xl font-bold text-zinc-800">Dashboard</h1>
         <p className="text-sm text-zinc-500 mt-0.5">
-          {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+          {new Date().toLocaleDateString('pt-BR', {
+            weekday: 'long',
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+          })}
         </p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard title="Receita do Dia" value={formatCurrency(summary?.revenueToday ?? 0)} icon={DollarSign} accent />
-        <StatCard title="Agendamentos" value={summary?.totalAppointments ?? 0} sub="hoje" icon={CalendarDays} />
+        <StatCard
+          title="Receita do Dia"
+          value={formatCurrency(summary?.revenueToday ?? 0)}
+          icon={DollarSign}
+          accent
+        />
+        <StatCard
+          title="Agendamentos"
+          value={summary?.totalAppointments ?? 0}
+          sub="hoje"
+          icon={CalendarDays}
+        />
         <StatCard title="Concluídos" value={summary?.completed ?? 0} sub="atendimentos" icon={CheckCircle2} />
         <StatCard title="Cancelados" value={summary?.cancelled ?? 0} sub="hoje" icon={XCircle} />
       </div>
@@ -125,8 +157,18 @@ export function DashboardPage() {
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={revenueData} barSize={28}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#a1a1aa' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#a1a1aa' }} axisLine={false} tickLine={false} tickFormatter={(v) => `R$${v}`} />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 11, fill: '#a1a1aa' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#a1a1aa' }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => `R$${v}`}
+                />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f4f4f5' }} />
                 <Bar dataKey="value" fill="#f59e0b" radius={[6, 6, 0, 0]} />
               </BarChart>
@@ -147,7 +189,15 @@ export function DashboardPage() {
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
-                <Pie data={statusData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value">
+                <Pie
+                  data={statusData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={80}
+                  paddingAngle={3}
+                  dataKey="value"
+                >
                   {statusData.map((_, index) => (
                     <Cell key={index} fill={STATUS_COLORS[index % STATUS_COLORS.length]} />
                   ))}
@@ -203,7 +253,9 @@ export function DashboardPage() {
               {summary.upcomingToday.map((a) => (
                 <div key={a.id} className="flex items-center gap-3 rounded-xl bg-zinc-50 px-3 py-2.5">
                   <div className="text-center min-w-[40px]">
-                    <p className="text-base font-bold text-amber-500 leading-none">{formatTime(a.startsAt)}</p>
+                    <p className="text-base font-bold text-amber-500 leading-none">
+                      {formatTime(a.startsAt)}
+                    </p>
                     <p className="text-[10px] text-zinc-400">{formatTime(a.endsAt)}</p>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -213,7 +265,9 @@ export function DashboardPage() {
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <span className="text-xs font-semibold text-zinc-700">{formatCurrency(Number(a.totalPrice))}</span>
+                    <span className="text-xs font-semibold text-zinc-700">
+                      {formatCurrency(Number(a.totalPrice))}
+                    </span>
                     <Badge status={a.status} />
                   </div>
                 </div>

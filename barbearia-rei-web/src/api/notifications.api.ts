@@ -1,12 +1,14 @@
 import { api } from './axios'
 import type { NotificationLog, NotificationStatus, NotificationType, PaginatedResponse } from '../types'
 
-export async function listNotificationLogs(filters: {
-  status?: NotificationStatus
-  type?: NotificationType
-  page?: number
-  limit?: number
-} = {}): Promise<PaginatedResponse<NotificationLog>> {
+export async function listNotificationLogs(
+  filters: {
+    status?: NotificationStatus
+    type?: NotificationType
+    page?: number
+    limit?: number
+  } = {},
+): Promise<PaginatedResponse<NotificationLog>> {
   const { data } = await api.get('/notifications', { params: filters })
   return data
 }

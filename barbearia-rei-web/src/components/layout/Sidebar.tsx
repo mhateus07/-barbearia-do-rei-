@@ -75,6 +75,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           {/* Botão fechar no mobile */}
           <button
             onClick={onClose}
+            aria-label="Fechar menu"
             className="md:hidden rounded-lg p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
           >
             <X className="h-5 w-5" />
@@ -116,7 +117,9 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       {/* Agendamento Online */}
       <div className="px-3 pb-3">
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-          <p className="text-[11px] font-semibold text-amber-400 mb-2 uppercase tracking-wide">Agendamento Online</p>
+          <p className="text-[11px] font-semibold text-amber-400 mb-2 uppercase tracking-wide">
+            Agendamento Online
+          </p>
           <div className="flex gap-1.5">
             <button
               onClick={copyLink}
@@ -129,6 +132,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               href={bookingUrl}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Abrir página de agendamento online em nova aba"
               className="flex items-center justify-center rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 px-2.5 transition-colors"
             >
               <ExternalLink className="h-3.5 w-3.5" />
@@ -140,7 +144,9 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       {/* Footer */}
       {(branding.shopAddress || branding.shopPhone) && (
         <div className="px-4 py-4 border-t border-zinc-800/60 space-y-1">
-          {branding.shopAddress && <p className="text-[10px] text-zinc-600 leading-snug">{branding.shopAddress}</p>}
+          {branding.shopAddress && (
+            <p className="text-[10px] text-zinc-600 leading-snug">{branding.shopAddress}</p>
+          )}
           {branding.shopPhone && <p className="text-[10px] text-zinc-600">{branding.shopPhone}</p>}
         </div>
       )}

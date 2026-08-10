@@ -30,10 +30,7 @@ export async function createAppointment(input: {
   return data.data
 }
 
-export async function updateAppointmentStatus(
-  id: string,
-  status: AppointmentStatus,
-): Promise<Appointment> {
+export async function updateAppointmentStatus(id: string, status: AppointmentStatus): Promise<Appointment> {
   const { data } = await api.patch(`/appointments/${id}/status`, { status })
   return data.data
 }

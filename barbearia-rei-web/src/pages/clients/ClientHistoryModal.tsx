@@ -83,7 +83,9 @@ export function ClientHistoryModal({ open, onClose, client }: Props) {
   return (
     <Modal open={open} onClose={onClose} title={`Histórico — ${client?.name ?? ''}`} size="lg">
       {isLoading ? (
-        <div className="flex h-40 items-center justify-center"><Spinner size="lg" /></div>
+        <div className="flex h-40 items-center justify-center">
+          <Spinner size="lg" />
+        </div>
       ) : (
         <div className="space-y-4">
           {/* Resumo */}
@@ -110,10 +112,15 @@ export function ClientHistoryModal({ open, onClose, client }: Props) {
                   <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                   <span className="text-sm font-semibold text-amber-800">Cartão Fidelidade</span>
                 </div>
-                {loyaltyLoading ? <Spinner /> : (
+                {loyaltyLoading ? (
+                  <Spinner />
+                ) : (
                   <div className="text-right">
                     <p className="text-xl font-bold text-amber-700">{balance} pts</p>
-                    <p className="text-[11px] text-amber-600">{loyalty?.visitCount ?? 0} visitas · {loyalty?.pointsEarned ?? 0} ganhos · {loyalty?.pointsRedeemed ?? 0} resgatados</p>
+                    <p className="text-[11px] text-amber-600">
+                      {loyalty?.visitCount ?? 0} visitas · {loyalty?.pointsEarned ?? 0} ganhos ·{' '}
+                      {loyalty?.pointsRedeemed ?? 0} resgatados
+                    </p>
                   </div>
                 )}
               </div>
@@ -123,7 +130,9 @@ export function ClientHistoryModal({ open, onClose, client }: Props) {
                 <div>
                   <div className="flex justify-between text-[11px] text-amber-700 mb-1">
                     <span>{balance} pts</span>
-                    <span>Meta: {redemptionPoints} pts = R$ {redemptionValue}</span>
+                    <span>
+                      Meta: {redemptionPoints} pts = R$ {redemptionValue}
+                    </span>
                   </div>
                   <div className="h-2 w-full rounded-full bg-amber-200">
                     <div
@@ -158,9 +167,7 @@ export function ClientHistoryModal({ open, onClose, client }: Props) {
                   </Button>
                 </div>
               )}
-              {redeemMsg && (
-                <p className="text-xs text-amber-800 font-medium">{redeemMsg}</p>
-              )}
+              {redeemMsg && <p className="text-xs text-amber-800 font-medium">{redeemMsg}</p>}
             </div>
           )}
 
@@ -170,7 +177,10 @@ export function ClientHistoryModal({ open, onClose, client }: Props) {
           ) : (
             <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
               {appointments.map((a) => (
-                <div key={a.id} className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3">
+                <div
+                  key={a.id}
+                  className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3"
+                >
                   <div className="min-w-[80px]">
                     <p className="text-xs font-semibold text-zinc-700">{formatDate(a.startsAt)}</p>
                     <p className="text-xs text-zinc-400">{formatTime(a.startsAt)}</p>
@@ -182,7 +192,9 @@ export function ClientHistoryModal({ open, onClose, client }: Props) {
                     <p className="text-xs text-zinc-400">{a.barber.name}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    <span className="text-sm font-semibold text-zinc-700">{formatCurrency(Number(a.totalPrice))}</span>
+                    <span className="text-sm font-semibold text-zinc-700">
+                      {formatCurrency(Number(a.totalPrice))}
+                    </span>
                     <Badge status={a.status} />
                   </div>
                 </div>

@@ -40,8 +40,8 @@ export function SignupPage() {
       setSession(result.token, result.admin, result.tenant.slug)
       navigate('/dashboard')
     } catch (err) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message
+      const message = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
+        ?.error?.message
       setError(message || 'Não foi possível criar sua conta. Tente novamente.')
     } finally {
       setLoading(false)
@@ -59,7 +59,8 @@ export function SignupPage() {
         </div>
         <div>
           <h2 className="text-4xl font-bold text-white leading-tight mb-4">
-            Coloque sua barbearia<br />
+            Coloque sua barbearia
+            <br />
             <span className="text-amber-400">no piloto automático.</span>
           </h2>
           <p className="text-zinc-400 text-lg leading-relaxed">

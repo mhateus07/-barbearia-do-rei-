@@ -42,7 +42,12 @@ export async function getPublicBarbers(tenantSlug: string): Promise<PublicBarber
   return data
 }
 
-export async function getAvailableSlots(tenantSlug: string, barberId: string, date: string, duration: number): Promise<string[]> {
+export async function getAvailableSlots(
+  tenantSlug: string,
+  barberId: string,
+  date: string,
+  duration: number,
+): Promise<string[]> {
   const { data } = await api.get(`/${tenantSlug}/barbers/${barberId}/slots`, { params: { date, duration } })
   return data.slots
 }
@@ -57,16 +62,19 @@ export interface PublicAppointmentResult {
   services: { service: { id: string; name: string } }[]
 }
 
-export async function createPublicAppointment(tenantSlug: string, payload: {
-  clientName: string
-  clientPhone: string
-  clientEmail?: string
-  barberId: string
-  serviceIds: string[]
-  date: string
-  time: string
-  notes?: string
-}): Promise<PublicAppointmentResult> {
+export async function createPublicAppointment(
+  tenantSlug: string,
+  payload: {
+    clientName: string
+    clientPhone: string
+    clientEmail?: string
+    barberId: string
+    serviceIds: string[]
+    date: string
+    time: string
+    notes?: string
+  },
+): Promise<PublicAppointmentResult> {
   const { data } = await api.post(`/${tenantSlug}/appointments`, payload)
   return data
 }
