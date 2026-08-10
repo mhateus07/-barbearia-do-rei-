@@ -82,13 +82,23 @@ export async function sendAndLog(params: {
 
 // ─── TEMPLATES ────────────────────────────────────────────────────────────────
 
-export function buildConfirmationMessage(clientName: string, barberName: string, startsAt: Date, services: string[]): string {
+export function buildConfirmationMessage(
+  clientName: string,
+  barberName: string,
+  startsAt: Date,
+  services: string[],
+): string {
   const date = startsAt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })
   const time = startsAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
   return `✅ *Agendamento confirmado!*\n\nOlá, ${clientName}! Seu agendamento está confirmado.\n\n📅 *Data:* ${date}\n⏰ *Horário:* ${time}\n✂️ *Serviços:* ${services.join(', ')}\n💈 *Barbeiro:* ${barberName}\n\n_Barbearia do Rei - São João del Rei_`
 }
 
-export function buildReminderMessage(clientName: string, barberName: string, startsAt: Date, services: string[]): string {
+export function buildReminderMessage(
+  clientName: string,
+  barberName: string,
+  startsAt: Date,
+  services: string[],
+): string {
   const time = startsAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
   return `⏰ *Lembrete de agendamento!*\n\nOlá, ${clientName}! Amanhã às ${time} você tem um horário marcado.\n\n✂️ *Serviços:* ${services.join(', ')}\n💈 *Barbeiro:* ${barberName}\n\nTe esperamos! 💈\n\n_Barbearia do Rei - São João del Rei_`
 }
@@ -137,7 +147,8 @@ export async function sendPendingReminders(): Promise<{ sent: number; failed: nu
       clientId: appt.client.id,
       appointmentId: appt.id,
     })
-    result.sent ? sent++ : failed++
+    if (result.sent) sent++
+    else failed++
   }
 
   return { sent, failed }

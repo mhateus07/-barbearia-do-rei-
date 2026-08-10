@@ -1,11 +1,7 @@
 import { Router } from 'express'
 import { list, getOne, create, update, updateStatus, remove } from './appointments.controller'
 import { validate } from '../../middlewares/validate.middleware'
-import {
-  createAppointmentSchema,
-  updateAppointmentSchema,
-  updateStatusSchema,
-} from './appointments.schema'
+import { createAppointmentSchema, updateAppointmentSchema, updateStatusSchema } from './appointments.schema'
 
 const router = Router()
 

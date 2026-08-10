@@ -25,22 +25,33 @@ import onboardingRoutes from './modules/onboarding/onboarding.routes'
 
 const app = express()
 
+// Atrás do Traefik em produção (ver docker-compose.prod.yml) — necessário
+// pra rate limiting e logging identificarem o IP real do cliente via
+// X-Forwarded-For, em vez do IP do proxy.
+app.set('trust proxy', 1)
+
 app.use(helmet())
-app.use(cors({
-  origin: env.FRONTEND_URL
-    ? env.FRONTEND_URL.split(',')
-    : ['http://localhost:5173', 'http://localhost:4173'],
-  credentials: true,
-}))
+app.use(
+  cors({
+    origin: env.FRONTEND_URL
+      ? env.FRONTEND_URL.split(',')
+      : ['http://localhost:5173', 'http://localhost:4173'],
+    credentials: true,
+  }),
+)
 app.use(express.json())
 
 // Uploads (logo/portfólio) servidos como arquivos estáticos. CORP liberado
 // pra cross-origin porque em dev local o front (5173) e a API (3333) são
 // origens diferentes; em produção ambos já ficam no mesmo subdomínio.
-app.use('/uploads', (_req, res, next) => {
-  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
-  next()
-}, express.static(UPLOADS_ROOT))
+app.use(
+  '/uploads',
+  (_req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
+    next()
+  },
+  express.static(UPLOADS_ROOT),
+)
 
 // Rotas públicas
 app.get('/health', (_req, res) => res.json({ ok: true, time: new Date().toISOString() }))

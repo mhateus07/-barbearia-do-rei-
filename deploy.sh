@@ -1,10 +1,16 @@
 #!/bin/bash
 set -e
 
-VPS="root@31.97.160.94"
-DOMAIN="rei.impulsiodigital.com"
-API_LOCAL="/Users/mateushenrique/Documents/01_Clientes/Barbearias/Barbearia do Rei/barbearia-rei-api"
-WEB_LOCAL="/Users/mateushenrique/Documents/01_Clientes/Barbearias/Barbearia do Rei/barbearia-rei-web"
+# ⚠️ DEPRECATED — este script descreve a infraestrutura antiga (single-tenant,
+# deploy via rsync + PM2 + Nginx + Certbot manual num VPS). O fluxo atual é
+# multi-tenant via Docker + Traefik (ver docker-compose.prod.yml e
+# CHANGELOG.md) — deploy é `git pull` + `docker compose up -d --build` no
+# servidor. Mantido só como referência histórica; não use para deploy.
+
+VPS="root@SEU_IP_AQUI"
+DOMAIN="seu-dominio.exemplo.com"
+API_LOCAL="/caminho/local/para/barbearia-rei-api"
+WEB_LOCAL="/caminho/local/para/barbearia-rei-web"
 
 echo "======================================"
 echo "  DEPLOY - Barbearia do Rei"
@@ -95,7 +101,7 @@ NGINX
   nginx -t && systemctl reload nginx
 
   # Gerar certificado SSL
-  certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos -m admin@impulsiodigital.com --redirect
+  certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos -m seu-email@exemplo.com --redirect
 REMOTE
 
 echo ""

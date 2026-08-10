@@ -18,5 +18,9 @@ const SCHEDULER_JOB_NAME = 'scan-tenants'
  * worker.
  */
 export async function scheduleReminderScan(everyMs = 15 * 60 * 1000) {
-  await schedulerQueue.upsertJobScheduler(SCHEDULER_JOB_NAME, { every: everyMs }, { name: SCHEDULER_JOB_NAME })
+  await schedulerQueue.upsertJobScheduler(
+    SCHEDULER_JOB_NAME,
+    { every: everyMs },
+    { name: SCHEDULER_JOB_NAME },
+  )
 }

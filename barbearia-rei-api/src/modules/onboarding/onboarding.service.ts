@@ -2,11 +2,12 @@ import { prisma } from '../../lib/prisma'
 import { runWithTenant } from '../../lib/tenant-context'
 import { hashPassword } from '../../utils/bcrypt'
 import { signToken } from '../../config/jwt'
+import { AppError } from '../../lib/errors'
 import { SignupInput } from './onboarding.schema'
 
 export async function signupTenant(input: SignupInput) {
   const existingSlug = await prisma.tenant.findUnique({ where: { slug: input.slug } })
-  if (existingSlug) throw new Error('Esse endereço já está em uso. Escolha outro.')
+  if (existingSlug) throw new AppError('Esse endereço já está em uso. Escolha outro.', 409)
 
   const tenant = await prisma.tenant.create({
     data: { slug: input.slug, name: input.shopName, status: 'TRIAL' },
@@ -33,7 +34,12 @@ export async function signupTenant(input: SignupInput) {
       },
     })
 
-    const token = signToken({ sub: admin.id, email: admin.email, tenantId: tenant.id, tenantSlug: tenant.slug })
+    const token = signToken({
+      sub: admin.id,
+      email: admin.email,
+      tenantId: tenant.id,
+      tenantSlug: tenant.slug,
+    })
 
     return {
       token,

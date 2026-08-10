@@ -40,6 +40,14 @@ beforeEach(() => {
   mockReset(prismaMock)
   getSettingsMock.mockReset()
   getSettingsMock.mockResolvedValue(BASE_SETTINGS)
+  // createPublicAppointment roda a checagem de conflito + criação dentro de
+  // prisma.$transaction(async (tx) => ...); no mock, `tx` é o próprio
+  // prismaMock, já que a extensão de tenant scoping é ignorada em testes.
+  prismaMock.$transaction.mockImplementation((fn: unknown) =>
+    typeof fn === 'function'
+      ? (fn as (tx: typeof prismaMock) => unknown)(prismaMock)
+      : Promise.all(fn as never),
+  )
 })
 
 // Próxima segunda-feira, distante o suficiente no futuro para não colidir com "now" nos testes.
@@ -81,7 +89,11 @@ describe('public.service', () => {
       const date = nextMonday()
       prismaMock.barber.findMany.mockResolvedValue([{ id: 'barber-1' }, { id: 'barber-2' }] as never)
       prismaMock.appointment.findMany.mockResolvedValue([
-        { startsAt: new Date(`${date}T09:00:00`), endsAt: new Date(`${date}T09:30:00`), barberId: 'barber-1' },
+        {
+          startsAt: new Date(`${date}T09:00:00`),
+          endsAt: new Date(`${date}T09:30:00`),
+          barberId: 'barber-1',
+        },
       ] as never)
 
       const slots = await getAvailableSlots('any', date, 30)
@@ -107,7 +119,7 @@ describe('public.service', () => {
           serviceIds: ['service-1'],
           date,
           time: '09:00',
-        })
+        }),
       ).rejects.toThrow('Horário não disponível')
     })
 
@@ -124,7 +136,7 @@ describe('public.service', () => {
           serviceIds: ['service-inexistente'],
           date,
           time: '09:00',
-        })
+        }),
       ).rejects.toThrow('Um ou mais serviços não encontrados ou inativos')
     })
   })

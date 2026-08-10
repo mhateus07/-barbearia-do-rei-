@@ -15,7 +15,9 @@ async function main() {
     console.error('[scheduler] falhou', job?.id, err.message)
   })
   reminderWorker.on('completed', (job, result) => {
-    console.log(`[reminders] tenant ${job.data.tenantId} — enviados: ${result?.sent ?? 0}, falhas: ${result?.failed ?? 0}`)
+    console.log(
+      `[reminders] tenant ${job.data.tenantId} — enviados: ${result?.sent ?? 0}, falhas: ${result?.failed ?? 0}`,
+    )
   })
   reminderWorker.on('failed', (job, err) => {
     console.error(`[reminders] falhou para tenant ${job?.data.tenantId}`, err.message)

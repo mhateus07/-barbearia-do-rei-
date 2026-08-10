@@ -17,7 +17,14 @@ const { loginService, getMeService } = await import('../auth.service')
 
 const prismaMock = prisma as unknown as DeepMockProxy<PrismaClient>
 
-const TENANT = { id: 'tenant-1', slug: 'barbearia-do-rei', name: 'Barbearia do Rei', status: 'ACTIVE' as const, createdAt: new Date(), updatedAt: new Date() }
+const TENANT = {
+  id: 'tenant-1',
+  slug: 'barbearia-do-rei',
+  name: 'Barbearia do Rei',
+  status: 'ACTIVE' as const,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}
 
 beforeEach(() => {
   mockReset(prismaMock)
@@ -38,7 +45,11 @@ describe('auth.service', () => {
         updatedAt: new Date(),
       })
 
-      const result = await loginService({ slug: 'barbearia-do-rei', email: 'admin@barbeariadorei.com', password: 'admin123' })
+      const result = await loginService({
+        slug: 'barbearia-do-rei',
+        email: 'admin@barbeariadorei.com',
+        password: 'admin123',
+      })
 
       expect(result.token).toEqual(expect.any(String))
       expect(result.admin).toEqual({
@@ -53,7 +64,7 @@ describe('auth.service', () => {
       prismaMock.tenant.findUnique.mockResolvedValue(null)
 
       await expect(
-        loginService({ slug: 'nao-existe', email: 'admin@barbeariadorei.com', password: 'admin123' })
+        loginService({ slug: 'nao-existe', email: 'admin@barbeariadorei.com', password: 'admin123' }),
       ).rejects.toThrow('Credenciais inválidas')
     })
 
@@ -61,7 +72,7 @@ describe('auth.service', () => {
       prismaMock.admin.findFirst.mockResolvedValue(null)
 
       await expect(
-        loginService({ slug: 'barbearia-do-rei', email: 'nao-existe@example.com', password: 'admin123' })
+        loginService({ slug: 'barbearia-do-rei', email: 'nao-existe@example.com', password: 'admin123' }),
       ).rejects.toThrow('Credenciais inválidas')
     })
 
@@ -78,7 +89,11 @@ describe('auth.service', () => {
       })
 
       await expect(
-        loginService({ slug: 'barbearia-do-rei', email: 'admin@barbeariadorei.com', password: 'senha-errada' })
+        loginService({
+          slug: 'barbearia-do-rei',
+          email: 'admin@barbeariadorei.com',
+          password: 'senha-errada',
+        }),
       ).rejects.toThrow('Credenciais inválidas')
     })
   })

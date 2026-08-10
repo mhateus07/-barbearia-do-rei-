@@ -15,67 +15,40 @@ import {
 
 export async function list(req: AuthRequest, res: Response) {
   const { search, page = '1', limit = '20', withLoyalty } = req.query as Record<string, string>
-  const result = withLoyalty === 'true'
-    ? await listClientsWithLoyalty(search, Number(page), Number(limit))
-    : await listClients(search, Number(page), Number(limit))
+  const result =
+    withLoyalty === 'true'
+      ? await listClientsWithLoyalty(search, Number(page), Number(limit))
+      : await listClients(search, Number(page), Number(limit))
   return paginate(res, result.data, { total: result.total, page: result.page, limit: result.limit })
 }
 
 export async function getOne(req: AuthRequest, res: Response) {
-  try {
-    return success(res, await getClientById(req.params.id))
-  } catch (err) {
-    return apiError(res, (err as Error).message, 404)
-  }
+  return success(res, await getClientById(req.params.id))
 }
 
 export async function create(req: AuthRequest, res: Response) {
-  try {
-    return success(res, await createClient(req.body), 201)
-  } catch (err) {
-    return apiError(res, (err as Error).message, 400)
-  }
+  return success(res, await createClient(req.body), 201)
 }
 
 export async function update(req: AuthRequest, res: Response) {
-  try {
-    return success(res, await updateClient(req.params.id, req.body))
-  } catch (err) {
-    return apiError(res, (err as Error).message, 404)
-  }
+  return success(res, await updateClient(req.params.id, req.body))
 }
 
 export async function remove(req: AuthRequest, res: Response) {
-  try {
-    await deleteClient(req.params.id)
-    return success(res, { message: 'Cliente removido com sucesso' })
-  } catch (err) {
-    return apiError(res, (err as Error).message, 400)
-  }
+  await deleteClient(req.params.id)
+  return success(res, { message: 'Cliente removido com sucesso' })
 }
 
 export async function clientAppointments(req: AuthRequest, res: Response) {
-  try {
-    return success(res, await getClientAppointments(req.params.id))
-  } catch (err) {
-    return apiError(res, (err as Error).message, 404)
-  }
+  return success(res, await getClientAppointments(req.params.id))
 }
 
 export async function clientLoyalty(req: AuthRequest, res: Response) {
-  try {
-    return success(res, await getClientLoyalty(req.params.id))
-  } catch (err) {
-    return apiError(res, (err as Error).message, 404)
-  }
+  return success(res, await getClientLoyalty(req.params.id))
 }
 
 export async function redeemLoyalty(req: AuthRequest, res: Response) {
-  try {
-    const { points } = req.body
-    if (!points || points <= 0) return apiError(res, 'Informe a quantidade de pontos a resgatar', 400)
-    return success(res, await redeemLoyaltyPoints(req.params.id, Number(points)))
-  } catch (err) {
-    return apiError(res, (err as Error).message, 400)
-  }
+  const { points } = req.body
+  if (!points || points <= 0) return apiError(res, 'Informe a quantidade de pontos a resgatar', 400)
+  return success(res, await redeemLoyaltyPoints(req.params.id, Number(points)))
 }

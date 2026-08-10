@@ -28,12 +28,17 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
     env.TENANT_DEV_SLUG
 
   if (!slug) {
-    return res.status(400).json({ error: { message: 'Não foi possível identificar a barbearia para esta requisição' } })
+    return res
+      .status(400)
+      .json({ error: { message: 'Não foi possível identificar a barbearia para esta requisição' } })
   }
 
   const tenant = await prisma.tenant.findUnique({ where: { slug } })
   if (!tenant) {
     return res.status(404).json({ error: { message: 'Barbearia não encontrada' } })
+  }
+  if (tenant.status === 'SUSPENDED') {
+    return res.status(403).json({ error: { message: 'Esta barbearia está temporariamente indisponível' } })
   }
 
   runWithTenant(tenant.id, next)

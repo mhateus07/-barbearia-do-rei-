@@ -1,11 +1,11 @@
-import { AppointmentStatus } from '@prisma/client'
+import { AppointmentStatus, Prisma } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
 import { getTenantId } from '../../lib/tenant-context'
-import {
-  CreateAppointmentInput,
-  UpdateAppointmentInput,
-  UpdateStatusInput,
-} from './appointments.schema'
+import { AppError } from '../../lib/errors'
+import { parseDateParam } from '../../utils/date'
+import { CreateAppointmentInput, UpdateAppointmentInput, UpdateStatusInput } from './appointments.schema'
+
+const SCHEDULING_CONFLICT_MESSAGE = 'Barbeiro já possui agendamento neste horário'
 
 const appointmentInclude = {
   client: { select: { id: true, name: true, phone: true } },
@@ -32,15 +32,15 @@ export async function listAppointments(filters: {
   const where: Record<string, unknown> = {}
 
   if (date) {
-    const start = new Date(`${date}T00:00:00`)
+    const start = parseDateParam(date, 'date')
     start.setHours(0, 0, 0, 0)
-    const end = new Date(`${date}T00:00:00`)
+    const end = parseDateParam(date, 'date')
     end.setHours(23, 59, 59, 999)
-where.startsAt = { gte: start, lte: end }
+    where.startsAt = { gte: start, lte: end }
   } else if (from || to) {
     where.startsAt = {
-      ...(from ? { gte: new Date(from) } : {}),
-      ...(to ? { lte: new Date(to) } : {}),
+      ...(from ? { gte: parseDateParam(from, 'from') } : {}),
+      ...(to ? { lte: parseDateParam(to, 'to') } : {}),
     }
   }
 
@@ -67,7 +67,7 @@ export async function getAppointmentById(id: string) {
     where: { id },
     include: appointmentInclude,
   })
-  if (!appointment) throw new Error('Agendamento não encontrado')
+  if (!appointment) throw new AppError('Agendamento não encontrado', 404)
   return appointment
 }
 
@@ -77,7 +77,7 @@ export async function createAppointment(input: CreateAppointmentInput) {
   })
 
   if (services.length !== input.serviceIds.length) {
-    throw new Error('Um ou mais serviços não encontrados ou inativos')
+    throw new AppError('Um ou mais serviços não encontrados ou inativos', 400)
   }
 
   const totalDuration = services.reduce((sum, s) => sum + s.durationMin, 0)
@@ -85,46 +85,60 @@ export async function createAppointment(input: CreateAppointmentInput) {
 
   const startsAt = new Date(input.startsAt)
   const endsAt = new Date(startsAt.getTime() + totalDuration * 60 * 1000)
+  const tenantId = getTenantId()
 
-  // Verificar conflito de horário do barbeiro
-  const conflict = await prisma.appointment.findFirst({
-    where: {
-      barberId: input.barberId,
-      status: { notIn: [AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW] },
-      OR: [
-        { startsAt: { gte: startsAt, lt: endsAt } },
-        { endsAt: { gt: startsAt, lte: endsAt } },
-        { startsAt: { lte: startsAt }, endsAt: { gte: endsAt } },
-      ],
-    },
-  })
+  try {
+    // Isolamento SERIALIZABLE: a checagem de conflito e a criação do
+    // agendamento acontecem na mesma transação. Se dois clientes agendarem o
+    // mesmo horário ao mesmo tempo, o Postgres detecta a anomalia de
+    // serialização e aborta uma das transações (erro P2034), evitando dupla
+    // marcação — o check-then-create isolado antes não protegia contra isso.
+    return await prisma.$transaction(
+      async (tx) => {
+        const conflict = await tx.appointment.findFirst({
+          where: {
+            barberId: input.barberId,
+            status: { notIn: [AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW] },
+            OR: [
+              { startsAt: { gte: startsAt, lt: endsAt } },
+              { endsAt: { gt: startsAt, lte: endsAt } },
+              { startsAt: { lte: startsAt }, endsAt: { gte: endsAt } },
+            ],
+          },
+        })
 
-  if (conflict) {
-    throw new Error('Barbeiro já possui agendamento neste horário')
-  }
+        if (conflict) {
+          throw new AppError(SCHEDULING_CONFLICT_MESSAGE, 409)
+        }
 
-  return prisma.$transaction(async (tx) => {
-    const appointment = await tx.appointment.create({
-      data: {
-        tenantId: getTenantId(),
-        clientId: input.clientId,
-        barberId: input.barberId,
-        startsAt,
-        endsAt,
-        totalPrice,
-        notes: input.notes,
-        services: {
-          create: services.map((s) => ({
-            serviceId: s.id,
-            priceSnapshot: Number(s.price),
-            durationSnapshot: s.durationMin,
-          })),
-        },
+        return tx.appointment.create({
+          data: {
+            tenantId,
+            clientId: input.clientId,
+            barberId: input.barberId,
+            startsAt,
+            endsAt,
+            totalPrice,
+            notes: input.notes,
+            services: {
+              create: services.map((s) => ({
+                serviceId: s.id,
+                priceSnapshot: Number(s.price),
+                durationSnapshot: s.durationMin,
+              })),
+            },
+          },
+          include: appointmentInclude,
+        })
       },
-      include: appointmentInclude,
-    })
-    return appointment
-  })
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    )
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2034') {
+      throw new AppError(SCHEDULING_CONFLICT_MESSAGE, 409)
+    }
+    throw err
+  }
 }
 
 export async function updateAppointment(id: string, input: UpdateAppointmentInput) {
@@ -217,7 +231,7 @@ export async function deleteAppointment(id: string) {
   const appointment = await getAppointmentById(id)
   const allowed: AppointmentStatus[] = [AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED]
   if (!allowed.includes(appointment.status)) {
-    throw new Error('Apenas agendamentos com status SCHEDULED ou CONFIRMED podem ser excluídos')
+    throw new AppError('Apenas agendamentos com status SCHEDULED ou CONFIRMED podem ser excluídos', 400)
   }
   return prisma.appointment.delete({ where: { id } })
 }

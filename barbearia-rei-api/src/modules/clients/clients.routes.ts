@@ -1,5 +1,14 @@
 import { Router } from 'express'
-import { list, getOne, create, update, remove, clientAppointments, clientLoyalty, redeemLoyalty } from './clients.controller'
+import {
+  list,
+  getOne,
+  create,
+  update,
+  remove,
+  clientAppointments,
+  clientLoyalty,
+  redeemLoyalty,
+} from './clients.controller'
 import { validate } from '../../middlewares/validate.middleware'
 import { createClientSchema, updateClientSchema } from './clients.schema'
 

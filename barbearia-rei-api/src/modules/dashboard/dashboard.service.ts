@@ -1,8 +1,9 @@
 import { AppointmentStatus } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
+import { parseDateParam } from '../../utils/date'
 
 export async function getDashboardSummary(date?: string) {
-  const targetDate = date ? new Date(`${date}T00:00:00`) : new Date()
+  const targetDate = date ? parseDateParam(date, 'date') : new Date()
   const start = new Date(targetDate)
   start.setHours(0, 0, 0, 0)
   const end = new Date(targetDate)
@@ -49,8 +50,8 @@ export async function getDashboardSummary(date?: string) {
 }
 
 export async function getDashboardStats(from?: string, to?: string) {
-  const startDate = from ? new Date(from) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-  const endDate = to ? new Date(to) : new Date()
+  const startDate = from ? parseDateParam(from, 'from') : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  const endDate = to ? parseDateParam(to, 'to') : new Date()
 
   const appointments = await prisma.appointment.findMany({
     where: {
@@ -97,7 +98,9 @@ export async function getDashboardStats(from?: string, to?: string) {
 
   return {
     revenueByDay: Object.entries(revenueByDay).map(([date, total]) => ({ date, total })),
-    topServices: Object.values(serviceCount).sort((a, b) => b.count - a.count).slice(0, 5),
+    topServices: Object.values(serviceCount)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5),
     topBarbers: Object.values(barberCount).sort((a, b) => b.count - a.count),
     appointmentsByStatus: allAppointments.map((g) => ({
       status: g.status,

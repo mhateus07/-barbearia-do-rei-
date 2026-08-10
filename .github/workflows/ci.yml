@@ -21,8 +21,12 @@ jobs:
           cache-dependency-path: barbearia-rei-api/package-lock.json
       - run: npm ci
       - run: npx prisma generate
+      - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm test
+      - name: npm audit (informativo — não bloqueia o merge)
+        run: npm audit --audit-level=high
+        continue-on-error: true
 
   web:
     name: Web — lint, typecheck, build
@@ -40,3 +44,6 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+      - name: npm audit (informativo — não bloqueia o merge)
+        run: npm audit --audit-level=high
+        continue-on-error: true

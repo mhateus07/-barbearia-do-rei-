@@ -18,7 +18,11 @@ export function startSchedulerWorker() {
       })
 
       for (const tenant of tenants) {
-        await reminderQueue.add('send-reminders', { tenantId: tenant.id }, { removeOnComplete: true, removeOnFail: 50 })
+        await reminderQueue.add(
+          'send-reminders',
+          { tenantId: tenant.id },
+          { removeOnComplete: true, removeOnFail: 50 },
+        )
       }
 
       return { tenantsScanned: tenants.length }

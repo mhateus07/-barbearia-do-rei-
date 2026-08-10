@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma'
 import { getTenantId } from '../../lib/tenant-context'
+import { AppError } from '../../lib/errors'
 import { CreateServiceInput, UpdateServiceInput } from './services.schema'
 
 export async function listServices(isActive?: boolean) {
@@ -11,7 +12,7 @@ export async function listServices(isActive?: boolean) {
 
 export async function getServiceById(id: string) {
   const service = await prisma.service.findUnique({ where: { id } })
-  if (!service) throw new Error('Serviço não encontrado')
+  if (!service) throw new AppError('Serviço não encontrado', 404)
   return service
 }
 
