@@ -2,7 +2,12 @@ import { Response } from 'express'
 import { NotificationStatus, NotificationType } from '@prisma/client'
 import { AuthRequest } from '../../middlewares/auth.middleware'
 import { success, paginate, apiError } from '../../utils/response'
-import { listNotificationLogs, sendAndLog, sendPendingReminders } from './notifications.service'
+import {
+  listNotificationLogs,
+  sendAndLog,
+  sendPendingReminders,
+  sendPendingReviewRequests,
+} from './notifications.service'
 
 export async function listLogsHandler(req: AuthRequest, res: Response) {
   const { status, type, page = '1', limit = '50' } = req.query as Record<string, string>
@@ -24,5 +29,10 @@ export async function sendCustomHandler(req: AuthRequest, res: Response) {
 
 export async function sendRemindersHandler(req: AuthRequest, res: Response) {
   const result = await sendPendingReminders()
+  return success(res, result)
+}
+
+export async function sendReviewRequestsHandler(req: AuthRequest, res: Response) {
+  const result = await sendPendingReviewRequests()
   return success(res, result)
 }

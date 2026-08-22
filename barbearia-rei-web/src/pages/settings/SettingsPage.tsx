@@ -4,6 +4,7 @@ import {
   Settings,
   Clock,
   Star,
+  ThumbsUp,
   MessageCircle,
   Save,
   RefreshCw,
@@ -22,13 +23,14 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Spinner } from '../../components/ui/Spinner'
 
-type Tab = 'info' | 'hours' | 'loyalty' | 'whatsapp'
+type Tab = 'info' | 'hours' | 'loyalty' | 'whatsapp' | 'reviews'
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'info', label: 'Informações', icon: Settings },
   { id: 'hours', label: 'Horários', icon: Clock },
   { id: 'loyalty', label: 'Fidelidade', icon: Star },
   { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
+  { id: 'reviews', label: 'Avaliações', icon: ThumbsUp },
 ]
 
 const DAYS = [
@@ -671,6 +673,126 @@ function WhatsAppTab({
   )
 }
 
+// ─── TAB: AVALIAÇÕES ─────────────────────────────────────────────────────────
+
+function ReviewsTab({
+  settings,
+  onSave,
+}: {
+  settings: Record<string, string>
+  onSave: (s: Record<string, string>) => void
+}) {
+  const [form, setForm] = useState({
+    review_enabled: settings.review_enabled ?? 'false',
+    review_link: settings.review_link ?? '',
+    review_delay_hours: settings.review_delay_hours ?? '2',
+  })
+
+  const [sendResult, setSendResult] = useState<{ sent: number; failed: number } | null>(null)
+  const [sendLoading, setSendLoading] = useState(false)
+
+  async function handleSendNow() {
+    setSendLoading(true)
+    setSendResult(null)
+    try {
+      const { sendReviewRequests } = await import('../../api/notifications.api')
+      const result = await sendReviewRequests()
+      setSendResult(result)
+    } catch (err) {
+      alert((err as Error).message)
+    } finally {
+      setSendLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-5 max-w-xl">
+      {/* Toggle */}
+      <div className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-5 py-4">
+        <div>
+          <p className="font-medium text-zinc-800">Pedido de avaliação</p>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Envia um WhatsApp pedindo avaliação depois de um atendimento concluído
+          </p>
+        </div>
+        <button
+          onClick={() =>
+            setForm({ ...form, review_enabled: form.review_enabled === 'true' ? 'false' : 'true' })
+          }
+          role="switch"
+          aria-checked={form.review_enabled === 'true'}
+          aria-label="Ativar pedido de avaliação"
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.review_enabled === 'true' ? 'bg-amber-500' : 'bg-zinc-300'}`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.review_enabled === 'true' ? 'translate-x-6' : 'translate-x-1'}`}
+          />
+        </button>
+      </div>
+
+      <div className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 text-xs text-blue-700">
+        <p className="font-semibold mb-1">Precisa do WhatsApp configurado</p>
+        <p>Esse envio usa a mesma integração de WhatsApp da aba anterior. Configure-a lá primeiro.</p>
+      </div>
+
+      <div className={`space-y-4 ${form.review_enabled !== 'true' ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-zinc-600">Link de avaliação (Google, por exemplo)</label>
+          <Input
+            value={form.review_link}
+            onChange={(e) => setForm({ ...form, review_link: e.target.value })}
+            placeholder="https://g.page/r/sua-barbearia/review"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-zinc-600">Enviar quantas horas após o atendimento</label>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              min="1"
+              max="72"
+              value={form.review_delay_hours}
+              onChange={(e) => setForm({ ...form, review_delay_hours: e.target.value })}
+              className="max-w-[100px]"
+            />
+            <span className="text-sm text-zinc-500">horas depois de concluído</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button onClick={() => onSave(form)}>
+          <Save className="h-4 w-4 mr-1.5" />
+          Salvar Avaliações
+        </Button>
+      </div>
+
+      {form.review_enabled === 'true' && (
+        <div className="space-y-3 pt-2 border-t border-zinc-100">
+          <p className="text-sm font-semibold text-zinc-700">Testar agora</p>
+          <p className="text-xs text-zinc-500">
+            Varre os atendimentos concluídos dentro da janela configurada e envia o pedido pra quem ainda
+            não recebeu.
+          </p>
+          <Button onClick={handleSendNow} disabled={sendLoading} variant="secondary">
+            {sendLoading ? (
+              <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-1.5" />
+            )}
+            Enviar Pedidos Agora
+          </Button>
+          {sendResult && (
+            <p className="text-sm text-zinc-600">
+              Avaliações: <strong>{sendResult.sent} enviadas</strong>, {sendResult.failed} falhas
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 export function SettingsPage() {
@@ -746,6 +868,9 @@ export function SettingsPage() {
         {activeTab === 'loyalty' && <LoyaltyTab settings={s} onSave={(data) => saveMutation.mutate(data)} />}
         {activeTab === 'whatsapp' && (
           <WhatsAppTab settings={s} onSave={(data) => saveMutation.mutate(data)} />
+        )}
+        {activeTab === 'reviews' && (
+          <ReviewsTab settings={s} onSave={(data) => saveMutation.mutate(data)} />
         )}
       </div>
     </div>

@@ -27,3 +27,8 @@ export async function sendReminders(): Promise<{ sent: number; failed: number }>
   const { data } = await api.post('/notifications/send-reminders')
   return data.data
 }
+
+export async function sendReviewRequests(): Promise<{ sent: number; failed: number }> {
+  const { data } = await api.post('/notifications/send-review-requests')
+  return data.data
+}

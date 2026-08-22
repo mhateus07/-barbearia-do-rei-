@@ -150,7 +150,11 @@ export interface CommissionPayment {
 
 export type NotificationStatus = 'PENDING' | 'SENT' | 'FAILED'
 export type NotificationType =
-  'APPOINTMENT_CONFIRMATION' | 'APPOINTMENT_REMINDER' | 'APPOINTMENT_CANCELLATION' | 'CUSTOM'
+  | 'APPOINTMENT_CONFIRMATION'
+  | 'APPOINTMENT_REMINDER'
+  | 'APPOINTMENT_CANCELLATION'
+  | 'REVIEW_REQUEST'
+  | 'CUSTOM'
 
 export interface NotificationLog {
   id: string

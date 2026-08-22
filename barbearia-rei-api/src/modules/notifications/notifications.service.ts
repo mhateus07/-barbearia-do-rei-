@@ -87,10 +87,11 @@ export function buildConfirmationMessage(
   barberName: string,
   startsAt: Date,
   services: string[],
+  shopName: string,
 ): string {
   const date = startsAt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })
   const time = startsAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  return `✅ *Agendamento confirmado!*\n\nOlá, ${clientName}! Seu agendamento está confirmado.\n\n📅 *Data:* ${date}\n⏰ *Horário:* ${time}\n✂️ *Serviços:* ${services.join(', ')}\n💈 *Barbeiro:* ${barberName}\n\n_Barbearia do Rei - São João del Rei_`
+  return `✅ *Agendamento confirmado!*\n\nOlá, ${clientName}! Seu agendamento está confirmado.\n\n📅 *Data:* ${date}\n⏰ *Horário:* ${time}\n✂️ *Serviços:* ${services.join(', ')}\n💈 *Barbeiro:* ${barberName}\n\n_${shopName}_`
 }
 
 export function buildReminderMessage(
@@ -98,21 +99,27 @@ export function buildReminderMessage(
   barberName: string,
   startsAt: Date,
   services: string[],
+  shopName: string,
 ): string {
   const time = startsAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  return `⏰ *Lembrete de agendamento!*\n\nOlá, ${clientName}! Amanhã às ${time} você tem um horário marcado.\n\n✂️ *Serviços:* ${services.join(', ')}\n💈 *Barbeiro:* ${barberName}\n\nTe esperamos! 💈\n\n_Barbearia do Rei - São João del Rei_`
+  return `⏰ *Lembrete de agendamento!*\n\nOlá, ${clientName}! Amanhã às ${time} você tem um horário marcado.\n\n✂️ *Serviços:* ${services.join(', ')}\n💈 *Barbeiro:* ${barberName}\n\nTe esperamos! 💈\n\n_${shopName}_`
 }
 
-export function buildCancellationMessage(clientName: string, startsAt: Date): string {
+export function buildCancellationMessage(clientName: string, startsAt: Date, shopName: string): string {
   const date = startsAt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })
   const time = startsAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  return `❌ *Agendamento cancelado*\n\nOlá, ${clientName}. Seu agendamento de ${date} às ${time} foi cancelado.\n\nPara remarcar, entre em contato conosco.\n\n_Barbearia do Rei - São João del Rei_`
+  return `❌ *Agendamento cancelado*\n\nOlá, ${clientName}. Seu agendamento de ${date} às ${time} foi cancelado.\n\nPara remarcar, entre em contato conosco.\n\n_${shopName}_`
+}
+
+export function buildReviewRequestMessage(clientName: string, shopName: string, reviewLink: string): string {
+  return `💈 *${shopName}*\n\nOlá, ${clientName}! Esperamos que tenha gostado do atendimento.\n\nSe puder, deixe sua avaliação — leva menos de um minuto e ajuda muito a gente:\n${reviewLink}\n\nObrigado! 🙏`
 }
 
 // ─── LEMBRETES AUTOMÁTICOS ───────────────────────────────────────────────────
 
 export async function sendPendingReminders(): Promise<{ sent: number; failed: number }> {
   const hoursAhead = Number(await getSetting('whatsapp_reminder_hours')) || 24
+  const shopName = (await getSetting('shop_name')) || 'sua barbearia'
 
   const now = new Date()
   const targetFrom = new Date(now.getTime() + (hoursAhead - 1) * 60 * 60 * 1000)
@@ -139,9 +146,55 @@ export async function sendPendingReminders(): Promise<{ sent: number; failed: nu
 
   for (const appt of appointments) {
     const services = appt.services.map((s) => s.service.name)
-    const message = buildReminderMessage(appt.client.name, appt.barber.name, appt.startsAt, services)
+    const message = buildReminderMessage(appt.client.name, appt.barber.name, appt.startsAt, services, shopName)
     const result = await sendAndLog({
       type: 'APPOINTMENT_REMINDER',
+      phone: appt.client.phone,
+      message,
+      clientId: appt.client.id,
+      appointmentId: appt.id,
+    })
+    if (result.sent) sent++
+    else failed++
+  }
+
+  return { sent, failed }
+}
+
+// ─── PEDIDO DE AVALIAÇÃO ──────────────────────────────────────────────────────
+
+export async function sendPendingReviewRequests(): Promise<{ sent: number; failed: number }> {
+  const enabled = await getSetting('review_enabled')
+  const reviewLink = await getSetting('review_link')
+  if (enabled !== 'true' || !reviewLink) return { sent: 0, failed: 0 }
+
+  const delayHours = Number(await getSetting('review_delay_hours')) || 2
+  const shopName = (await getSetting('shop_name')) || 'sua barbearia'
+
+  const now = new Date()
+  const targetFrom = new Date(now.getTime() - (delayHours + 1) * 60 * 60 * 1000)
+  const targetTo = new Date(now.getTime() - (delayHours - 1) * 60 * 60 * 1000)
+
+  // Busca atendimentos concluídos dentro da janela do delay que ainda não
+  // receberam pedido de avaliação
+  const appointments = await prisma.appointment.findMany({
+    where: {
+      status: 'COMPLETED',
+      endsAt: { gte: targetFrom, lte: targetTo },
+      notificationLogs: {
+        none: { type: 'REVIEW_REQUEST' },
+      },
+    },
+    include: { client: true },
+  })
+
+  let sent = 0
+  let failed = 0
+
+  for (const appt of appointments) {
+    const message = buildReviewRequestMessage(appt.client.name, shopName, reviewLink)
+    const result = await sendAndLog({
+      type: 'REVIEW_REQUEST',
       phone: appt.client.phone,
       message,
       clientId: appt.client.id,

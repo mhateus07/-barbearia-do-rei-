@@ -31,4 +31,7 @@ export const SETTING_DEFAULTS: Record<string, string> = {
   whatsapp_api_key: '',
   whatsapp_instance: '',
   whatsapp_reminder_hours: '24',
+  review_enabled: 'false',
+  review_link: '',
+  review_delay_hours: '2',
 }
