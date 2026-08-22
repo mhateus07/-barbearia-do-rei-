@@ -64,6 +64,8 @@ export interface Appointment {
   client: { id: string; name: string; phone: string }
   barber: { id: string; name: string }
   services: AppointmentService[]
+  clientPackageId?: string | null
+  clientPackage?: { id: string; package: { name: string } } | null
   createdAt: string
 }
 
@@ -168,6 +170,30 @@ export interface NotificationLog {
   createdAt: string
   client?: { id: string; name: string } | null
   appointment?: { id: string; startsAt: string } | null
+}
+
+export interface Package {
+  id: string
+  name: string
+  description?: string
+  totalSessions: number
+  price: number
+  validityDays?: number
+  isActive: boolean
+  service: { id: string; name: string }
+  createdAt: string
+}
+
+export interface ClientPackage {
+  id: string
+  sessionsTotal: number
+  sessionsUsed: number
+  sessionsRemaining: number
+  active: boolean
+  pricePaid: number
+  purchasedAt: string
+  expiresAt?: string
+  package: { id: string; name: string; serviceId: string; service: { id: string; name: string } }
 }
 
 export type WaitlistStatus = 'WAITING' | 'NOTIFIED' | 'CONVERTED' | 'CANCELLED'

@@ -25,6 +25,7 @@ export async function createAppointment(input: {
   serviceIds: string[]
   startsAt: string
   notes?: string
+  clientPackageId?: string
 }): Promise<Appointment> {
   const { data } = await api.post('/appointments', input)
   return data.data

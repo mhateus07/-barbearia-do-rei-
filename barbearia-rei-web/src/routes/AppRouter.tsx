@@ -8,6 +8,7 @@ import { SignupPage } from '../pages/SignupPage'
 import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { BarbersPage } from '../pages/barbers/BarbersPage'
 import { ServicesPage } from '../pages/services/ServicesPage'
+import { PackagesPage } from '../pages/packages/PackagesPage'
 import { ClientsPage } from '../pages/clients/ClientsPage'
 import { AppointmentsPage } from '../pages/appointments/AppointmentsPage'
 import { WaitlistPage } from '../pages/waitlist/WaitlistPage'
@@ -40,6 +41,7 @@ export function AppRouter() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/barbeiros" element={<BarbersPage />} />
             <Route path="/servicos" element={<ServicesPage />} />
+            <Route path="/pacotes" element={<PackagesPage />} />
             <Route path="/clientes" element={<ClientsPage />} />
             <Route path="/agendamentos" element={<AppointmentsPage />} />
             <Route path="/lista-espera" element={<WaitlistPage />} />

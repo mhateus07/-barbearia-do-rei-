@@ -6,9 +6,10 @@ import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { listAppointments } from '../../api/appointments.api'
 import { getClientLoyalty, redeemLoyaltyPoints } from '../../api/clients.api'
+import { listClientPackages } from '../../api/packages.api'
 import { getSettings } from '../../api/settings.api'
 import { formatCurrency } from '../../utils/formatCurrency'
-import { Star, Gift } from 'lucide-react'
+import { Star, Gift, PackageIcon } from 'lucide-react'
 import type { ClientWithLoyalty } from '../../types'
 
 interface Props {
@@ -46,6 +47,12 @@ export function ClientHistoryModal({ open, onClose, client }: Props) {
     queryKey: ['settings'],
     queryFn: getSettings,
     enabled: open,
+  })
+
+  const { data: clientPackages = [] } = useQuery({
+    queryKey: ['client-packages', client?.id],
+    queryFn: () => listClientPackages(client!.id),
+    enabled: open && !!client,
   })
 
   const redeemMutation = useMutation({
@@ -171,6 +178,51 @@ export function ClientHistoryModal({ open, onClose, client }: Props) {
             </div>
           )}
 
+          {/* Pacotes do cliente */}
+          {clientPackages.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <PackageIcon className="h-4 w-4 text-amber-500" />
+                <span className="text-sm font-semibold text-zinc-700">Pacotes</span>
+              </div>
+              {clientPackages.map((cp) => (
+                <div
+                  key={cp.id}
+                  className={`rounded-xl border px-4 py-3 ${cp.active ? 'border-amber-200 bg-amber-50/60' : 'border-zinc-200 bg-zinc-50'}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-zinc-800">{cp.package.name}</p>
+                      <p className="text-xs text-zinc-500">
+                        {cp.package.service.name}
+                        {cp.expiresAt && ` · válido até ${formatDate(cp.expiresAt)}`}
+                      </p>
+                    </div>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${cp.active ? 'bg-green-50 text-green-600' : 'bg-zinc-200 text-zinc-500'}`}
+                    >
+                      {cp.active ? 'Ativo' : cp.sessionsUsed >= cp.sessionsTotal ? 'Esgotado' : 'Expirado'}
+                    </span>
+                  </div>
+                  <div className="mt-2">
+                    <div className="flex justify-between text-[11px] text-zinc-500 mb-1">
+                      <span>
+                        {cp.sessionsUsed} de {cp.sessionsTotal} usadas
+                      </span>
+                      <span>{cp.sessionsRemaining} restantes</span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-zinc-200">
+                      <div
+                        className="h-1.5 rounded-full bg-amber-500 transition-all"
+                        style={{ width: `${Math.min(100, (cp.sessionsUsed / cp.sessionsTotal) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Lista de agendamentos */}
           {appointments.length === 0 ? (
             <p className="py-8 text-center text-sm text-zinc-400">Nenhum atendimento registrado.</p>
@@ -192,9 +244,16 @@ export function ClientHistoryModal({ open, onClose, client }: Props) {
                     <p className="text-xs text-zinc-400">{a.barber.name}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    <span className="text-sm font-semibold text-zinc-700">
-                      {formatCurrency(Number(a.totalPrice))}
-                    </span>
+                    {a.clientPackage ? (
+                      <span className="flex items-center gap-1 text-xs font-medium text-amber-600">
+                        <PackageIcon className="h-3 w-3" />
+                        Pago com pacote
+                      </span>
+                    ) : (
+                      <span className="text-sm font-semibold text-zinc-700">
+                        {formatCurrency(Number(a.totalPrice))}
+                      </span>
+                    )}
                     <Badge status={a.status} />
                   </div>
                 </div>

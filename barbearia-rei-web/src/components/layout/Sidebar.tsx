@@ -7,6 +7,7 @@ import {
   Users,
   Scissors,
   Sparkles,
+  PackageIcon,
   Wallet,
   ImageIcon,
   Settings,
@@ -26,6 +27,7 @@ const navItems = [
   { to: '/clientes', label: 'Clientes', icon: Users },
   { to: '/barbeiros', label: 'Barbeiros', icon: Scissors },
   { to: '/servicos', label: 'Serviços', icon: Sparkles },
+  { to: '/pacotes', label: 'Pacotes', icon: PackageIcon },
   { to: '/vitrine', label: 'Vitrine', icon: ImageIcon },
   { to: '/configuracoes', label: 'Configurações', icon: Settings },
 ]

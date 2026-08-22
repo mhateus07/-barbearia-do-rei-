@@ -35,6 +35,8 @@ model Tenant {
   commissionPayments CommissionPayment[]
   notificationLogs   NotificationLog[]
   waitlistEntries    WaitlistEntry[]
+  packages           Package[]
+  clientPackages     ClientPackage[]
 
   @@map("tenants")
 }
@@ -90,6 +92,7 @@ model Service {
 
   appointmentServices AppointmentService[]
   waitlistEntries     WaitlistEntry[]
+  packages            Package[]
 
   @@map("services")
 }
@@ -111,6 +114,7 @@ model Client {
   loyaltyCard      LoyaltyCard?
   notificationLogs NotificationLog[]
   waitlistEntries  WaitlistEntry[]
+  clientPackages   ClientPackage[]
 
   @@unique([tenantId, phone])
   @@unique([tenantId, email])
@@ -144,6 +148,12 @@ model Appointment {
 
   tenant   Tenant @relation(fields: [tenantId], references: [id])
   tenantId String
+
+  // Preenchido quando o agendamento é pago com sessão de um pacote em vez de
+  // cobrado avulso — nesse caso totalPrice fica zerado (o valor já entrou na
+  // venda do pacote)
+  clientPackage   ClientPackage? @relation(fields: [clientPackageId], references: [id], onDelete: SetNull)
+  clientPackageId String?
 
   services         AppointmentService[]
   payment          Payment?
@@ -195,15 +205,17 @@ enum ExpenseStatus {
 }
 
 model Payment {
-  id            String        @id @default(uuid())
-  amount        Decimal       @db.Decimal(10, 2)
-  method        PaymentMethod
-  paidAt        DateTime      @default(now())
-  notes         String?
-  appointmentId String?       @unique
-  appointment   Appointment?  @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id              String         @id @default(uuid())
+  amount          Decimal        @db.Decimal(10, 2)
+  method          PaymentMethod
+  paidAt          DateTime       @default(now())
+  notes           String?
+  appointmentId   String?        @unique
+  appointment     Appointment?   @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  clientPackageId String?        @unique
+  clientPackage   ClientPackage? @relation(fields: [clientPackageId], references: [id], onDelete: SetNull)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   tenant   Tenant @relation(fields: [tenantId], references: [id])
   tenantId String
@@ -367,4 +379,60 @@ model WaitlistEntry {
   @@index([tenantId, preferredDate])
   @@index([status])
   @@map("waitlist_entries")
+}
+
+// ─── PACOTES DE SESSÕES ──────────────────────────────────────────────────────
+
+// Catálogo: um tipo de pacote vendável (ex: "10 Cortes", 90 dias de validade)
+model Package {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  totalSessions Int
+  price         Decimal  @db.Decimal(10, 2)
+  // null = sem validade (nunca expira)
+  validityDays  Int?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  service   Service @relation(fields: [serviceId], references: [id])
+  serviceId String
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  clientPackages ClientPackage[]
+
+  @@map("packages")
+}
+
+// Uma compra: instância de um Package pertencente a um Client, com saldo de
+// sessões. sessionsTotal/pricePaid são snapshot da hora da compra — não
+// mudam se o Package do catálogo for editado depois.
+model ClientPackage {
+  id            String    @id @default(uuid())
+  sessionsTotal Int
+  sessionsUsed  Int       @default(0)
+  pricePaid     Decimal   @db.Decimal(10, 2)
+  purchasedAt   DateTime  @default(now())
+  // null = sem validade
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId String
+
+  package   Package @relation(fields: [packageId], references: [id])
+  packageId String
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  payment      Payment?
+  appointments Appointment[]
+
+  @@index([tenantId, clientId])
+  @@map("client_packages")
 }

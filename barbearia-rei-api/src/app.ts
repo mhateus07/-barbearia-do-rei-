@@ -20,6 +20,7 @@ import financesRoutes from './modules/finances/finances.routes'
 import settingsRoutes from './modules/settings/settings.routes'
 import notificationsRoutes from './modules/notifications/notifications.routes'
 import waitlistRoutes from './modules/waitlist/waitlist.routes'
+import packagesRoutes from './modules/packages/packages.routes'
 import publicRoutes from './modules/public/public.routes'
 import mediaRoutes from './modules/media/media.routes'
 import onboardingRoutes from './modules/onboarding/onboarding.routes'
@@ -70,6 +71,7 @@ app.use('/api/v1/finances', authMiddleware, financesRoutes)
 app.use('/api/v1/settings', authMiddleware, settingsRoutes)
 app.use('/api/v1/notifications', authMiddleware, notificationsRoutes)
 app.use('/api/v1/waitlist', authMiddleware, waitlistRoutes)
+app.use('/api/v1/packages', authMiddleware, packagesRoutes)
 app.use('/api/v1/media', authMiddleware, mediaRoutes)
 
 // Front-end (build do barbearia-rei-web), servido pela própria API — mesmo

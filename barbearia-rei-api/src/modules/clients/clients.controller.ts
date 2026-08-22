@@ -12,6 +12,7 @@ import {
   getClientLoyalty,
   redeemLoyaltyPoints,
 } from './clients.service'
+import { listClientPackages } from '../packages/packages.service'
 
 export async function list(req: AuthRequest, res: Response) {
   const { search, page = '1', limit = '20', withLoyalty } = req.query as Record<string, string>
@@ -45,6 +46,10 @@ export async function clientAppointments(req: AuthRequest, res: Response) {
 
 export async function clientLoyalty(req: AuthRequest, res: Response) {
   return success(res, await getClientLoyalty(req.params.id))
+}
+
+export async function clientPackages(req: AuthRequest, res: Response) {
+  return success(res, await listClientPackages(req.params.id))
 }
 
 export async function redeemLoyalty(req: AuthRequest, res: Response) {

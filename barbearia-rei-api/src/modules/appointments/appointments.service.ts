@@ -4,6 +4,7 @@ import { getTenantId } from '../../lib/tenant-context'
 import { AppError } from '../../lib/errors'
 import { parseDateParam } from '../../utils/date'
 import { notifyWaitlistForOpening } from '../waitlist/waitlist.service'
+import { getUsableClientPackage, consumeSession, restoreSession } from '../packages/packages.service'
 import { CreateAppointmentInput, UpdateAppointmentInput, UpdateStatusInput } from './appointments.schema'
 
 const SCHEDULING_CONFLICT_MESSAGE = 'Barbeiro já possui agendamento neste horário'
@@ -16,6 +17,7 @@ const appointmentInclude = {
       service: { select: { id: true, name: true } },
     },
   },
+  clientPackage: { select: { id: true, package: { select: { name: true } } } },
 }
 
 export async function listAppointments(filters: {
@@ -82,19 +84,31 @@ export async function createAppointment(input: CreateAppointmentInput) {
   }
 
   const totalDuration = services.reduce((sum, s) => sum + s.durationMin, 0)
-  const totalPrice = services.reduce((sum, s) => sum + Number(s.price), 0)
+  let totalPrice = services.reduce((sum, s) => sum + Number(s.price), 0)
+
+  // Pagamento com pacote: só cobre um serviço por vez (o serviço do
+  // pacote), então zera o preço do agendamento — o valor já entrou na
+  // venda do pacote
+  if (input.clientPackageId) {
+    if (input.serviceIds.length !== 1) {
+      throw new AppError('Agendamento pago com pacote só pode ter um serviço', 400)
+    }
+    await getUsableClientPackage(input.clientPackageId, input.clientId, input.serviceIds[0])
+    totalPrice = 0
+  }
 
   const startsAt = new Date(input.startsAt)
   const endsAt = new Date(startsAt.getTime() + totalDuration * 60 * 1000)
   const tenantId = getTenantId()
 
+  let created
   try {
     // Isolamento SERIALIZABLE: a checagem de conflito e a criação do
     // agendamento acontecem na mesma transação. Se dois clientes agendarem o
     // mesmo horário ao mesmo tempo, o Postgres detecta a anomalia de
     // serialização e aborta uma das transações (erro P2034), evitando dupla
     // marcação — o check-then-create isolado antes não protegia contra isso.
-    return await prisma.$transaction(
+    created = await prisma.$transaction(
       async (tx) => {
         const conflict = await tx.appointment.findFirst({
           where: {
@@ -121,6 +135,7 @@ export async function createAppointment(input: CreateAppointmentInput) {
             endsAt,
             totalPrice,
             notes: input.notes,
+            clientPackageId: input.clientPackageId,
             services: {
               create: services.map((s) => ({
                 serviceId: s.id,
@@ -140,10 +155,27 @@ export async function createAppointment(input: CreateAppointmentInput) {
     }
     throw err
   }
+
+  // Só debita a sessão depois que o agendamento foi criado com sucesso —
+  // já validamos saldo/validade antes, então isso não deveria falhar, mas
+  // se falhar não desfaz a reserva por causa disso
+  if (input.clientPackageId) {
+    try {
+      await consumeSession(input.clientPackageId)
+    } catch {
+      // ver comentário acima
+    }
+  }
+
+  return created
 }
 
 export async function updateAppointment(id: string, input: UpdateAppointmentInput) {
   const existing = await getAppointmentById(id)
+
+  if (input.serviceIds && existing.clientPackageId) {
+    throw new AppError('Não é possível trocar os serviços de um agendamento pago com pacote', 400)
+  }
 
   const serviceIds = input.serviceIds ?? existing.services.map((s) => s.service.id)
   const services = await prisma.service.findMany({
@@ -151,7 +183,9 @@ export async function updateAppointment(id: string, input: UpdateAppointmentInpu
   })
 
   const totalDuration = services.reduce((sum, s) => sum + s.durationMin, 0)
-  const totalPrice = services.reduce((sum, s) => sum + Number(s.price), 0)
+  const totalPrice = existing.clientPackageId
+    ? Number(existing.totalPrice)
+    : services.reduce((sum, s) => sum + Number(s.price), 0)
 
   const startsAt = input.startsAt ? new Date(input.startsAt) : existing.startsAt
   const endsAt = new Date(startsAt.getTime() + totalDuration * 60 * 1000)
@@ -233,6 +267,16 @@ export async function updateAppointmentStatus(id: string, input: UpdateStatusInp
     } catch {
       // Não falha o cancelamento se o aviso da lista de espera der erro
     }
+
+    // Devolve a sessão do pacote — cancelamento não deve custar sessão do
+    // cliente (diferente de NO_SHOW, que continua consumindo)
+    if (appointment.clientPackageId) {
+      try {
+        await restoreSession(appointment.clientPackageId)
+      } catch {
+        // Não falha o cancelamento se a devolução da sessão der erro
+      }
+    }
   }
 
   return updated
@@ -250,6 +294,14 @@ export async function deleteAppointment(id: string) {
     await notifyWaitlistForOpening(appointment.barberId, appointment.startsAt)
   } catch {
     // Não falha a exclusão se o aviso da lista de espera der erro
+  }
+
+  if (appointment.clientPackageId) {
+    try {
+      await restoreSession(appointment.clientPackageId)
+    } catch {
+      // Não falha a exclusão se a devolução da sessão der erro
+    }
   }
 
   return deleted

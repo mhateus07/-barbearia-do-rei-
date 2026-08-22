@@ -8,6 +8,7 @@ import {
   clientAppointments,
   clientLoyalty,
   redeemLoyalty,
+  clientPackages,
 } from './clients.controller'
 import { validate } from '../../middlewares/validate.middleware'
 import { createClientSchema, updateClientSchema } from './clients.schema'
@@ -22,5 +23,6 @@ router.delete('/:id', remove)
 router.get('/:id/appointments', clientAppointments)
 router.get('/:id/loyalty', clientLoyalty)
 router.post('/:id/loyalty/redeem', redeemLoyalty)
+router.get('/:id/packages', clientPackages)
 
 export default router
