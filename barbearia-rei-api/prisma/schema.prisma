@@ -34,6 +34,7 @@ model Tenant {
   loyaltyCards       LoyaltyCard[]
   commissionPayments CommissionPayment[]
   notificationLogs   NotificationLog[]
+  waitlistEntries    WaitlistEntry[]
 
   @@map("tenants")
 }
@@ -69,6 +70,7 @@ model Barber {
 
   appointments       Appointment[]
   commissionPayments CommissionPayment[]
+  waitlistEntries    WaitlistEntry[]
 
   @@map("barbers")
 }
@@ -87,6 +89,7 @@ model Service {
   tenantId String
 
   appointmentServices AppointmentService[]
+  waitlistEntries     WaitlistEntry[]
 
   @@map("services")
 }
@@ -107,6 +110,7 @@ model Client {
   appointments     Appointment[]
   loyaltyCard      LoyaltyCard?
   notificationLogs NotificationLog[]
+  waitlistEntries  WaitlistEntry[]
 
   @@unique([tenantId, phone])
   @@unique([tenantId, email])
@@ -302,6 +306,7 @@ enum NotificationType {
   APPOINTMENT_REMINDER
   APPOINTMENT_CANCELLATION
   REVIEW_REQUEST
+  WAITLIST_SLOT_OPEN
   CUSTOM
 }
 
@@ -325,4 +330,41 @@ model NotificationLog {
   tenantId String
 
   @@map("notification_logs")
+}
+
+// ─── LISTA DE ESPERA ─────────────────────────────────────────────────────────
+
+enum WaitlistStatus {
+  WAITING
+  NOTIFIED
+  CONVERTED
+  CANCELLED
+}
+
+model WaitlistEntry {
+  id            String         @id @default(uuid())
+  preferredDate DateTime
+  status        WaitlistStatus @default(WAITING)
+  notes         String?
+  notifiedAt    DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId String
+
+  // null = qualquer barbeiro serve
+  barber   Barber? @relation(fields: [barberId], references: [id], onDelete: SetNull)
+  barberId String?
+
+  // null = qualquer serviço serve
+  service   Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  serviceId String?
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  @@index([tenantId, preferredDate])
+  @@index([status])
+  @@map("waitlist_entries")
 }

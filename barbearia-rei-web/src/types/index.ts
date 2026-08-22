@@ -154,6 +154,7 @@ export type NotificationType =
   | 'APPOINTMENT_REMINDER'
   | 'APPOINTMENT_CANCELLATION'
   | 'REVIEW_REQUEST'
+  | 'WAITLIST_SLOT_OPEN'
   | 'CUSTOM'
 
 export interface NotificationLog {
@@ -167,6 +168,20 @@ export interface NotificationLog {
   createdAt: string
   client?: { id: string; name: string } | null
   appointment?: { id: string; startsAt: string } | null
+}
+
+export type WaitlistStatus = 'WAITING' | 'NOTIFIED' | 'CONVERTED' | 'CANCELLED'
+
+export interface WaitlistEntry {
+  id: string
+  preferredDate: string
+  status: WaitlistStatus
+  notes?: string
+  notifiedAt?: string
+  client: { id: string; name: string; phone: string }
+  barber?: { id: string; name: string } | null
+  service?: { id: string; name: string } | null
+  createdAt: string
 }
 
 export interface FinancialSummary {

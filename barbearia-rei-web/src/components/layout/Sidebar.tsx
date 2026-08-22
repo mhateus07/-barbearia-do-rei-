@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard,
   CalendarDays,
+  Hourglass,
   Users,
   Scissors,
   Sparkles,
@@ -20,6 +21,7 @@ import { useAuth } from '../../contexts/auth-context'
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/agendamentos', label: 'Agendamentos', icon: CalendarDays },
+  { to: '/lista-espera', label: 'Lista de Espera', icon: Hourglass },
   { to: '/financeiro', label: 'Financeiro', icon: Wallet },
   { to: '/clientes', label: 'Clientes', icon: Users },
   { to: '/barbeiros', label: 'Barbeiros', icon: Scissors },

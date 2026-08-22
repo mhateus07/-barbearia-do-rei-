@@ -21,6 +21,7 @@ export const TENANT_SCOPED_MODELS = new Set([
   'LoyaltyCard',
   'CommissionPayment',
   'NotificationLog',
+  'WaitlistEntry',
 ])
 
 function uncapitalize(model: string): string {

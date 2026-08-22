@@ -3,6 +3,7 @@ import { prisma } from '../../lib/prisma'
 import { getTenantId } from '../../lib/tenant-context'
 import { AppError } from '../../lib/errors'
 import { parseDateParam } from '../../utils/date'
+import { notifyWaitlistForOpening } from '../waitlist/waitlist.service'
 import { CreateAppointmentInput, UpdateAppointmentInput, UpdateStatusInput } from './appointments.schema'
 
 const SCHEDULING_CONFLICT_MESSAGE = 'Barbeiro já possui agendamento neste horário'
@@ -224,6 +225,16 @@ export async function updateAppointmentStatus(id: string, input: UpdateStatusInp
     }
   }
 
+  // Ao cancelar, avisa quem está na lista de espera esperando esse
+  // barbeiro (ou qualquer um) nesse dia de que abriu vaga
+  if (input.status === AppointmentStatus.CANCELLED) {
+    try {
+      await notifyWaitlistForOpening(appointment.barberId, appointment.startsAt)
+    } catch {
+      // Não falha o cancelamento se o aviso da lista de espera der erro
+    }
+  }
+
   return updated
 }
 
@@ -233,5 +244,13 @@ export async function deleteAppointment(id: string) {
   if (!allowed.includes(appointment.status)) {
     throw new AppError('Apenas agendamentos com status SCHEDULED ou CONFIRMED podem ser excluídos', 400)
   }
-  return prisma.appointment.delete({ where: { id } })
+  const deleted = await prisma.appointment.delete({ where: { id } })
+
+  try {
+    await notifyWaitlistForOpening(appointment.barberId, appointment.startsAt)
+  } catch {
+    // Não falha a exclusão se o aviso da lista de espera der erro
+  }
+
+  return deleted
 }

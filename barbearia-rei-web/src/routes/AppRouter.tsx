@@ -10,6 +10,7 @@ import { BarbersPage } from '../pages/barbers/BarbersPage'
 import { ServicesPage } from '../pages/services/ServicesPage'
 import { ClientsPage } from '../pages/clients/ClientsPage'
 import { AppointmentsPage } from '../pages/appointments/AppointmentsPage'
+import { WaitlistPage } from '../pages/waitlist/WaitlistPage'
 import { FinancesPage } from '../pages/finances/FinancesPage'
 import { ShowcasePage } from '../pages/showcase/ShowcasePage'
 import { SettingsPage } from '../pages/settings/SettingsPage'
@@ -41,6 +42,7 @@ export function AppRouter() {
             <Route path="/servicos" element={<ServicesPage />} />
             <Route path="/clientes" element={<ClientsPage />} />
             <Route path="/agendamentos" element={<AppointmentsPage />} />
+            <Route path="/lista-espera" element={<WaitlistPage />} />
             <Route path="/financeiro" element={<FinancesPage />} />
             <Route path="/vitrine" element={<ShowcasePage />} />
             <Route path="/configuracoes" element={<SettingsPage />} />
