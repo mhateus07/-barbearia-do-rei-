@@ -24,3 +24,25 @@ export async function scheduleReminderScan(everyMs = 15 * 60 * 1000) {
     { name: SCHEDULER_JOB_NAME },
   )
 }
+
+// Um job por tick: varre as assinaturas Pix vencendo em breve e enfileira um
+// job de renovação por tenant em `billingRenewQueue`.
+export const billingScanQueue = new Queue('billing-scan', { connection: redisConnection })
+
+// Um job por tenant: gera a próxima cobrança Pix dentro do contexto daquele
+// tenant (runWithTenant). Cartão não passa por aqui — o MP cobra sozinho.
+export const billingRenewQueue = new Queue<{ tenantId: string }>('billing-renew', {
+  connection: redisConnection,
+})
+
+const BILLING_SCAN_JOB_NAME = 'scan-pix-subscriptions'
+
+// Roda 1x/dia — cobrança Pix não precisa da granularidade de 15min dos
+// lembretes de WhatsApp.
+export async function scheduleBillingScan(everyMs = 24 * 60 * 60 * 1000) {
+  await billingScanQueue.upsertJobScheduler(
+    BILLING_SCAN_JOB_NAME,
+    { every: everyMs },
+    { name: BILLING_SCAN_JOB_NAME },
+  )
+}

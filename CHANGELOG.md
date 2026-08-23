@@ -1,5 +1,41 @@
 # Changelog — Barbearia do Rei
 
+## [23/08/2026] — Cobrança recorrente dos tenants via Mercado Pago
+
+Primeira forma da SaaS se cobrar sozinha: módulo `billing` novo, cartão e Pix,
+plano único. Usa as credenciais de produção do Mercado Pago que já estavam
+guardadas de uma sessão anterior (ver "Adiado" de 22/07).
+
+- Novos models `Subscription`/`SubscriptionPayment` (1 assinatura por tenant,
+  histórico de cobranças), fora do isolamento automático por tenant do Prisma
+  de propósito — webhook e job de renovação localizam registros por ID
+  externo do Mercado Pago antes de existir um `tenantId` de contexto
+- **Cartão**: assinatura de verdade via `preapproval` do MP — o admin
+  autoriza uma vez no checkout hospedado do próprio MP, cobrança automática
+  todo ciclo dali em diante
+- **Pix**: sem débito automático maduro no Brasil ainda, então o sistema
+  gera uma nova cobrança Pix (QR code) a cada ciclo via um job diário
+  (`billing-scan`/`billing-renew`, mesmo padrão scheduler→fila-por-tenant já
+  usado pelos lembretes de WhatsApp) — o tenant paga manualmente todo mês
+- Webhook (`POST /api/v1/webhooks/mercadopago`) validado por assinatura HMAC
+  (`x-signature`), nunca por token estático; sempre rebusca o recurso pela
+  API do MP usando o ID antes de agir, nunca confia no corpo da notificação
+- Painel: página `/assinatura` nova (status, forma de pagamento, próxima
+  cobrança, histórico, QR code do Pix com copia-e-cola)
+- **Sem enforcement ainda**: tenant em `PAST_DUE`/inadimplente continua com
+  acesso normal — o sistema só passou a rastrear e mostrar o status real da
+  assinatura. Bloqueio de acesso fica pra uma iteração futura, por decisão
+  deliberada (evitar suspender cliente pagante por falha transitória do
+  gateway antes de o fluxo estar validado em produção)
+
+### Adiado / não incluído nesta sessão
+- Bloqueio de acesso do tenant inadimplente (`PAST_DUE`/`SUSPENDED`)
+- Pix Automático de verdade (débito recorrente sem gerar QR novo a cada mês)
+- Múltiplos planos/tiers (hoje é plano único, valor fixo via `MP_PLAN_PRICE`)
+- Testado só com `npx tsc`/`vitest`/`eslint` — **fluxo ponta a ponta com o
+  Mercado Pago (sandbox) ainda não foi validado manualmente**, banco local
+  não estava acessível nesta sessão pra rodar a migration
+
 ## [22/07/2026] — Conversão para SaaS multi-tenant + deploy em produção
 
 Sessão longa: o painel single-tenant da Barbearia do Rei virou uma SaaS

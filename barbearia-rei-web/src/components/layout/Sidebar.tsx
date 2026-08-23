@@ -15,6 +15,7 @@ import {
   Link2,
   Check,
   ExternalLink,
+  CreditCard,
 } from 'lucide-react'
 import { useBranding } from '../../contexts/branding-context'
 import { useAuth } from '../../contexts/auth-context'
@@ -29,6 +30,7 @@ const navItems = [
   { to: '/servicos', label: 'Serviços', icon: Sparkles },
   { to: '/pacotes', label: 'Pacotes', icon: PackageIcon },
   { to: '/vitrine', label: 'Vitrine', icon: ImageIcon },
+  { to: '/assinatura', label: 'Assinatura', icon: CreditCard },
   { to: '/configuracoes', label: 'Configurações', icon: Settings },
 ]
 

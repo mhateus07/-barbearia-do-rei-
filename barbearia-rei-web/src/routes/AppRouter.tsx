@@ -16,6 +16,7 @@ import { FinancesPage } from '../pages/finances/FinancesPage'
 import { ShowcasePage } from '../pages/showcase/ShowcasePage'
 import { SettingsPage } from '../pages/settings/SettingsPage'
 import { BookingPage } from '../pages/booking/BookingPage'
+import { SubscriptionPage } from '../pages/billing/SubscriptionPage'
 
 function AdminArea() {
   const { tenantSlug } = useAuth()
@@ -47,6 +48,7 @@ export function AppRouter() {
             <Route path="/lista-espera" element={<WaitlistPage />} />
             <Route path="/financeiro" element={<FinancesPage />} />
             <Route path="/vitrine" element={<ShowcasePage />} />
+            <Route path="/assinatura" element={<SubscriptionPage />} />
             <Route path="/configuracoes" element={<SettingsPage />} />
           </Route>
         </Route>

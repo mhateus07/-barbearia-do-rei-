@@ -24,6 +24,8 @@ import packagesRoutes from './modules/packages/packages.routes'
 import publicRoutes from './modules/public/public.routes'
 import mediaRoutes from './modules/media/media.routes'
 import onboardingRoutes from './modules/onboarding/onboarding.routes'
+import billingRoutes from './modules/billing/billing.routes'
+import billingWebhookRoutes from './modules/billing/billing.webhook.routes'
 
 const app = express()
 
@@ -60,6 +62,7 @@ app.get('/health', (_req, res) => res.json({ ok: true, time: new Date().toISOStr
 app.use('/api/v1/auth', authRoutes)
 app.use('/api/v1/public/:tenantSlug', tenantMiddleware, publicRoutes)
 app.use('/api/v1/onboarding', onboardingRoutes)
+app.use('/api/v1/webhooks', billingWebhookRoutes)
 
 // Rotas protegidas
 app.use('/api/v1/barbers', authMiddleware, barberRoutes)
@@ -73,6 +76,7 @@ app.use('/api/v1/notifications', authMiddleware, notificationsRoutes)
 app.use('/api/v1/waitlist', authMiddleware, waitlistRoutes)
 app.use('/api/v1/packages', authMiddleware, packagesRoutes)
 app.use('/api/v1/media', authMiddleware, mediaRoutes)
+app.use('/api/v1/billing', authMiddleware, billingRoutes)
 
 // Front-end (build do barbearia-rei-web), servido pela própria API — mesmo
 // container, mesmo domínio. Só existe quando WEB_DIST_DIR aponta pra uma

@@ -221,3 +221,31 @@ export interface FinancialSummary {
   cashFlowByDay: { date: string; income: number; expenses: number; balance: number }[]
   period: { from: string; to: string }
 }
+
+// ─── ASSINATURA (cobrança do tenant com a plataforma) ────────────────────────
+
+export type SubscriptionStatus = 'PENDING_SETUP' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED'
+export type BillingMethod = 'CARD' | 'PIX'
+export type SubscriptionPaymentStatus = 'PENDING' | 'PAID' | 'OVERDUE' | 'FAILED' | 'REFUNDED'
+
+export interface Subscription {
+  id: string
+  method: BillingMethod | null
+  status: SubscriptionStatus
+  amount: number
+  nextDueDate?: string | null
+  canceledAt?: string | null
+  payments: SubscriptionPayment[]
+}
+
+export interface SubscriptionPayment {
+  id: string
+  method: BillingMethod
+  status: SubscriptionPaymentStatus
+  amount: number
+  dueDate: string
+  paidAt?: string | null
+  pixQrCode?: string | null
+  pixCopyPaste?: string | null
+  createdAt: string
+}

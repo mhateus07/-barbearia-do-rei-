@@ -23,20 +23,22 @@ model Tenant {
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
 
-  admins             Admin[]
-  barbers            Barber[]
-  services           Service[]
-  clients            Client[]
-  appointments       Appointment[]
-  payments           Payment[]
-  expenses           Expense[]
-  settings           Settings[]
-  loyaltyCards       LoyaltyCard[]
-  commissionPayments CommissionPayment[]
-  notificationLogs   NotificationLog[]
-  waitlistEntries    WaitlistEntry[]
-  packages           Package[]
-  clientPackages     ClientPackage[]
+  admins               Admin[]
+  barbers              Barber[]
+  services             Service[]
+  clients              Client[]
+  appointments         Appointment[]
+  payments             Payment[]
+  expenses             Expense[]
+  settings             Settings[]
+  loyaltyCards         LoyaltyCard[]
+  commissionPayments   CommissionPayment[]
+  notificationLogs     NotificationLog[]
+  waitlistEntries      WaitlistEntry[]
+  packages             Package[]
+  clientPackages       ClientPackage[]
+  subscription         Subscription?
+  subscriptionPayments SubscriptionPayment[]
 
   @@map("tenants")
 }
@@ -435,4 +437,76 @@ model ClientPackage {
 
   @@index([tenantId, clientId])
   @@map("client_packages")
+}
+
+// ─── ASSINATURA (COBRANÇA DA PLATAFORMA SOBRE O TENANT) ─────────────────────
+
+enum SubscriptionStatus {
+  PENDING_SETUP
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum BillingMethod {
+  CARD
+  PIX
+}
+
+enum SubscriptionPaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  FAILED
+  REFUNDED
+}
+
+// Assinatura do tenant com a própria plataforma (não confundir com Package,
+// que é venda de sessões da barbearia pros clientes dela). Uma por tenant.
+model Subscription {
+  id              String             @id @default(uuid())
+  method          BillingMethod?
+  status          SubscriptionStatus @default(PENDING_SETUP)
+  amount          Decimal            @db.Decimal(10, 2)
+  // preapproval = assinatura recorrente de cartão no Mercado Pago
+  mpPreapprovalId String?            @unique
+  mpPayerEmail    String?
+  nextDueDate     DateTime?
+  canceledAt      DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String @unique
+
+  payments SubscriptionPayment[]
+
+  @@map("subscriptions")
+}
+
+// Histórico de cobranças da assinatura (cada ciclo gera uma linha nova).
+model SubscriptionPayment {
+  id           String                    @id @default(uuid())
+  method       BillingMethod
+  status       SubscriptionPaymentStatus @default(PENDING)
+  amount       Decimal                   @db.Decimal(10, 2)
+  mpPaymentId  String?                   @unique
+  dueDate      DateTime
+  paidAt       DateTime?
+  // Pix: QR code (base64) e código copia-e-cola gerados pelo Mercado Pago
+  pixQrCode    String?
+  pixCopyPaste String?
+  // payload bruto do Mercado Pago, guardado pra depuração
+  rawPayload   Json?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  @@index([tenantId, dueDate])
+  @@map("subscription_payments")
 }

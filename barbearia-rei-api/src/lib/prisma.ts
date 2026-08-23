@@ -8,7 +8,12 @@ const basePrisma = new PrismaClient({ adapter })
 
 // Modelos de negócio isolados por tenant. `Tenant` (identidade do tenant) e
 // `AppointmentService` (sempre acessado através de Appointment, já filtrado)
-// ficam de fora de propósito.
+// ficam de fora de propósito. `Subscription`/`SubscriptionPayment` também
+// ficam de fora: o webhook do Mercado Pago e o job de renovação de Pix
+// localizam esses registros a partir de IDs externos (mpPreapprovalId/
+// mpPaymentId) antes de haver um tenantId de contexto — getTenantId()
+// lançaria erro nesse momento — então os services desse módulo passam
+// tenantId explícito no where/data em vez de depender da injeção automática.
 export const TENANT_SCOPED_MODELS = new Set([
   'Admin',
   'Barber',
