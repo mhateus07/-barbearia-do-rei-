@@ -1,5 +1,14 @@
 import { api } from './axios'
-import type { Payment, Expense, FinancialSummary, BarberCommission, CommissionPayment, PaginatedResponse, PaymentMethod, ExpenseCategory } from '../types'
+import type {
+  Payment,
+  Expense,
+  FinancialSummary,
+  BarberCommission,
+  CommissionPayment,
+  PaginatedResponse,
+  PaymentMethod,
+  ExpenseCategory,
+} from '../types'
 
 // ─── SUMMARY ─────────────────────────────────────────────────────────────────
 
@@ -10,13 +19,15 @@ export async function getFinancialSummary(from?: string, to?: string): Promise<F
 
 // ─── PAYMENTS ────────────────────────────────────────────────────────────────
 
-export async function listPayments(filters: {
-  from?: string
-  to?: string
-  method?: string
-  page?: number
-  limit?: number
-} = {}): Promise<PaginatedResponse<Payment>> {
+export async function listPayments(
+  filters: {
+    from?: string
+    to?: string
+    method?: string
+    page?: number
+    limit?: number
+  } = {},
+): Promise<PaginatedResponse<Payment>> {
   const { data } = await api.get('/finances/payments', { params: filters })
   return data
 }
@@ -38,14 +49,16 @@ export async function deletePayment(id: string): Promise<void> {
 
 // ─── EXPENSES ────────────────────────────────────────────────────────────────
 
-export async function listExpenses(filters: {
-  status?: string
-  from?: string
-  to?: string
-  category?: string
-  page?: number
-  limit?: number
-} = {}): Promise<PaginatedResponse<Expense>> {
+export async function listExpenses(
+  filters: {
+    status?: string
+    from?: string
+    to?: string
+    category?: string
+    page?: number
+    limit?: number
+  } = {},
+): Promise<PaginatedResponse<Expense>> {
   const { data } = await api.get('/finances/expenses', { params: filters })
   return data
 }
@@ -103,11 +116,13 @@ export async function payCommission(input: {
   return data.data
 }
 
-export async function listCommissionPayments(params: {
-  barberId?: string
-  from?: string
-  to?: string
-} = {}): Promise<CommissionPayment[]> {
+export async function listCommissionPayments(
+  params: {
+    barberId?: string
+    from?: string
+    to?: string
+  } = {},
+): Promise<CommissionPayment[]> {
   const { data } = await api.get('/finances/commissions/payments', { params })
   return data.data
 }

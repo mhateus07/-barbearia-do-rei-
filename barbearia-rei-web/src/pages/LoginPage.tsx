@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { Scissors, Mail, Lock, ArrowRight } from 'lucide-react'
+import { useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../contexts/auth-context'
+import { Scissors, Mail, Lock, ArrowRight, Store } from 'lucide-react'
 
 export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const [slug, setSlug] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -16,10 +17,10 @@ export function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      await login(email, password)
+      await login(slug, email, password)
       navigate('/dashboard')
     } catch {
-      setError('E-mail ou senha inválidos.')
+      setError('Endereço, e-mail ou senha inválidos.')
     } finally {
       setLoading(false)
     }
@@ -33,15 +34,16 @@ export function LoginPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 shadow-lg shadow-amber-500/30">
             <Scissors className="h-5 w-5 text-white" strokeWidth={2.5} />
           </div>
-          <span className="text-white font-bold text-lg">Barbearia do Rei</span>
+          <span className="text-white font-bold text-lg">Gestão de Barbearia</span>
         </div>
         <div>
           <h2 className="text-4xl font-bold text-white leading-tight mb-4">
-            Não é só corte,<br />
+            Não é só corte,
+            <br />
             <span className="text-amber-400">é cuidado.</span>
           </h2>
           <p className="text-zinc-400 text-lg leading-relaxed">
-            Na Barbearia do Rei, sua imagem é prioridade.
+            Gestão completa para a sua barbearia, num só lugar.
           </p>
         </div>
         <div className="flex gap-8">
@@ -71,6 +73,21 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
+              <label className="text-sm font-medium text-zinc-300">Endereço da sua barbearia</label>
+              <div className="relative">
+                <Store className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                <input
+                  type="text"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  placeholder="minha-barbearia"
+                  required
+                  className="w-full rounded-xl bg-zinc-800/80 border border-zinc-700 pl-10 pr-4 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
               <label className="text-sm font-medium text-zinc-300">E-mail</label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
@@ -78,7 +95,7 @@ export function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@barbeariadorei.com"
+                  placeholder="seu@email.com"
                   required
                   className="w-full rounded-xl bg-zinc-800/80 border border-zinc-700 pl-10 pr-4 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
                 />
@@ -120,6 +137,13 @@ export function LoginPage() {
                 </>
               )}
             </button>
+
+            <p className="text-center text-sm text-zinc-500 pt-2">
+              Ainda não tem conta?{' '}
+              <Link to="/signup" className="text-amber-400 hover:text-amber-300 font-medium">
+                Criar barbearia grátis
+              </Link>
+            </p>
           </form>
         </div>
       </div>

@@ -1,5 +1,133 @@
 # Changelog — Barbearia do Rei
 
+## [23/08/2026] — Cobrança recorrente dos tenants via Mercado Pago
+
+Primeira forma da SaaS se cobrar sozinha: módulo `billing` novo, cartão e Pix,
+plano único. Usa as credenciais de produção do Mercado Pago que já estavam
+guardadas de uma sessão anterior (ver "Adiado" de 22/07).
+
+- Novos models `Subscription`/`SubscriptionPayment` (1 assinatura por tenant,
+  histórico de cobranças), fora do isolamento automático por tenant do Prisma
+  de propósito — webhook e job de renovação localizam registros por ID
+  externo do Mercado Pago antes de existir um `tenantId` de contexto
+- **Cartão**: assinatura de verdade via `preapproval` do MP — o admin
+  autoriza uma vez no checkout hospedado do próprio MP, cobrança automática
+  todo ciclo dali em diante
+- **Pix**: sem débito automático maduro no Brasil ainda, então o sistema
+  gera uma nova cobrança Pix (QR code) a cada ciclo via um job diário
+  (`billing-scan`/`billing-renew`, mesmo padrão scheduler→fila-por-tenant já
+  usado pelos lembretes de WhatsApp) — o tenant paga manualmente todo mês
+- Webhook (`POST /api/v1/webhooks/mercadopago`) validado por assinatura HMAC
+  (`x-signature`), nunca por token estático; sempre rebusca o recurso pela
+  API do MP usando o ID antes de agir, nunca confia no corpo da notificação
+- Painel: página `/assinatura` nova (status, forma de pagamento, próxima
+  cobrança, histórico, QR code do Pix com copia-e-cola)
+- **Sem enforcement ainda**: tenant em `PAST_DUE`/inadimplente continua com
+  acesso normal — o sistema só passou a rastrear e mostrar o status real da
+  assinatura. Bloqueio de acesso fica pra uma iteração futura, por decisão
+  deliberada (evitar suspender cliente pagante por falha transitória do
+  gateway antes de o fluxo estar validado em produção)
+
+### Adiado / não incluído nesta sessão
+- Bloqueio de acesso do tenant inadimplente (`PAST_DUE`/`SUSPENDED`)
+- Pix Automático de verdade (débito recorrente sem gerar QR novo a cada mês)
+- Múltiplos planos/tiers (hoje é plano único, valor fixo via `MP_PLAN_PRICE`)
+- Testado só com `npx tsc`/`vitest`/`eslint` — **fluxo ponta a ponta com o
+  Mercado Pago (sandbox) ainda não foi validado manualmente**, banco local
+  não estava acessível nesta sessão pra rodar a migration
+
+## [22/07/2026] — Conversão para SaaS multi-tenant + deploy em produção
+
+Sessão longa: o painel single-tenant da Barbearia do Rei virou uma SaaS
+multi-tenant completa, vendável para outras barbearias, terminando com
+deploy real em produção. Branch `saas-multi-tenant` no mesmo repositório
+(o código do cliente real permanece intocado no VPS antigo).
+
+### Multi-tenancy (schema + isolamento)
+- Novo modelo `Tenant` + `tenantId` em todos os 11 modelos de negócio, via
+  3 migrações 100% aditivas (nullable → backfill → NOT NULL + constraints
+  compostas), testadas contra cópia real do banco antes de aplicar
+- Isolamento por tenant implementado com `AsyncLocalStorage` +
+  Prisma Client Extension (`src/lib/prisma.ts`) — injeta `tenantId`
+  automaticamente em toda operação sobre os modelos de negócio, sem
+  precisar editar os ~83 pontos de acesso ao banco espalhados pelos
+  services
+- **Isolamento testado com dois tenants reais rodando lado a lado**:
+  painel admin, rotas públicas e até o caso de um JWT de um tenant com
+  header de outro (o JWT sempre vence) — zero vazamento de dado
+
+### Branding dinâmico por tenant
+- Todo hardcode de "Barbearia do Rei" removido de Sidebar, LoginPage,
+  ShowcasePage, BookingPage e do cabeçalho do PDF financeiro
+- `GET /public/:slug/info` devolve nome, logo, endereço, telefone,
+  Instagram, horários e portfólio de cada tenant
+- Upload de logo e galeria de portfólio direto pelo painel
+  (`/configuracoes`), salvos em disco no VPS (uma pasta por tenant)
+
+### Onboarding self-serve
+- Cadastro público (`/signup`): cria barbearia + admin + serviço inicial
+  numa operação só, já loga automaticamente — sem nenhum passo manual
+  de banco
+
+### Jobs em background
+- BullMQ + Redis conectam a função de lembrete de WhatsApp (que já
+  existia mas não era chamada por nada) a um agendamento real: varre
+  tenants ativos periodicamente e envia lembretes isolados por tenant
+
+### Estrutura de URL: path/slug em vez de subdomínio
+- Decisão inicial era subdomínio por tenant, revertida ao descobrir que
+  o VPS de produção usa Traefik com certificado por domínio exato (não
+  wildcard) — subdomínio novo exigiria DNS + deploy manual a cada
+  cadastro, o que quebraria o self-serve
+- Modelo final: um domínio único (`saas.impulsiodigital.com`), tenant
+  identificado por slug na URL (`/sua-barbearia/agendar`); login passa a
+  pedir slug + e-mail + senha
+
+### Docker + deploy em produção
+- Dockerfile único (build do front + build da API + runtime), a própria
+  API passa a servir os arquivos estáticos do front (mesmo container,
+  mesmo domínio) — não há nginx próprio, o Traefik que já roda no VPS
+  cuida do roteamento e HTTPS
+- `docker-compose.yml` (base, testável localmente) +
+  `docker-compose.prod.yml` (overlay com os labels do Traefik) +
+  `docker-compose.local.yml` (porta publicada, só dev)
+- **Deploy real concluído**: https://saas.impulsiodigital.com no ar,
+  HTTPS válido via Let's Encrypt (Traefik existente), rodando em
+  `/opt/barbearia-saas` no VPS `173.212.208.109`
+- VPS teve a chave SSH configurada e login por senha desabilitado
+  (hardening de segurança)
+
+### Bugs reais encontrados e corrigidos durante os testes/deploy
+- Contexto de tenant se perdia depois do parsing assíncrono do `multer`
+  no upload de imagens — corrigido reestabelecendo o contexto a partir
+  de `req.tenantId`
+- `prisma.config.ts` (raiz do projeto) não estava sendo copiado pra
+  imagem Docker de runtime, quebrando `prisma migrate deploy` dentro do
+  container
+- Container ficou em duas redes Docker diferentes (a do compose e a
+  overlay do Traefik); o Traefik tentava rotear pelo IP da rede errada
+  (isolada) e todo request dava timeout — corrigido com o label
+  `traefik.docker.network=easypanel`
+- `ports: []` num arquivo de override do Compose não limpava a
+  publicação de porta do arquivo base — a porta 3333 ficou acessível
+  direto da internet por alguns minutos, ignorando Traefik/HTTPS;
+  corrigido removendo a publicação de porta do arquivo base
+
+### Fundação (testes/CI)
+- Vitest + Supertest, primeiros testes automatizados do projeto
+  (`auth.service`, `public.service`)
+- CI no GitHub Actions (lint + typecheck + testes) em todo PR
+
+### Adiado / não incluído nesta sessão
+- Cobrança recorrente via Mercado Pago e Pix de sinal (credenciais de
+  produção já em mãos, guardadas, aguardando implementação)
+- Automação do deploy via CI/CD (hoje é `git pull` + `docker compose up`
+  manual por SSH)
+- Concierge de WhatsApp com IA (Claude API) — pulado a pedido do
+  usuário, sem urgência
+
+---
+
 ## [31/03/2026] — Sessão de desenvolvimento
 
 ### Agendamento Online pelo Cliente (link público)
@@ -83,14 +211,26 @@
 ---
 
 ## Stack
+
+### Sistema original (cliente real, single-tenant)
 - **Backend**: Node.js + Express 5 + Prisma 7 + PostgreSQL + JWT + Zod
 - **Frontend**: React + Vite + Tailwind CSS 3 + React Query + Recharts + jsPDF
-- **Banco (VPS)**: 31.97.160.94 — `barbearia_rei`
-- **Repositório**: https://github.com/mhateus07/-barbearia-do-rei-
+- **VPS**: 31.97.160.94 — domínio `rei.impulsiodigital.com` — banco `barbearia_rei`
+- **Repositório**: https://github.com/mhateus07/-barbearia-do-rei- (branch `main`)
 
-## Próximos passos planejados
-- Deploy na VPS
-- Agendamento pelo cliente (link público sem login)
-- Notificações via WhatsApp
-- Agenda semanal
-- Programa de fidelidade
+### SaaS multi-tenant (branch `saas-multi-tenant`)
+- **Backend**: Node.js + Express 5 + Prisma 7 (Client Extension pra
+  multi-tenancy) + PostgreSQL + JWT + Zod + BullMQ + Redis + Multer
+- **Frontend**: React + Vite + Tailwind CSS 3 + React Query + Recharts + jsPDF
+- **Infra**: Docker + docker-compose, deploy atrás do Traefik já
+  existente no VPS (Easypanel)
+- **VPS**: 173.212.208.109 — domínio `saas.impulsiodigital.com` — pasta
+  `/opt/barbearia-saas`
+- **Repositório**: https://github.com/mhateus07/-barbearia-do-rei-
+  (branch `saas-multi-tenant`)
+
+## Próximos passos planejados (SaaS)
+- Cobrança recorrente das barbearias-clientes via Mercado Pago
+- Pix de sinal no agendamento público (reduzir no-show)
+- Automatizar o deploy via CI/CD (hoje é manual via SSH)
+- Concierge de WhatsApp com IA (Claude API) — pausado por enquanto

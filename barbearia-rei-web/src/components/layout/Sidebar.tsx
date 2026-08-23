@@ -3,9 +3,11 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard,
   CalendarDays,
+  Hourglass,
   Users,
   Scissors,
   Sparkles,
+  PackageIcon,
   Wallet,
   ImageIcon,
   Settings,
@@ -13,18 +15,22 @@ import {
   Link2,
   Check,
   ExternalLink,
+  CreditCard,
 } from 'lucide-react'
-
-const BOOKING_URL = `${window.location.origin}/agendar`
+import { useBranding } from '../../contexts/branding-context'
+import { useAuth } from '../../contexts/auth-context'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/agendamentos', label: 'Agendamentos', icon: CalendarDays },
+  { to: '/lista-espera', label: 'Lista de Espera', icon: Hourglass },
   { to: '/financeiro', label: 'Financeiro', icon: Wallet },
   { to: '/clientes', label: 'Clientes', icon: Users },
   { to: '/barbeiros', label: 'Barbeiros', icon: Scissors },
   { to: '/servicos', label: 'Serviços', icon: Sparkles },
+  { to: '/pacotes', label: 'Pacotes', icon: PackageIcon },
   { to: '/vitrine', label: 'Vitrine', icon: ImageIcon },
+  { to: '/assinatura', label: 'Assinatura', icon: CreditCard },
   { to: '/configuracoes', label: 'Configurações', icon: Settings },
 ]
 
@@ -35,9 +41,12 @@ interface SidebarProps {
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const [copied, setCopied] = useState(false)
+  const { branding } = useBranding()
+  const { tenantSlug } = useAuth()
+  const bookingUrl = `${window.location.origin}/${tenantSlug}/agendar`
 
   function copyLink() {
-    navigator.clipboard.writeText(BOOKING_URL)
+    navigator.clipboard.writeText(bookingUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -54,18 +63,25 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       {/* Logo */}
       <div className="px-6 py-5 border-b border-zinc-800/60">
         <div className="flex items-center gap-3">
-          <img
-            src="/logo.jpeg"
-            alt="Barbearia do Rei"
-            className="h-10 w-10 rounded-xl object-cover shadow-lg shadow-amber-500/20"
-          />
+          {branding.logoUrl ? (
+            <img
+              src={branding.logoUrl}
+              alt={branding.shopName}
+              className="h-10 w-10 rounded-xl object-cover shadow-lg shadow-amber-500/20"
+            />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 shadow-lg shadow-amber-500/20">
+              <Scissors className="h-5 w-5 text-amber-400" />
+            </div>
+          )}
           <div className="flex-1">
-            <p className="font-bold text-white text-sm leading-tight">Barbearia do Rei</p>
+            <p className="font-bold text-white text-sm leading-tight">{branding.shopName}</p>
             <p className="text-[11px] text-zinc-500 leading-tight">Painel Administrativo</p>
           </div>
           {/* Botão fechar no mobile */}
           <button
             onClick={onClose}
+            aria-label="Fechar menu"
             className="md:hidden rounded-lg p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
           >
             <X className="h-5 w-5" />
@@ -107,7 +123,9 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       {/* Agendamento Online */}
       <div className="px-3 pb-3">
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-          <p className="text-[11px] font-semibold text-amber-400 mb-2 uppercase tracking-wide">Agendamento Online</p>
+          <p className="text-[11px] font-semibold text-amber-400 mb-2 uppercase tracking-wide">
+            Agendamento Online
+          </p>
           <div className="flex gap-1.5">
             <button
               onClick={copyLink}
@@ -117,9 +135,10 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               {copied ? 'Copiado!' : 'Copiar link'}
             </button>
             <a
-              href={BOOKING_URL}
+              href={bookingUrl}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Abrir página de agendamento online em nova aba"
               className="flex items-center justify-center rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 px-2.5 transition-colors"
             >
               <ExternalLink className="h-3.5 w-3.5" />
@@ -129,11 +148,14 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-4 border-t border-zinc-800/60 space-y-1">
-        <p className="text-[10px] text-zinc-600 leading-snug">São João del Rei · MG</p>
-        <p className="text-[10px] text-zinc-600">(32) 99160-8852</p>
-        <p className="text-[10px] text-zinc-700">⭐ 5.0 · 32 avaliações</p>
-      </div>
+      {(branding.shopAddress || branding.shopPhone) && (
+        <div className="px-4 py-4 border-t border-zinc-800/60 space-y-1">
+          {branding.shopAddress && (
+            <p className="text-[10px] text-zinc-600 leading-snug">{branding.shopAddress}</p>
+          )}
+          {branding.shopPhone && <p className="text-[10px] text-zinc-600">{branding.shopPhone}</p>}
+        </div>
+      )}
     </aside>
   )
 }

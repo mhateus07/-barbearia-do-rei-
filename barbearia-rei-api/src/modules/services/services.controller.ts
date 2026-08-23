@@ -1,6 +1,6 @@
 import { Response } from 'express'
 import { AuthRequest } from '../../middlewares/auth.middleware'
-import { success, apiError } from '../../utils/response'
+import { success } from '../../utils/response'
 import {
   listServices,
   getServiceById,
@@ -10,19 +10,13 @@ import {
 } from './services.service'
 
 export async function list(req: AuthRequest, res: Response) {
-  const isActive = req.query.isActive !== undefined
-    ? req.query.isActive === 'true'
-    : undefined
+  const isActive = req.query.isActive !== undefined ? req.query.isActive === 'true' : undefined
   const services = await listServices(isActive)
   return success(res, services)
 }
 
 export async function getOne(req: AuthRequest, res: Response) {
-  try {
-    return success(res, await getServiceById(req.params.id))
-  } catch (err) {
-    return apiError(res, (err as Error).message, 404)
-  }
+  return success(res, await getServiceById(req.params.id))
 }
 
 export async function create(req: AuthRequest, res: Response) {
@@ -30,18 +24,10 @@ export async function create(req: AuthRequest, res: Response) {
 }
 
 export async function update(req: AuthRequest, res: Response) {
-  try {
-    return success(res, await updateService(req.params.id, req.body))
-  } catch (err) {
-    return apiError(res, (err as Error).message, 404)
-  }
+  return success(res, await updateService(req.params.id, req.body))
 }
 
 export async function remove(req: AuthRequest, res: Response) {
-  try {
-    await deactivateService(req.params.id)
-    return success(res, { message: 'Serviço desativado com sucesso' })
-  } catch (err) {
-    return apiError(res, (err as Error).message, 404)
-  }
+  await deactivateService(req.params.id)
+  return success(res, { message: 'Serviço desativado com sucesso' })
 }

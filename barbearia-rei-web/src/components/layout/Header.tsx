@@ -1,5 +1,5 @@
 import { LogOut, User, Menu } from 'lucide-react'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/auth-context'
 
 interface HeaderProps {
   onMenuClick: () => void
@@ -30,6 +30,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         </div>
         <button
           onClick={logout}
+          aria-label="Sair"
           className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 transition-colors"
         >
           <LogOut className="h-4 w-4" />

@@ -1,0 +1,74 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-barbearia}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      POSTGRES_DB: ${POSTGRES_DB:-barbearia_rei}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-barbearia}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # API + front estático servidos pelo mesmo container (ver Dockerfile na
+  # raiz). Sem porta publicada aqui de propósito — Compose não confiavelmente
+  # limpa uma lista `ports` de um service via override (testado: `ports: []`
+  # no arquivo de prod NÃO removia o mapeamento, deixando a porta 3333
+  # acessível direto da internet por fora do Traefik). Pra dev/teste local,
+  # use docker-compose.local.yml; em produção, docker-compose.prod.yml
+  # adiciona o Traefik do VPS (ver esse arquivo pros labels de roteamento).
+  api:
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file: ./barbearia-rei-api/.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-barbearia}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-barbearia_rei}
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - uploads:/app/uploads
+    command: sh -c "npx prisma migrate deploy && node dist/server.js"
+
+  worker:
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
+    env_file: ./barbearia-rei-api/.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-barbearia}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-barbearia_rei}
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - uploads:/app/uploads
+    command: node dist/worker.js
+
+volumes:
+  pgdata:
+  redisdata:
+  uploads:

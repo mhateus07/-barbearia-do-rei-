@@ -1,5 +1,8 @@
 import { ExpenseStatus } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
+import { getTenantId } from '../../lib/tenant-context'
+import { AppError } from '../../lib/errors'
+import { parseDateParam } from '../../utils/date'
 import {
   CreatePaymentInput,
   CreateExpenseInput,
@@ -23,8 +26,8 @@ export async function listPayments(filters: {
 
   if (from || to) {
     where.paidAt = {
-      ...(from ? { gte: new Date(from) } : {}),
-      ...(to ? { lte: new Date(`${to}T23:59:59`) } : {}),
+      ...(from ? { gte: parseDateParam(from, 'from') } : {}),
+      ...(to ? { lte: parseDateParam(`${to}T23:59:59`, 'to') } : {}),
     }
   }
 
@@ -60,16 +63,17 @@ export async function createPayment(input: CreatePaymentInput) {
     const existing = await prisma.payment.findUnique({
       where: { appointmentId: input.appointmentId },
     })
-    if (existing) throw new Error('Este agendamento já possui um pagamento registrado')
+    if (existing) throw new AppError('Este agendamento já possui um pagamento registrado', 409)
 
     const appointment = await prisma.appointment.findUnique({
       where: { id: input.appointmentId },
     })
-    if (!appointment) throw new Error('Agendamento não encontrado')
+    if (!appointment) throw new AppError('Agendamento não encontrado', 404)
   }
 
   return prisma.payment.create({
     data: {
+      tenantId: getTenantId(),
       amount: input.amount,
       method: input.method,
       paidAt: input.paidAt ? new Date(input.paidAt) : new Date(),
@@ -93,7 +97,7 @@ export async function createPayment(input: CreatePaymentInput) {
 
 export async function deletePayment(id: string) {
   const payment = await prisma.payment.findUnique({ where: { id } })
-  if (!payment) throw new Error('Pagamento não encontrado')
+  if (!payment) throw new AppError('Pagamento não encontrado', 404)
   return prisma.payment.delete({ where: { id } })
 }
 
@@ -116,8 +120,8 @@ export async function listExpenses(filters: {
 
   if (from || to) {
     where.dueDate = {
-      ...(from ? { gte: new Date(from) } : {}),
-      ...(to ? { lte: new Date(`${to}T23:59:59`) } : {}),
+      ...(from ? { gte: parseDateParam(from, 'from') } : {}),
+      ...(to ? { lte: parseDateParam(`${to}T23:59:59`, 'to') } : {}),
     }
   }
 
@@ -137,6 +141,7 @@ export async function listExpenses(filters: {
 export async function createExpense(input: CreateExpenseInput) {
   return prisma.expense.create({
     data: {
+      tenantId: getTenantId(),
       description: input.description,
       amount: input.amount,
       category: input.category,
@@ -148,7 +153,7 @@ export async function createExpense(input: CreateExpenseInput) {
 
 export async function updateExpense(id: string, input: UpdateExpenseInput) {
   const expense = await prisma.expense.findUnique({ where: { id } })
-  if (!expense) throw new Error('Despesa não encontrada')
+  if (!expense) throw new AppError('Despesa não encontrada', 404)
 
   return prisma.expense.update({
     where: { id },
@@ -165,8 +170,8 @@ export async function updateExpense(id: string, input: UpdateExpenseInput) {
 
 export async function payExpense(id: string, input: PayExpenseInput) {
   const expense = await prisma.expense.findUnique({ where: { id } })
-  if (!expense) throw new Error('Despesa não encontrada')
-  if (expense.status === ExpenseStatus.PAID) throw new Error('Despesa já foi paga')
+  if (!expense) throw new AppError('Despesa não encontrada', 404)
+  if (expense.status === ExpenseStatus.PAID) throw new AppError('Despesa já foi paga', 400)
 
   return prisma.expense.update({
     where: { id },
@@ -179,15 +184,17 @@ export async function payExpense(id: string, input: PayExpenseInput) {
 
 export async function deleteExpense(id: string) {
   const expense = await prisma.expense.findUnique({ where: { id } })
-  if (!expense) throw new Error('Despesa não encontrada')
+  if (!expense) throw new AppError('Despesa não encontrada', 404)
   return prisma.expense.delete({ where: { id } })
 }
 
 // ─── COMMISSIONS ─────────────────────────────────────────────────────────────
 
 export async function getCommissions(from?: string, to?: string) {
-  const fromDate = from ? new Date(`${from}T00:00:00`) : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-  const toDate = to ? new Date(`${to}T23:59:59`) : new Date()
+  const fromDate = from
+    ? parseDateParam(from, 'from')
+    : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  const toDate = to ? parseDateParam(`${to}T23:59:59`, 'to') : new Date()
 
   const barbers = await prisma.barber.findMany({ where: { isActive: true } })
 
@@ -222,10 +229,11 @@ export async function getCommissions(from?: string, to?: string) {
 
 export async function payCommission(input: PayCommissionInput) {
   const barber = await prisma.barber.findUnique({ where: { id: input.barberId } })
-  if (!barber) throw new Error('Barbeiro não encontrado')
+  if (!barber) throw new AppError('Barbeiro não encontrado', 404)
 
   return prisma.commissionPayment.create({
     data: {
+      tenantId: getTenantId(),
       barberId: input.barberId,
       periodFrom: new Date(`${input.periodFrom}T00:00:00`),
       periodTo: new Date(`${input.periodTo}T23:59:59`),
@@ -246,8 +254,8 @@ export async function listCommissionPayments(barberId?: string, from?: string, t
   if (barberId) where.barberId = barberId
   if (from || to) {
     where.paidAt = {
-      ...(from ? { gte: new Date(from) } : {}),
-      ...(to ? { lte: new Date(`${to}T23:59:59`) } : {}),
+      ...(from ? { gte: parseDateParam(from, 'from') } : {}),
+      ...(to ? { lte: parseDateParam(`${to}T23:59:59`, 'to') } : {}),
     }
   }
 
@@ -261,8 +269,10 @@ export async function listCommissionPayments(barberId?: string, from?: string, t
 // ─── FINANCIAL SUMMARY ───────────────────────────────────────────────────────
 
 export async function getFinancialSummary(from?: string, to?: string) {
-  const fromDate = from ? new Date(from) : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-  const toDate = to ? new Date(`${to}T23:59:59`) : new Date()
+  const fromDate = from
+    ? parseDateParam(from, 'from')
+    : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  const toDate = to ? parseDateParam(`${to}T23:59:59`, 'to') : new Date()
 
   const [payments, expenses, pendingExpenses] = await Promise.all([
     prisma.payment.findMany({
@@ -291,7 +301,11 @@ export async function getFinancialSummary(from?: string, to?: string) {
     .reduce((sum, e) => sum + Number(e.amount), 0)
 
   const totalOverdue = pendingExpenses
-    .filter((e) => e.status === ExpenseStatus.OVERDUE || (e.status === ExpenseStatus.PENDING && new Date(e.dueDate) < new Date()))
+    .filter(
+      (e) =>
+        e.status === ExpenseStatus.OVERDUE ||
+        (e.status === ExpenseStatus.PENDING && new Date(e.dueDate) < new Date()),
+    )
     .reduce((sum, e) => sum + Number(e.amount), 0)
 
   // Income by payment method

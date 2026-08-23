@@ -7,6 +7,7 @@ export const createAppointmentSchema = z.object({
   serviceIds: z.array(z.string().uuid()).min(1, 'Selecione pelo menos um serviço'),
   startsAt: z.string().min(1, 'Data/hora obrigatória'),
   notes: z.string().optional(),
+  clientPackageId: z.string().uuid().optional(),
 })
 
 export const updateAppointmentSchema = z.object({

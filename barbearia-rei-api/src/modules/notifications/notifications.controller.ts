@@ -2,7 +2,12 @@ import { Response } from 'express'
 import { NotificationStatus, NotificationType } from '@prisma/client'
 import { AuthRequest } from '../../middlewares/auth.middleware'
 import { success, paginate, apiError } from '../../utils/response'
-import { listNotificationLogs, sendAndLog, sendPendingReminders } from './notifications.service'
+import {
+  listNotificationLogs,
+  sendAndLog,
+  sendPendingReminders,
+  sendPendingReviewRequests,
+} from './notifications.service'
 
 export async function listLogsHandler(req: AuthRequest, res: Response) {
   const { status, type, page = '1', limit = '50' } = req.query as Record<string, string>
@@ -16,21 +21,18 @@ export async function listLogsHandler(req: AuthRequest, res: Response) {
 }
 
 export async function sendCustomHandler(req: AuthRequest, res: Response) {
-  try {
-    const { phone, message, clientId, appointmentId } = req.body
-    if (!phone || !message) return apiError(res, 'phone e message são obrigatórios', 400)
-    const result = await sendAndLog({ type: 'CUSTOM', phone, message, clientId, appointmentId })
-    return success(res, result)
-  } catch (err) {
-    return apiError(res, (err as Error).message, 400)
-  }
+  const { phone, message, clientId, appointmentId } = req.body
+  if (!phone || !message) return apiError(res, 'phone e message são obrigatórios', 400)
+  const result = await sendAndLog({ type: 'CUSTOM', phone, message, clientId, appointmentId })
+  return success(res, result)
 }
 
 export async function sendRemindersHandler(req: AuthRequest, res: Response) {
-  try {
-    const result = await sendPendingReminders()
-    return success(res, result)
-  } catch (err) {
-    return apiError(res, (err as Error).message, 500)
-  }
+  const result = await sendPendingReminders()
+  return success(res, result)
+}
+
+export async function sendReviewRequestsHandler(req: AuthRequest, res: Response) {
+  const result = await sendPendingReviewRequests()
+  return success(res, result)
 }

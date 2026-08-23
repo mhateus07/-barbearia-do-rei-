@@ -4,11 +4,7 @@ export function success<T>(res: Response, data: T, statusCode = 200) {
   return res.status(statusCode).json({ data })
 }
 
-export function paginate<T>(
-  res: Response,
-  data: T[],
-  meta: { total: number; page: number; limit: number },
-) {
+export function paginate<T>(res: Response, data: T[], meta: { total: number; page: number; limit: number }) {
   return res.status(200).json({
     data,
     meta: {

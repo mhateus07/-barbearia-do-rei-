@@ -25,15 +25,13 @@ export async function createAppointment(input: {
   serviceIds: string[]
   startsAt: string
   notes?: string
+  clientPackageId?: string
 }): Promise<Appointment> {
   const { data } = await api.post('/appointments', input)
   return data.data
 }
 
-export async function updateAppointmentStatus(
-  id: string,
-  status: AppointmentStatus,
-): Promise<Appointment> {
+export async function updateAppointmentStatus(id: string, status: AppointmentStatus): Promise<Appointment> {
   const { data } = await api.patch(`/appointments/${id}/status`, { status })
   return data.data
 }

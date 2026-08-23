@@ -18,9 +18,7 @@ export function Card({ title, value, subtitle, icon, accent }: CardProps) {
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-zinc-500">{title}</p>
-          <p className={`mt-1 text-2xl font-bold ${accent ? 'text-amber-600' : 'text-zinc-800'}`}>
-            {value}
-          </p>
+          <p className={`mt-1 text-2xl font-bold ${accent ? 'text-amber-600' : 'text-zinc-800'}`}>{value}</p>
           {subtitle && <p className="mt-1 text-xs text-zinc-400">{subtitle}</p>}
         </div>
         {icon && <div className={`text-2xl ${accent ? 'text-amber-500' : 'text-zinc-400'}`}>{icon}</div>}

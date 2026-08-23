@@ -1,10 +1,5 @@
 export type AppointmentStatus =
-  | 'SCHEDULED'
-  | 'CONFIRMED'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'CANCELLED'
-  | 'NO_SHOW'
+  'SCHEDULED' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
 
 export interface Admin {
   id: string
@@ -69,6 +64,8 @@ export interface Appointment {
   client: { id: string; name: string; phone: string }
   barber: { id: string; name: string }
   services: AppointmentService[]
+  clientPackageId?: string | null
+  clientPackage?: { id: string; package: { name: string } } | null
   createdAt: string
 }
 
@@ -92,7 +89,8 @@ export interface PaginatedResponse<T> {
 }
 
 export type PaymentMethod = 'CASH' | 'PIX' | 'CREDIT_CARD' | 'DEBIT_CARD'
-export type ExpenseCategory = 'RENT' | 'UTILITIES' | 'SUPPLIES' | 'SALARY' | 'EQUIPMENT' | 'MARKETING' | 'OTHER'
+export type ExpenseCategory =
+  'RENT' | 'UTILITIES' | 'SUPPLIES' | 'SALARY' | 'EQUIPMENT' | 'MARKETING' | 'OTHER'
 export type ExpenseStatus = 'PENDING' | 'PAID' | 'OVERDUE'
 
 export interface Payment {
@@ -157,6 +155,8 @@ export type NotificationType =
   | 'APPOINTMENT_CONFIRMATION'
   | 'APPOINTMENT_REMINDER'
   | 'APPOINTMENT_CANCELLATION'
+  | 'REVIEW_REQUEST'
+  | 'WAITLIST_SLOT_OPEN'
   | 'CUSTOM'
 
 export interface NotificationLog {
@@ -172,6 +172,44 @@ export interface NotificationLog {
   appointment?: { id: string; startsAt: string } | null
 }
 
+export interface Package {
+  id: string
+  name: string
+  description?: string
+  totalSessions: number
+  price: number
+  validityDays?: number
+  isActive: boolean
+  service: { id: string; name: string }
+  createdAt: string
+}
+
+export interface ClientPackage {
+  id: string
+  sessionsTotal: number
+  sessionsUsed: number
+  sessionsRemaining: number
+  active: boolean
+  pricePaid: number
+  purchasedAt: string
+  expiresAt?: string
+  package: { id: string; name: string; serviceId: string; service: { id: string; name: string } }
+}
+
+export type WaitlistStatus = 'WAITING' | 'NOTIFIED' | 'CONVERTED' | 'CANCELLED'
+
+export interface WaitlistEntry {
+  id: string
+  preferredDate: string
+  status: WaitlistStatus
+  notes?: string
+  notifiedAt?: string
+  client: { id: string; name: string; phone: string }
+  barber?: { id: string; name: string } | null
+  service?: { id: string; name: string } | null
+  createdAt: string
+}
+
 export interface FinancialSummary {
   totalIncome: number
   totalExpenses: number
@@ -182,4 +220,32 @@ export interface FinancialSummary {
   expensesByCategory: Record<string, number>
   cashFlowByDay: { date: string; income: number; expenses: number; balance: number }[]
   period: { from: string; to: string }
+}
+
+// ─── ASSINATURA (cobrança do tenant com a plataforma) ────────────────────────
+
+export type SubscriptionStatus = 'PENDING_SETUP' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED'
+export type BillingMethod = 'CARD' | 'PIX'
+export type SubscriptionPaymentStatus = 'PENDING' | 'PAID' | 'OVERDUE' | 'FAILED' | 'REFUNDED'
+
+export interface Subscription {
+  id: string
+  method: BillingMethod | null
+  status: SubscriptionStatus
+  amount: number
+  nextDueDate?: string | null
+  canceledAt?: string | null
+  payments: SubscriptionPayment[]
+}
+
+export interface SubscriptionPayment {
+  id: string
+  method: BillingMethod
+  status: SubscriptionPaymentStatus
+  amount: number
+  dueDate: string
+  paidAt?: string | null
+  pixQrCode?: string | null
+  pixCopyPaste?: string | null
+  createdAt: string
 }

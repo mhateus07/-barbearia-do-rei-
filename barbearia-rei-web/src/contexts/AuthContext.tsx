@@ -1,16 +1,8 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import type { Admin } from '../types'
 import { login as loginApi } from '../api/auth.api'
-
-interface AuthContextValue {
-  admin: Admin | null
-  isAuthenticated: boolean
-  login: (email: string, password: string) => Promise<void>
-  logout: () => void
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null)
+import { AuthContext } from './auth-context'
 
 function getStoredAdmin(): Admin | null {
   try {
@@ -23,29 +15,35 @@ function getStoredAdmin(): Admin | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [admin, setAdmin] = useState<Admin | null>(getStoredAdmin)
+  const [tenantSlug, setTenantSlug] = useState<string | null>(() => localStorage.getItem('tenantSlug'))
 
-  const login = useCallback(async (email: string, password: string) => {
-    const result = await loginApi(email, password)
-    localStorage.setItem('token', result.token)
-    localStorage.setItem('admin', JSON.stringify(result.admin))
-    setAdmin(result.admin)
+  const setSession = useCallback((token: string, admin: Admin, tenantSlug: string) => {
+    localStorage.setItem('token', token)
+    localStorage.setItem('admin', JSON.stringify(admin))
+    localStorage.setItem('tenantSlug', tenantSlug)
+    setAdmin(admin)
+    setTenantSlug(tenantSlug)
   }, [])
+
+  const login = useCallback(
+    async (slug: string, email: string, password: string) => {
+      const result = await loginApi(slug, email, password)
+      setSession(result.token, result.admin, result.tenant.slug)
+    },
+    [setSession],
+  )
 
   const logout = useCallback(() => {
     localStorage.removeItem('token')
     localStorage.removeItem('admin')
+    localStorage.removeItem('tenantSlug')
     setAdmin(null)
+    setTenantSlug(null)
   }, [])
 
   return (
-    <AuthContext.Provider value={{ admin, isAuthenticated: !!admin, login, logout }}>
+    <AuthContext.Provider value={{ admin, tenantSlug, isAuthenticated: !!admin, login, logout, setSession }}>
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth deve ser usado dentro de AuthProvider')
-  return ctx
 }

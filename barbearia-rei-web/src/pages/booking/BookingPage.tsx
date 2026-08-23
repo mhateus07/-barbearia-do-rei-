@@ -1,7 +1,20 @@
 import { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
+import axios from 'axios'
 import {
-  Scissors, User, Calendar, Clock, CheckCircle2, ChevronLeft,
-  ChevronRight, Loader2, Phone, Mail, MessageSquare, Star, MapPin,
+  Scissors,
+  User,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Phone,
+  Mail,
+  MessageSquare,
+  Star,
+  MapPin,
 } from 'lucide-react'
 import {
   getPublicInfo,
@@ -10,7 +23,7 @@ import {
   getAvailableSlots,
   createPublicAppointment,
 } from '../../api/public.api'
-import type { PublicService, PublicBarber, PublicInfo } from '../../api/public.api'
+import type { PublicService, PublicBarber, PublicInfo, PublicAppointmentResult } from '../../api/public.api'
 import { formatCurrency } from '../../utils/formatCurrency'
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6
@@ -44,6 +57,7 @@ function formatDateBR(dateStr: string) {
 }
 
 export function BookingPage() {
+  const { tenantSlug = '' } = useParams<{ tenantSlug: string }>()
   const [step, setStep] = useState<Step>(1)
   const [info, setInfo] = useState<PublicInfo | null>(null)
   const [services, setServices] = useState<PublicService[]>([])
@@ -64,17 +78,17 @@ export function BookingPage() {
 
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
-  const [appointment, setAppointment] = useState<any>(null)
+  const [appointment, setAppointment] = useState<PublicAppointmentResult | null>(null)
 
   useEffect(() => {
-    Promise.all([getPublicInfo(), getPublicServices(), getPublicBarbers()])
+    Promise.all([getPublicInfo(tenantSlug), getPublicServices(tenantSlug), getPublicBarbers(tenantSlug)])
       .then(([i, s, b]) => {
         setInfo(i)
         setServices(s)
         setBarbers(b)
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [tenantSlug])
 
   const totalDuration = selectedServices.reduce((sum, id) => {
     const s = services.find((sv) => sv.id === id)
@@ -87,9 +101,7 @@ export function BookingPage() {
   }, 0)
 
   function toggleService(id: string) {
-    setSelectedServices((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
-    )
+    setSelectedServices((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]))
   }
 
   function handleBarberSelect(id: string) {
@@ -106,7 +118,7 @@ export function BookingPage() {
     if (!date || !selectedBarber) return
     setLoadingSlots(true)
     try {
-      const result = await getAvailableSlots(selectedBarber, date, totalDuration)
+      const result = await getAvailableSlots(tenantSlug, selectedBarber, date, totalDuration)
       setSlots(result)
     } catch {
       setSlots([])
@@ -119,7 +131,7 @@ export function BookingPage() {
     setSubmitting(true)
     setSubmitError('')
     try {
-      const result = await createPublicAppointment({
+      const result = await createPublicAppointment(tenantSlug, {
         clientName,
         clientPhone,
         clientEmail: clientEmail || undefined,
@@ -131,8 +143,9 @@ export function BookingPage() {
       })
       setAppointment(result)
       setStep(6)
-    } catch (err: any) {
-      setSubmitError(err.response?.data?.message || 'Erro ao criar agendamento. Tente novamente.')
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined
+      setSubmitError(message || 'Erro ao criar agendamento. Tente novamente.')
     } finally {
       setSubmitting(false)
     }
@@ -140,9 +153,7 @@ export function BookingPage() {
 
   const today = new Date().toISOString().split('T')[0]
   const barberName =
-    selectedBarber === 'any'
-      ? 'Sem preferência'
-      : barbers.find((b) => b.id === selectedBarber)?.name ?? ''
+    selectedBarber === 'any' ? 'Sem preferência' : (barbers.find((b) => b.id === selectedBarber)?.name ?? '')
 
   const canNextStep1 = selectedServices.length > 0
   const canNextStep2 = selectedBarber !== ''
@@ -162,14 +173,19 @@ export function BookingPage() {
       {/* Header */}
       <header className="border-b border-zinc-800 bg-zinc-900">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <img src="/logo.jpeg" alt="Barbearia do Rei" className="h-10 w-10 rounded-xl object-cover" />
+          {info?.logoUrl ? (
+            <img src={info.logoUrl} alt={info.shopName} className="h-10 w-10 rounded-xl object-cover" />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15">
+              <Scissors className="h-5 w-5 text-amber-400" />
+            </div>
+          )}
           <div>
-            <p className="font-bold text-white leading-tight">{info?.shopName ?? 'Barbearia do Rei'}</p>
+            <p className="font-bold text-white leading-tight">{info?.shopName ?? 'Minha Barbearia'}</p>
             <div className="flex items-center gap-1 mt-0.5">
               {[...Array(5)].map((_, i) => (
                 <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />
               ))}
-              <span className="text-xs text-amber-400 font-semibold ml-1">5.0</span>
             </div>
           </div>
         </div>
@@ -185,7 +201,9 @@ export function BookingPage() {
               </div>
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">Agendamento confirmado!</h2>
-            <p className="text-zinc-400 mb-8">Até logo, {appointment.client.name.split(' ')[0]}! Te esperamos na barbearia.</p>
+            <p className="text-zinc-400 mb-8">
+              Até logo, {appointment.client.name.split(' ')[0]}! Te esperamos na barbearia.
+            </p>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-left space-y-4 mb-8">
               <div className="flex items-center gap-3 pb-4 border-b border-zinc-800">
@@ -193,7 +211,7 @@ export function BookingPage() {
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wide">Serviços</p>
                   <p className="text-white font-medium">
-                    {appointment.services.map((s: any) => s.service.name).join(', ')}
+                    {appointment.services.map((s) => s.service.name).join(', ')}
                   </p>
                 </div>
               </div>
@@ -256,8 +274,8 @@ export function BookingPage() {
                         s < step
                           ? 'bg-amber-500 text-zinc-900'
                           : s === step
-                          ? 'bg-amber-500 text-zinc-900 ring-2 ring-amber-500/30'
-                          : 'bg-zinc-800 text-zinc-500'
+                            ? 'bg-amber-500 text-zinc-900 ring-2 ring-amber-500/30'
+                            : 'bg-zinc-800 text-zinc-500'
                       }`}
                     >
                       {s < step ? <CheckCircle2 className="h-4 w-4" /> : s}
@@ -302,9 +320,7 @@ export function BookingPage() {
                           <div className="flex-1 min-w-0 mr-4">
                             <div className="flex items-center gap-2">
                               <p className="font-semibold text-white">{service.name}</p>
-                              {selected && (
-                                <CheckCircle2 className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                              )}
+                              {selected && <CheckCircle2 className="h-4 w-4 text-amber-500 flex-shrink-0" />}
                             </div>
                             {service.description && (
                               <p className="text-sm text-zinc-400 mt-0.5 truncate">{service.description}</p>
@@ -365,9 +381,7 @@ export function BookingPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-white">Sem preferência</p>
-                          {selectedBarber === 'any' && (
-                            <CheckCircle2 className="h-4 w-4 text-amber-500" />
-                          )}
+                          {selectedBarber === 'any' && <CheckCircle2 className="h-4 w-4 text-amber-500" />}
                         </div>
                         <p className="text-sm text-zinc-400">Qualquer barbeiro disponível</p>
                       </div>
@@ -418,13 +432,17 @@ export function BookingPage() {
               <div className="space-y-6">
                 <div className="mb-6">
                   <h2 className="text-xl font-bold text-white">Escolha a data</h2>
-                  <p className="text-zinc-400 text-sm mt-1">Selecione o dia para ver os horários disponíveis</p>
+                  <p className="text-zinc-400 text-sm mt-1">
+                    Selecione o dia para ver os horários disponíveis
+                  </p>
                 </div>
 
                 {/* Horários de funcionamento */}
                 {info && (
                   <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-                    <p className="text-xs text-zinc-500 uppercase tracking-wide mb-3 font-medium">Horários de funcionamento</p>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wide mb-3 font-medium">
+                      Horários de funcionamento
+                    </p>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
                       {Object.entries(info.hours).map(([day, hours]) => (
                         <div key={day} className="flex justify-between text-sm">
@@ -582,7 +600,9 @@ export function BookingPage() {
                           return s ? (
                             <div key={id} className="flex justify-between text-sm">
                               <span className="text-white">{s.name}</span>
-                              <span className="text-amber-400 font-medium">{formatCurrency(Number(s.price))}</span>
+                              <span className="text-amber-400 font-medium">
+                                {formatCurrency(Number(s.price))}
+                              </span>
                             </div>
                           ) : null
                         })}

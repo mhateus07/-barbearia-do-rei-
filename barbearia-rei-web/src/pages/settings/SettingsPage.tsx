@@ -1,21 +1,36 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Settings, Clock, Star, MessageCircle, Save, RefreshCw,
-  CheckCircle2, AlertCircle, Send, Loader2,
+  Settings,
+  Clock,
+  Star,
+  ThumbsUp,
+  MessageCircle,
+  Save,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+  Send,
+  Loader2,
+  Upload,
+  Trash2,
+  ImageOff,
 } from 'lucide-react'
 import { getSettings, updateSettings } from '../../api/settings.api'
+import { uploadLogo, uploadPortfolioImage, deletePortfolioImage } from '../../api/media.api'
+import { useBranding } from '../../contexts/branding-context'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Spinner } from '../../components/ui/Spinner'
 
-type Tab = 'info' | 'hours' | 'loyalty' | 'whatsapp'
+type Tab = 'info' | 'hours' | 'loyalty' | 'whatsapp' | 'reviews'
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'info', label: 'Informações', icon: Settings },
   { id: 'hours', label: 'Horários', icon: Clock },
   { id: 'loyalty', label: 'Fidelidade', icon: Star },
   { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
+  { id: 'reviews', label: 'Avaliações', icon: ThumbsUp },
 ]
 
 const DAYS = [
@@ -36,7 +51,159 @@ function parseHours(value: string): { open: string; close: string; closed: boole
 
 // ─── TAB: INFORMAÇÕES ────────────────────────────────────────────────────────
 
-function InfoTab({ settings, onSave }: { settings: Record<string, string>; onSave: (s: Record<string, string>) => void }) {
+function LogoUploader({ logoUrl }: { logoUrl: string }) {
+  const qc = useQueryClient()
+  const { refetch: refetchBranding } = useBranding()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setUploading(true)
+    setError('')
+    try {
+      await uploadLogo(file)
+      await qc.invalidateQueries({ queryKey: ['settings'] })
+      refetchBranding()
+    } catch {
+      setError('Não foi possível enviar a imagem. Tente um arquivo menor (até 5MB).')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5 col-span-2">
+      <label className="text-xs font-medium text-zinc-600">Logo</label>
+      <div className="flex items-center gap-4">
+        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
+          {logoUrl ? (
+            <img src={logoUrl} alt="Logo" className="h-full w-full object-cover" />
+          ) : (
+            <ImageOff className="h-5 w-5 text-zinc-300" />
+          )}
+        </div>
+        <div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileSelected}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? (
+              <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4 mr-1.5" />
+            )}
+            {uploading ? 'Enviando...' : 'Enviar logo'}
+          </Button>
+          {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PortfolioManager({ portfolioImages }: { portfolioImages: string[] }) {
+  const qc = useQueryClient()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setUploading(true)
+    setError('')
+    try {
+      await uploadPortfolioImage(file)
+      await qc.invalidateQueries({ queryKey: ['settings'] })
+    } catch {
+      setError('Não foi possível enviar a imagem. Tente um arquivo menor (até 5MB).')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  async function handleDelete(url: string) {
+    await deletePortfolioImage(url)
+    qc.invalidateQueries({ queryKey: ['settings'] })
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-zinc-600">Portfólio (vitrine pública)</label>
+        <div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileSelected}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? (
+              <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4 mr-1.5" />
+            )}
+            {uploading ? 'Enviando...' : 'Adicionar foto'}
+          </Button>
+        </div>
+      </div>
+      {error && <p className="text-xs text-red-500">{error}</p>}
+      {portfolioImages.length === 0 ? (
+        <p className="text-sm text-zinc-400">
+          Nenhuma foto ainda. Adicione fotos do seu trabalho pra exibir na vitrine.
+        </p>
+      ) : (
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+          {portfolioImages.map((url) => (
+            <div
+              key={url}
+              className="group relative aspect-square overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50"
+            >
+              <img src={url} alt="Foto do portfólio" className="h-full w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => handleDelete(url)}
+                aria-label="Remover foto do portfólio"
+                className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/40 group-hover:opacity-100"
+              >
+                <Trash2 className="h-4 w-4 text-white" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function InfoTab({
+  settings,
+  onSave,
+}: {
+  settings: Record<string, string>
+  onSave: (s: Record<string, string>) => void
+}) {
   const [form, setForm] = useState({
     shop_name: settings.shop_name ?? '',
     shop_phone: settings.shop_phone ?? '',
@@ -44,24 +211,49 @@ function InfoTab({ settings, onSave }: { settings: Record<string, string>; onSav
     shop_instagram: settings.shop_instagram ?? '',
   })
 
+  let portfolioImages: string[] = []
+  try {
+    const parsed = JSON.parse(settings.portfolio_images || '[]')
+    if (Array.isArray(parsed)) portfolioImages = parsed
+  } catch {
+    portfolioImages = []
+  }
+
   return (
-    <div className="space-y-5 max-w-xl">
+    <div className="space-y-8 max-w-xl">
       <div className="grid grid-cols-2 gap-4">
+        <LogoUploader logoUrl={settings.logo_url ?? ''} />
         <div className="flex flex-col gap-1.5 col-span-2">
           <label className="text-xs font-medium text-zinc-600">Nome da Barbearia</label>
-          <Input value={form.shop_name} onChange={(e) => setForm({ ...form, shop_name: e.target.value })} placeholder="Barbearia do Rei" />
+          <Input
+            value={form.shop_name}
+            onChange={(e) => setForm({ ...form, shop_name: e.target.value })}
+            placeholder="Minha Barbearia"
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-zinc-600">Telefone / WhatsApp</label>
-          <Input value={form.shop_phone} onChange={(e) => setForm({ ...form, shop_phone: e.target.value })} placeholder="(32) 99160-8852" />
+          <Input
+            value={form.shop_phone}
+            onChange={(e) => setForm({ ...form, shop_phone: e.target.value })}
+            placeholder="(11) 99999-9999"
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-zinc-600">Instagram</label>
-          <Input value={form.shop_instagram} onChange={(e) => setForm({ ...form, shop_instagram: e.target.value })} placeholder="@usuario" />
+          <Input
+            value={form.shop_instagram}
+            onChange={(e) => setForm({ ...form, shop_instagram: e.target.value })}
+            placeholder="@usuario"
+          />
         </div>
         <div className="flex flex-col gap-1.5 col-span-2">
           <label className="text-xs font-medium text-zinc-600">Endereço</label>
-          <Input value={form.shop_address} onChange={(e) => setForm({ ...form, shop_address: e.target.value })} placeholder="Rua, número, bairro, cidade" />
+          <Input
+            value={form.shop_address}
+            onChange={(e) => setForm({ ...form, shop_address: e.target.value })}
+            placeholder="Rua, número, bairro, cidade"
+          />
         </div>
       </div>
       <div className="flex justify-end">
@@ -70,13 +262,23 @@ function InfoTab({ settings, onSave }: { settings: Record<string, string>; onSav
           Salvar Informações
         </Button>
       </div>
+
+      <div className="border-t border-zinc-100 pt-6">
+        <PortfolioManager portfolioImages={portfolioImages} />
+      </div>
     </div>
   )
 }
 
 // ─── TAB: HORÁRIOS ───────────────────────────────────────────────────────────
 
-function HoursTab({ settings, onSave }: { settings: Record<string, string>; onSave: (s: Record<string, string>) => void }) {
+function HoursTab({
+  settings,
+  onSave,
+}: {
+  settings: Record<string, string>
+  onSave: (s: Record<string, string>) => void
+}) {
   const [hours, setHours] = useState(() => {
     const result: Record<string, { open: string; close: string; closed: boolean }> = {}
     for (const day of DAYS) {
@@ -102,8 +304,12 @@ function HoursTab({ settings, onSave }: { settings: Record<string, string>; onSa
             <tr className="border-b border-zinc-100 bg-zinc-50">
               <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">Dia</th>
               <th className="px-4 py-3 text-center text-xs font-semibold text-zinc-500 uppercase">Fechado</th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-zinc-500 uppercase">Abertura</th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-zinc-500 uppercase">Fechamento</th>
+              <th className="px-4 py-3 text-center text-xs font-semibold text-zinc-500 uppercase">
+                Abertura
+              </th>
+              <th className="px-4 py-3 text-center text-xs font-semibold text-zinc-500 uppercase">
+                Fechamento
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
@@ -156,7 +362,13 @@ function HoursTab({ settings, onSave }: { settings: Record<string, string>; onSa
 
 // ─── TAB: FIDELIDADE ─────────────────────────────────────────────────────────
 
-function LoyaltyTab({ settings, onSave }: { settings: Record<string, string>; onSave: (s: Record<string, string>) => void }) {
+function LoyaltyTab({
+  settings,
+  onSave,
+}: {
+  settings: Record<string, string>
+  onSave: (s: Record<string, string>) => void
+}) {
   const [form, setForm] = useState({
     loyalty_enabled: settings.loyalty_enabled ?? 'true',
     loyalty_points_per_visit: settings.loyalty_points_per_visit ?? '10',
@@ -164,9 +376,10 @@ function LoyaltyTab({ settings, onSave }: { settings: Record<string, string>; on
     loyalty_redemption_value: settings.loyalty_redemption_value ?? '10',
   })
 
-  const redemptionRatio = Number(form.loyalty_redemption_points) > 0
-    ? (Number(form.loyalty_redemption_value) / Number(form.loyalty_redemption_points)).toFixed(2)
-    : '0'
+  const redemptionRatio =
+    Number(form.loyalty_redemption_points) > 0
+      ? (Number(form.loyalty_redemption_value) / Number(form.loyalty_redemption_points)).toFixed(2)
+      : '0'
 
   return (
     <div className="space-y-5 max-w-xl">
@@ -174,13 +387,22 @@ function LoyaltyTab({ settings, onSave }: { settings: Record<string, string>; on
       <div className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-5 py-4">
         <div>
           <p className="font-medium text-zinc-800">Programa de Fidelidade</p>
-          <p className="text-xs text-zinc-500 mt-0.5">Clientes acumulam pontos a cada atendimento concluído</p>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Clientes acumulam pontos a cada atendimento concluído
+          </p>
         </div>
         <button
-          onClick={() => setForm({ ...form, loyalty_enabled: form.loyalty_enabled === 'true' ? 'false' : 'true' })}
+          onClick={() =>
+            setForm({ ...form, loyalty_enabled: form.loyalty_enabled === 'true' ? 'false' : 'true' })
+          }
+          role="switch"
+          aria-checked={form.loyalty_enabled === 'true'}
+          aria-label="Ativar programa de fidelidade"
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.loyalty_enabled === 'true' ? 'bg-amber-500' : 'bg-zinc-300'}`}
         >
-          <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.loyalty_enabled === 'true' ? 'translate-x-6' : 'translate-x-1'}`} />
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.loyalty_enabled === 'true' ? 'translate-x-6' : 'translate-x-1'}`}
+          />
         </button>
       </div>
 
@@ -231,9 +453,16 @@ function LoyaltyTab({ settings, onSave }: { settings: Record<string, string>; on
         <div className="rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-sm">
           <p className="font-medium text-amber-800">Resumo do programa:</p>
           <ul className="mt-1.5 space-y-1 text-amber-700 text-xs">
-            <li>✅ Cliente ganha <strong>{form.loyalty_points_per_visit} pontos</strong> por atendimento</li>
-            <li>🎁 A cada <strong>{form.loyalty_redemption_points} pontos</strong> acumulados, pode resgatar <strong>R$ {form.loyalty_redemption_value}</strong></li>
-            <li>💰 Cada ponto equivale a <strong>R$ {redemptionRatio}</strong></li>
+            <li>
+              ✅ Cliente ganha <strong>{form.loyalty_points_per_visit} pontos</strong> por atendimento
+            </li>
+            <li>
+              🎁 A cada <strong>{form.loyalty_redemption_points} pontos</strong> acumulados, pode resgatar{' '}
+              <strong>R$ {form.loyalty_redemption_value}</strong>
+            </li>
+            <li>
+              💰 Cada ponto equivale a <strong>R$ {redemptionRatio}</strong>
+            </li>
           </ul>
         </div>
       </div>
@@ -250,7 +479,13 @@ function LoyaltyTab({ settings, onSave }: { settings: Record<string, string>; on
 
 // ─── TAB: WHATSAPP ───────────────────────────────────────────────────────────
 
-function WhatsAppTab({ settings, onSave }: { settings: Record<string, string>; onSave: (s: Record<string, string>) => void }) {
+function WhatsAppTab({
+  settings,
+  onSave,
+}: {
+  settings: Record<string, string>
+  onSave: (s: Record<string, string>) => void
+}) {
   const [form, setForm] = useState({
     whatsapp_enabled: settings.whatsapp_enabled ?? 'false',
     whatsapp_api_url: settings.whatsapp_api_url ?? '',
@@ -260,7 +495,9 @@ function WhatsAppTab({ settings, onSave }: { settings: Record<string, string>; o
   })
 
   const [testPhone, setTestPhone] = useState('')
-  const [testMsg, setTestMsg] = useState('Olá! Esta é uma mensagem de teste da Barbearia do Rei 💈')
+  const [testMsg, setTestMsg] = useState(
+    `Olá! Esta é uma mensagem de teste da ${settings.shop_name || 'sua barbearia'} 💈`,
+  )
   const [testResult, setTestResult] = useState<{ sent: boolean; error?: string } | null>(null)
   const [testLoading, setTestLoading] = useState(false)
 
@@ -305,38 +542,70 @@ function WhatsAppTab({ settings, onSave }: { settings: Record<string, string>; o
           <p className="text-xs text-zinc-500 mt-0.5">Enviar lembretes e confirmações automaticamente</p>
         </div>
         <button
-          onClick={() => setForm({ ...form, whatsapp_enabled: form.whatsapp_enabled === 'true' ? 'false' : 'true' })}
+          onClick={() =>
+            setForm({ ...form, whatsapp_enabled: form.whatsapp_enabled === 'true' ? 'false' : 'true' })
+          }
+          role="switch"
+          aria-checked={form.whatsapp_enabled === 'true'}
+          aria-label="Ativar notificações via WhatsApp"
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.whatsapp_enabled === 'true' ? 'bg-green-500' : 'bg-zinc-300'}`}
         >
-          <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.whatsapp_enabled === 'true' ? 'translate-x-6' : 'translate-x-1'}`} />
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.whatsapp_enabled === 'true' ? 'translate-x-6' : 'translate-x-1'}`}
+          />
         </button>
       </div>
 
       {/* Info Evolution API */}
       <div className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 text-xs text-blue-700">
         <p className="font-semibold mb-1">Compatível com Evolution API</p>
-        <p>Configure sua instância da Evolution API (ou Z-API). A URL deve ser o endereço base, ex: <code>https://api.seudominio.com</code></p>
+        <p>
+          Configure sua instância da Evolution API (ou Z-API). A URL deve ser o endereço base, ex:{' '}
+          <code>https://api.seudominio.com</code>
+        </p>
       </div>
 
-      <div className={`space-y-4 ${form.whatsapp_enabled !== 'true' ? 'opacity-50 pointer-events-none' : ''}`}>
+      <div
+        className={`space-y-4 ${form.whatsapp_enabled !== 'true' ? 'opacity-50 pointer-events-none' : ''}`}
+      >
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-zinc-600">URL da API</label>
-          <Input value={form.whatsapp_api_url} onChange={(e) => setForm({ ...form, whatsapp_api_url: e.target.value })} placeholder="https://api.seudominio.com" />
+          <Input
+            value={form.whatsapp_api_url}
+            onChange={(e) => setForm({ ...form, whatsapp_api_url: e.target.value })}
+            placeholder="https://api.seudominio.com"
+          />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-zinc-600">Chave da API (Bearer Token)</label>
-            <Input type="password" value={form.whatsapp_api_key} onChange={(e) => setForm({ ...form, whatsapp_api_key: e.target.value })} placeholder="sua-chave-secreta" />
+            <Input
+              type="password"
+              value={form.whatsapp_api_key}
+              onChange={(e) => setForm({ ...form, whatsapp_api_key: e.target.value })}
+              placeholder="sua-chave-secreta"
+            />
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-zinc-600">Nome da Instância</label>
-            <Input value={form.whatsapp_instance} onChange={(e) => setForm({ ...form, whatsapp_instance: e.target.value })} placeholder="barbearia-rei" />
+            <Input
+              value={form.whatsapp_instance}
+              onChange={(e) => setForm({ ...form, whatsapp_instance: e.target.value })}
+              placeholder="barbearia-rei"
+            />
           </div>
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-zinc-600">Horas de antecedência para lembrete</label>
           <div className="flex items-center gap-2">
-            <Input type="number" min="1" max="72" value={form.whatsapp_reminder_hours} onChange={(e) => setForm({ ...form, whatsapp_reminder_hours: e.target.value })} className="max-w-[100px]" />
+            <Input
+              type="number"
+              min="1"
+              max="72"
+              value={form.whatsapp_reminder_hours}
+              onChange={(e) => setForm({ ...form, whatsapp_reminder_hours: e.target.value })}
+              className="max-w-[100px]"
+            />
             <span className="text-sm text-zinc-500">horas antes do agendamento</span>
           </div>
         </div>
@@ -354,7 +623,12 @@ function WhatsAppTab({ settings, onSave }: { settings: Record<string, string>; o
         <div className="space-y-4 pt-2 border-t border-zinc-100">
           <p className="text-sm font-semibold text-zinc-700">Testar envio</p>
           <div className="flex gap-2">
-            <Input placeholder="Telefone (ex: 32991608852)" value={testPhone} onChange={(e) => setTestPhone(e.target.value)} className="flex-1" />
+            <Input
+              placeholder="Telefone (ex: 32991608852)"
+              value={testPhone}
+              onChange={(e) => setTestPhone(e.target.value)}
+              className="flex-1"
+            />
           </div>
           <textarea
             value={testMsg}
@@ -363,24 +637,154 @@ function WhatsAppTab({ settings, onSave }: { settings: Record<string, string>; o
             className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
           />
           {testResult && (
-            <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${testResult.sent ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+            <div
+              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${testResult.sent ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
+            >
               {testResult.sent ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
               {testResult.sent ? 'Mensagem enviada com sucesso!' : `Erro: ${testResult.error}`}
             </div>
           )}
           <div className="flex gap-2">
             <Button onClick={handleTest} disabled={testLoading || !testPhone} variant="secondary">
-              {testLoading ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Send className="h-4 w-4 mr-1.5" />}
+              {testLoading ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-1.5" />
+              )}
               Enviar Teste
             </Button>
             <Button onClick={handleSendReminders} disabled={reminderLoading} variant="secondary">
-              {reminderLoading ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1.5" />}
+              {reminderLoading ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-1.5" />
+              )}
               Enviar Lembretes Agora
             </Button>
           </div>
           {reminderResult && (
             <p className="text-sm text-zinc-600">
               Lembretes: <strong>{reminderResult.sent} enviados</strong>, {reminderResult.failed} falhas
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── TAB: AVALIAÇÕES ─────────────────────────────────────────────────────────
+
+function ReviewsTab({
+  settings,
+  onSave,
+}: {
+  settings: Record<string, string>
+  onSave: (s: Record<string, string>) => void
+}) {
+  const [form, setForm] = useState({
+    review_enabled: settings.review_enabled ?? 'false',
+    review_link: settings.review_link ?? '',
+    review_delay_hours: settings.review_delay_hours ?? '2',
+  })
+
+  const [sendResult, setSendResult] = useState<{ sent: number; failed: number } | null>(null)
+  const [sendLoading, setSendLoading] = useState(false)
+
+  async function handleSendNow() {
+    setSendLoading(true)
+    setSendResult(null)
+    try {
+      const { sendReviewRequests } = await import('../../api/notifications.api')
+      const result = await sendReviewRequests()
+      setSendResult(result)
+    } catch (err) {
+      alert((err as Error).message)
+    } finally {
+      setSendLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-5 max-w-xl">
+      {/* Toggle */}
+      <div className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-5 py-4">
+        <div>
+          <p className="font-medium text-zinc-800">Pedido de avaliação</p>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Envia um WhatsApp pedindo avaliação depois de um atendimento concluído
+          </p>
+        </div>
+        <button
+          onClick={() =>
+            setForm({ ...form, review_enabled: form.review_enabled === 'true' ? 'false' : 'true' })
+          }
+          role="switch"
+          aria-checked={form.review_enabled === 'true'}
+          aria-label="Ativar pedido de avaliação"
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.review_enabled === 'true' ? 'bg-amber-500' : 'bg-zinc-300'}`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.review_enabled === 'true' ? 'translate-x-6' : 'translate-x-1'}`}
+          />
+        </button>
+      </div>
+
+      <div className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 text-xs text-blue-700">
+        <p className="font-semibold mb-1">Precisa do WhatsApp configurado</p>
+        <p>Esse envio usa a mesma integração de WhatsApp da aba anterior. Configure-a lá primeiro.</p>
+      </div>
+
+      <div className={`space-y-4 ${form.review_enabled !== 'true' ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-zinc-600">Link de avaliação (Google, por exemplo)</label>
+          <Input
+            value={form.review_link}
+            onChange={(e) => setForm({ ...form, review_link: e.target.value })}
+            placeholder="https://g.page/r/sua-barbearia/review"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-zinc-600">Enviar quantas horas após o atendimento</label>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              min="1"
+              max="72"
+              value={form.review_delay_hours}
+              onChange={(e) => setForm({ ...form, review_delay_hours: e.target.value })}
+              className="max-w-[100px]"
+            />
+            <span className="text-sm text-zinc-500">horas depois de concluído</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button onClick={() => onSave(form)}>
+          <Save className="h-4 w-4 mr-1.5" />
+          Salvar Avaliações
+        </Button>
+      </div>
+
+      {form.review_enabled === 'true' && (
+        <div className="space-y-3 pt-2 border-t border-zinc-100">
+          <p className="text-sm font-semibold text-zinc-700">Testar agora</p>
+          <p className="text-xs text-zinc-500">
+            Varre os atendimentos concluídos dentro da janela configurada e envia o pedido pra quem ainda
+            não recebeu.
+          </p>
+          <Button onClick={handleSendNow} disabled={sendLoading} variant="secondary">
+            {sendLoading ? (
+              <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-1.5" />
+            )}
+            Enviar Pedidos Agora
+          </Button>
+          {sendResult && (
+            <p className="text-sm text-zinc-600">
+              Avaliações: <strong>{sendResult.sent} enviadas</strong>, {sendResult.failed} falhas
             </p>
           )}
         </div>
@@ -459,17 +863,14 @@ export function SettingsPage() {
 
       {/* Content */}
       <div>
-        {activeTab === 'info' && (
-          <InfoTab settings={s} onSave={(data) => saveMutation.mutate(data)} />
-        )}
-        {activeTab === 'hours' && (
-          <HoursTab settings={s} onSave={(data) => saveMutation.mutate(data)} />
-        )}
-        {activeTab === 'loyalty' && (
-          <LoyaltyTab settings={s} onSave={(data) => saveMutation.mutate(data)} />
-        )}
+        {activeTab === 'info' && <InfoTab settings={s} onSave={(data) => saveMutation.mutate(data)} />}
+        {activeTab === 'hours' && <HoursTab settings={s} onSave={(data) => saveMutation.mutate(data)} />}
+        {activeTab === 'loyalty' && <LoyaltyTab settings={s} onSave={(data) => saveMutation.mutate(data)} />}
         {activeTab === 'whatsapp' && (
           <WhatsAppTab settings={s} onSave={(data) => saveMutation.mutate(data)} />
+        )}
+        {activeTab === 'reviews' && (
+          <ReviewsTab settings={s} onSave={(data) => saveMutation.mutate(data)} />
         )}
       </div>
     </div>

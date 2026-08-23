@@ -1,7 +1,7 @@
 import { Response } from 'express'
 import { AppointmentStatus } from '@prisma/client'
 import { AuthRequest } from '../../middlewares/auth.middleware'
-import { success, paginate, apiError } from '../../utils/response'
+import { success, paginate } from '../../utils/response'
 import {
   listAppointments,
   getAppointmentById,
@@ -12,8 +12,16 @@ import {
 } from './appointments.service'
 
 export async function list(req: AuthRequest, res: Response) {
-  const { date, from, to, barberId, clientId, status, page = '1', limit = '50' } =
-    req.query as Record<string, string>
+  const {
+    date,
+    from,
+    to,
+    barberId,
+    clientId,
+    status,
+    page = '1',
+    limit = '50',
+  } = req.query as Record<string, string>
   const result = await listAppointments({
     date,
     from,
@@ -28,42 +36,22 @@ export async function list(req: AuthRequest, res: Response) {
 }
 
 export async function getOne(req: AuthRequest, res: Response) {
-  try {
-    return success(res, await getAppointmentById(req.params.id))
-  } catch (err) {
-    return apiError(res, (err as Error).message, 404)
-  }
+  return success(res, await getAppointmentById(req.params.id))
 }
 
 export async function create(req: AuthRequest, res: Response) {
-  try {
-    return success(res, await createAppointment(req.body), 201)
-  } catch (err) {
-    return apiError(res, (err as Error).message, 400)
-  }
+  return success(res, await createAppointment(req.body), 201)
 }
 
 export async function update(req: AuthRequest, res: Response) {
-  try {
-    return success(res, await updateAppointment(req.params.id, req.body))
-  } catch (err) {
-    return apiError(res, (err as Error).message, 400)
-  }
+  return success(res, await updateAppointment(req.params.id, req.body))
 }
 
 export async function updateStatus(req: AuthRequest, res: Response) {
-  try {
-    return success(res, await updateAppointmentStatus(req.params.id, req.body))
-  } catch (err) {
-    return apiError(res, (err as Error).message, 400)
-  }
+  return success(res, await updateAppointmentStatus(req.params.id, req.body))
 }
 
 export async function remove(req: AuthRequest, res: Response) {
-  try {
-    await deleteAppointment(req.params.id)
-    return success(res, { message: 'Agendamento removido com sucesso' })
-  } catch (err) {
-    return apiError(res, (err as Error).message, 400)
-  }
+  await deleteAppointment(req.params.id)
+  return success(res, { message: 'Agendamento removido com sucesso' })
 }

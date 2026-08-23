@@ -6,30 +6,75 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── TENANTS ─────────────────────────────────────────────────────────────────
+
+enum TenantStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  SUSPENDED
+}
+
+model Tenant {
+  id        String       @id @default(uuid())
+  slug      String       @unique
+  name      String
+  status    TenantStatus @default(TRIAL)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  admins               Admin[]
+  barbers              Barber[]
+  services             Service[]
+  clients              Client[]
+  appointments         Appointment[]
+  payments             Payment[]
+  expenses             Expense[]
+  settings             Settings[]
+  loyaltyCards         LoyaltyCard[]
+  commissionPayments   CommissionPayment[]
+  notificationLogs     NotificationLog[]
+  waitlistEntries      WaitlistEntry[]
+  packages             Package[]
+  clientPackages       ClientPackage[]
+  subscription         Subscription?
+  subscriptionPayments SubscriptionPayment[]
+
+  @@map("tenants")
+}
+
 model Admin {
   id           String   @id @default(uuid())
   name         String
-  email        String   @unique
+  email        String
   passwordHash String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  @@unique([tenantId, email])
   @@map("admins")
 }
 
 model Barber {
-  id             String    @id @default(uuid())
+  id             String   @id @default(uuid())
   name           String
   phone          String?
-  email          String?   @unique
+  email          String?  @unique
   avatarUrl      String?
-  isActive       Boolean   @default(true)
-  commissionRate Decimal?  @db.Decimal(5, 2)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  isActive       Boolean  @default(true)
+  commissionRate Decimal? @db.Decimal(5, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
 
   appointments       Appointment[]
   commissionPayments CommissionPayment[]
+  waitlistEntries    WaitlistEntry[]
 
   @@map("barbers")
 }
@@ -44,7 +89,12 @@ model Service {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
   appointmentServices AppointmentService[]
+  waitlistEntries     WaitlistEntry[]
+  packages            Package[]
 
   @@map("services")
 }
@@ -52,17 +102,24 @@ model Service {
 model Client {
   id        String    @id @default(uuid())
   name      String
-  phone     String    @unique
-  email     String?   @unique
+  phone     String
+  email     String?
   birthDate DateTime?
   notes     String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
   appointments     Appointment[]
   loyaltyCard      LoyaltyCard?
   notificationLogs NotificationLog[]
+  waitlistEntries  WaitlistEntry[]
+  clientPackages   ClientPackage[]
 
+  @@unique([tenantId, phone])
+  @@unique([tenantId, email])
   @@map("clients")
 }
 
@@ -91,6 +148,15 @@ model Appointment {
   barber   Barber @relation(fields: [barberId], references: [id])
   barberId String
 
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  // Preenchido quando o agendamento é pago com sessão de um pacote em vez de
+  // cobrado avulso — nesse caso totalPrice fica zerado (o valor já entrou na
+  // venda do pacote)
+  clientPackage   ClientPackage? @relation(fields: [clientPackageId], references: [id], onDelete: SetNull)
+  clientPackageId String?
+
   services         AppointmentService[]
   payment          Payment?
   notificationLogs NotificationLog[]
@@ -98,6 +164,7 @@ model Appointment {
   @@index([startsAt])
   @@index([barberId, startsAt])
   @@index([status])
+  @@index([tenantId, startsAt])
   @@map("appointments")
 }
 
@@ -140,17 +207,23 @@ enum ExpenseStatus {
 }
 
 model Payment {
-  id            String        @id @default(uuid())
-  amount        Decimal       @db.Decimal(10, 2)
-  method        PaymentMethod
-  paidAt        DateTime      @default(now())
-  notes         String?
-  appointmentId String?       @unique
-  appointment   Appointment?  @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id              String         @id @default(uuid())
+  amount          Decimal        @db.Decimal(10, 2)
+  method          PaymentMethod
+  paidAt          DateTime       @default(now())
+  notes           String?
+  appointmentId   String?        @unique
+  appointment     Appointment?   @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  clientPackageId String?        @unique
+  clientPackage   ClientPackage? @relation(fields: [clientPackageId], references: [id], onDelete: SetNull)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
 
   @@index([paidAt])
+  @@index([tenantId, paidAt])
   @@map("payments")
 }
 
@@ -166,8 +239,12 @@ model Expense {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
   @@index([dueDate])
   @@index([status])
+  @@index([tenantId, dueDate])
   @@map("expenses")
 }
 
@@ -175,11 +252,15 @@ model Expense {
 
 model Settings {
   id        String   @id @default(uuid())
-  key       String   @unique
+  key       String
   value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  @@unique([tenantId, key])
   @@map("settings")
 }
 
@@ -196,6 +277,9 @@ model LoyaltyCard {
 
   client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   clientId String @unique
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
 
   @@map("loyalty_cards")
 }
@@ -216,6 +300,9 @@ model CommissionPayment {
   barber   Barber @relation(fields: [barberId], references: [id])
   barberId String
 
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
   @@index([barberId])
   @@map("commission_payments")
 }
@@ -232,18 +319,20 @@ enum NotificationType {
   APPOINTMENT_CONFIRMATION
   APPOINTMENT_REMINDER
   APPOINTMENT_CANCELLATION
+  REVIEW_REQUEST
+  WAITLIST_SLOT_OPEN
   CUSTOM
 }
 
 model NotificationLog {
-  id      String             @id @default(uuid())
-  type    NotificationType
-  phone   String
-  message String
-  status  NotificationStatus @default(PENDING)
-  error   String?
-  sentAt  DateTime?
-  createdAt DateTime         @default(now())
+  id        String             @id @default(uuid())
+  type      NotificationType
+  phone     String
+  message   String
+  status    NotificationStatus @default(PENDING)
+  error     String?
+  sentAt    DateTime?
+  createdAt DateTime           @default(now())
 
   appointmentId String?
   appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
@@ -251,5 +340,173 @@ model NotificationLog {
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
 
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
   @@map("notification_logs")
+}
+
+// ─── LISTA DE ESPERA ─────────────────────────────────────────────────────────
+
+enum WaitlistStatus {
+  WAITING
+  NOTIFIED
+  CONVERTED
+  CANCELLED
+}
+
+model WaitlistEntry {
+  id            String         @id @default(uuid())
+  preferredDate DateTime
+  status        WaitlistStatus @default(WAITING)
+  notes         String?
+  notifiedAt    DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId String
+
+  // null = qualquer barbeiro serve
+  barber   Barber? @relation(fields: [barberId], references: [id], onDelete: SetNull)
+  barberId String?
+
+  // null = qualquer serviço serve
+  service   Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  serviceId String?
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  @@index([tenantId, preferredDate])
+  @@index([status])
+  @@map("waitlist_entries")
+}
+
+// ─── PACOTES DE SESSÕES ──────────────────────────────────────────────────────
+
+// Catálogo: um tipo de pacote vendável (ex: "10 Cortes", 90 dias de validade)
+model Package {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  totalSessions Int
+  price         Decimal  @db.Decimal(10, 2)
+  // null = sem validade (nunca expira)
+  validityDays  Int?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  service   Service @relation(fields: [serviceId], references: [id])
+  serviceId String
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  clientPackages ClientPackage[]
+
+  @@map("packages")
+}
+
+// Uma compra: instância de um Package pertencente a um Client, com saldo de
+// sessões. sessionsTotal/pricePaid são snapshot da hora da compra — não
+// mudam se o Package do catálogo for editado depois.
+model ClientPackage {
+  id            String    @id @default(uuid())
+  sessionsTotal Int
+  sessionsUsed  Int       @default(0)
+  pricePaid     Decimal   @db.Decimal(10, 2)
+  purchasedAt   DateTime  @default(now())
+  // null = sem validade
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId String
+
+  package   Package @relation(fields: [packageId], references: [id])
+  packageId String
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  payment      Payment?
+  appointments Appointment[]
+
+  @@index([tenantId, clientId])
+  @@map("client_packages")
+}
+
+// ─── ASSINATURA (COBRANÇA DA PLATAFORMA SOBRE O TENANT) ─────────────────────
+
+enum SubscriptionStatus {
+  PENDING_SETUP
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum BillingMethod {
+  CARD
+  PIX
+}
+
+enum SubscriptionPaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  FAILED
+  REFUNDED
+}
+
+// Assinatura do tenant com a própria plataforma (não confundir com Package,
+// que é venda de sessões da barbearia pros clientes dela). Uma por tenant.
+model Subscription {
+  id              String             @id @default(uuid())
+  method          BillingMethod?
+  status          SubscriptionStatus @default(PENDING_SETUP)
+  amount          Decimal            @db.Decimal(10, 2)
+  // preapproval = assinatura recorrente de cartão no Mercado Pago
+  mpPreapprovalId String?            @unique
+  mpPayerEmail    String?
+  nextDueDate     DateTime?
+  canceledAt      DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String @unique
+
+  payments SubscriptionPayment[]
+
+  @@map("subscriptions")
+}
+
+// Histórico de cobranças da assinatura (cada ciclo gera uma linha nova).
+model SubscriptionPayment {
+  id           String                    @id @default(uuid())
+  method       BillingMethod
+  status       SubscriptionPaymentStatus @default(PENDING)
+  amount       Decimal                   @db.Decimal(10, 2)
+  mpPaymentId  String?                   @unique
+  dueDate      DateTime
+  paidAt       DateTime?
+  // Pix: QR code (base64) e código copia-e-cola gerados pelo Mercado Pago
+  pixQrCode    String?
+  pixCopyPaste String?
+  // payload bruto do Mercado Pago, guardado pra depuração
+  rawPayload   Json?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+  subscriptionId String
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  @@index([tenantId, dueDate])
+  @@map("subscription_payments")
 }

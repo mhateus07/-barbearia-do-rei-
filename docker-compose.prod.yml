@@ -1,0 +1,27 @@
+# Overlay de produção — usar junto do docker-compose.yml no VPS que já tem
+# Easypanel/Traefik rodando:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Conecta a API à rede overlay "easypanel" (onde o Traefik existente escuta)
+# e adiciona os labels de roteamento. Não expõe a porta 3333 direto no host
+# — todo o tráfego passa pelo Traefik (80/443), que já é quem os outros
+# apps desse VPS usam.
+services:
+  api:
+    networks:
+      - default
+      - easypanel
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=easypanel
+      - traefik.http.routers.barbearia-saas.rule=Host(`${APP_DOMAIN:-saas.impulsiodigital.com}`)
+      - traefik.http.routers.barbearia-saas.entrypoints=https
+      - traefik.http.routers.barbearia-saas.tls.certresolver=letsencrypt
+      - traefik.http.services.barbearia-saas.loadbalancer.server.port=3333
+      - traefik.http.routers.barbearia-saas-http.rule=Host(`${APP_DOMAIN:-saas.impulsiodigital.com}`)
+      - traefik.http.routers.barbearia-saas-http.entrypoints=http
+      - traefik.http.routers.barbearia-saas-http.middlewares=redirect-to-https@file
+
+networks:
+  easypanel:
+    external: true

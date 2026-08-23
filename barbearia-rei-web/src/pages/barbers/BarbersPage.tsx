@@ -61,7 +61,10 @@ export function BarbersPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {data.map((barber) => (
-            <div key={barber.id} className="rounded-2xl border border-zinc-200 bg-white p-5 hover:shadow-md transition-shadow">
+            <div
+              key={barber.id}
+              className="rounded-2xl border border-zinc-200 bg-white p-5 hover:shadow-md transition-shadow"
+            >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 border border-amber-100">
@@ -69,7 +72,9 @@ export function BarbersPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-zinc-800">{barber.name}</p>
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${barber.isActive ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${barber.isActive ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}`}
+                    >
                       {barber.isActive ? 'Ativo' : 'Inativo'}
                     </span>
                   </div>
@@ -78,7 +83,9 @@ export function BarbersPage() {
               <div className="space-y-1.5 text-sm text-zinc-500 mb-4">
                 {barber.phone && <p>{barber.phone}</p>}
                 {barber.email && <p className="truncate">{barber.email}</p>}
-                {!barber.phone && !barber.email && <p className="italic text-zinc-300">Sem contato cadastrado</p>}
+                {!barber.phone && !barber.email && (
+                  <p className="italic text-zinc-300">Sem contato cadastrado</p>
+                )}
                 {barber.commissionRate != null && (
                   <p className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-100">
                     Comissão: {barber.commissionRate}%
@@ -94,7 +101,9 @@ export function BarbersPage() {
                   Editar
                 </button>
                 <button
-                  onClick={() => { if (confirm(`Desativar ${barber.name}?`)) deleteMutation.mutate(barber.id) }}
+                  onClick={() => {
+                    if (confirm(`Desativar ${barber.name}?`)) deleteMutation.mutate(barber.id)
+                  }}
                   className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 transition-colors ml-auto"
                 >
                   <UserX className="h-3.5 w-3.5" />

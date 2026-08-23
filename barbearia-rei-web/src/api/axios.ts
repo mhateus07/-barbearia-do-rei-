@@ -1,7 +1,11 @@
 import axios from 'axios'
 
+// Em produção, o front é servido no mesmo subdomínio da API de cada tenant
+// (proxy reverso), então uma baseURL relativa já resolve para o tenant certo.
+// VITE_API_URL continua existindo como override para dev local (front e API
+// em portas/origens diferentes).
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3333/api/v1',
+  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
 })
 
 api.interceptors.request.use((config) => {

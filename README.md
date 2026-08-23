@@ -58,12 +58,9 @@ npm run dev
 # Interface disponível em http://localhost:5173
 ```
 
-### Acesso padrão
+### Acesso inicial
 
-| Campo | Valor |
-|-------|-------|
-| E-mail | admin@barbeariadorei.com |
-| Senha | admin123 |
+O `npm run db:seed` não cria mais um admin com senha fixa. Defina `SEED_ADMIN_EMAIL` e `SEED_ADMIN_PASSWORD` no `.env` antes de rodar o seed; se `SEED_ADMIN_PASSWORD` não for definida, uma senha aleatória é gerada e impressa uma única vez no console — copie-a dali, pois ela não fica salva em nenhum arquivo.
 
 > **Importante:** Troque a senha após o primeiro acesso em produção.
 

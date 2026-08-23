@@ -1,6 +1,6 @@
 import { Response } from 'express'
 import { AuthRequest } from '../../middlewares/auth.middleware'
-import { success, apiError } from '../../utils/response'
+import { success } from '../../utils/response'
 import {
   listBarbers,
   getBarberById,
@@ -11,20 +11,14 @@ import {
 } from './barbers.service'
 
 export async function list(req: AuthRequest, res: Response) {
-  const isActive = req.query.isActive !== undefined
-    ? req.query.isActive === 'true'
-    : undefined
+  const isActive = req.query.isActive !== undefined ? req.query.isActive === 'true' : undefined
   const barbers = await listBarbers(isActive)
   return success(res, barbers)
 }
 
 export async function getOne(req: AuthRequest, res: Response) {
-  try {
-    const barber = await getBarberById(req.params.id)
-    return success(res, barber)
-  } catch (err) {
-    return apiError(res, (err as Error).message, 404)
-  }
+  const barber = await getBarberById(req.params.id)
+  return success(res, barber)
 }
 
 export async function create(req: AuthRequest, res: Response) {
@@ -33,32 +27,16 @@ export async function create(req: AuthRequest, res: Response) {
 }
 
 export async function update(req: AuthRequest, res: Response) {
-  try {
-    const barber = await updateBarber(req.params.id, req.body)
-    return success(res, barber)
-  } catch (err) {
-    return apiError(res, (err as Error).message, 404)
-  }
+  const barber = await updateBarber(req.params.id, req.body)
+  return success(res, barber)
 }
 
 export async function remove(req: AuthRequest, res: Response) {
-  try {
-    await deactivateBarber(req.params.id)
-    return success(res, { message: 'Barbeiro desativado com sucesso' })
-  } catch (err) {
-    return apiError(res, (err as Error).message, 404)
-  }
+  await deactivateBarber(req.params.id)
+  return success(res, { message: 'Barbeiro desativado com sucesso' })
 }
 
 export async function appointments(req: AuthRequest, res: Response) {
-  try {
-    const data = await getBarberAppointments(
-      req.params.id,
-      req.query.from as string,
-      req.query.to as string,
-    )
-    return success(res, data)
-  } catch (err) {
-    return apiError(res, (err as Error).message, 404)
-  }
+  const data = await getBarberAppointments(req.params.id, req.query.from as string, req.query.to as string)
+  return success(res, data)
 }
