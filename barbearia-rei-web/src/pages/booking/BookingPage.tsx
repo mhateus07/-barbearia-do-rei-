@@ -1,7 +1,19 @@
+import { PublicWaitlist } from './PublicWaitlist'
+import { isAxiosError } from 'axios'
 import { useState, useEffect } from 'react'
 import {
-  Scissors, User, Calendar, Clock, CheckCircle2, ChevronLeft,
-  ChevronRight, Loader2, Phone, Mail, MessageSquare, Star, MapPin,
+  Scissors,
+  User,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Phone,
+  Mail,
+  MessageSquare,
+  MapPin,
 } from 'lucide-react'
 import {
   getPublicInfo,
@@ -10,14 +22,18 @@ import {
   getAvailableSlots,
   createPublicAppointment,
 } from '../../api/public.api'
-import type { PublicService, PublicBarber, PublicInfo } from '../../api/public.api'
+import type {
+  PublicService,
+  PublicBarber,
+  PublicInfo,
+} from '../../api/public.api'
 import { formatCurrency } from '../../utils/formatCurrency'
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6
 
 const STEP_LABELS: Record<number, string> = {
   1: 'Serviços',
-  2: 'Barbeiro',
+  2: 'Profissional',
   3: 'Data & Hora',
   4: 'Seus Dados',
   5: 'Confirmar',
@@ -49,6 +65,7 @@ export function BookingPage() {
   const [services, setServices] = useState<PublicService[]>([])
   const [barbers, setBarbers] = useState<PublicBarber[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
   const [selectedServices, setSelectedServices] = useState<string[]>([])
   const [selectedBarber, setSelectedBarber] = useState<string>('')
@@ -64,7 +81,14 @@ export function BookingPage() {
 
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
-  const [appointment, setAppointment] = useState<any>(null)
+  const [appointment, setAppointment] = useState<{
+    id: string
+    startsAt: string
+    totalPrice: number
+    client: { name: string }
+    barber: { name: string }
+    services: { service: { name: string } }[]
+  } | null>(null)
 
   useEffect(() => {
     Promise.all([getPublicInfo(), getPublicServices(), getPublicBarbers()])
@@ -73,20 +97,48 @@ export function BookingPage() {
         setServices(s)
         setBarbers(b)
       })
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false))
   }, [])
 
+  const hasSpecialPricing = barbers.some((b) =>
+    selectedServices.some(
+      (id) =>
+        b.serviceOverrides?.[id]?.price !== undefined ||
+        b.serviceOverrides?.[id]?.durationMin !== undefined,
+    ),
+  )
   const totalDuration = selectedServices.reduce((sum, id) => {
     const s = services.find((sv) => sv.id === id)
-    return sum + (s?.durationMin ?? 0)
+    return (
+      sum +
+      ((barbers.find((b) => b.id === selectedBarber)?.serviceOverrides?.[id]
+        ?.durationMin ??
+        s?.durationMin ??
+        0) +
+        (s?.processingMin ?? 0) +
+        (s?.finishingMin ?? 0))
+    )
   }, 0)
 
   const totalPrice = selectedServices.reduce((sum, id) => {
     const s = services.find((sv) => sv.id === id)
-    return sum + (s ? Number(s.price) : 0)
+    return (
+      sum +
+      (s
+        ? Number(
+            barbers.find((b) => b.id === selectedBarber)?.serviceOverrides?.[id]
+              ?.price ?? s.price,
+          )
+        : 0)
+    )
   }, 0)
 
   function toggleService(id: string) {
+    setSelectedBarber('')
+    setSelectedTime('')
+    setSelectedDate('')
+    setSlots([])
     setSelectedServices((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
     )
@@ -106,7 +158,12 @@ export function BookingPage() {
     if (!date || !selectedBarber) return
     setLoadingSlots(true)
     try {
-      const result = await getAvailableSlots(selectedBarber, date, totalDuration)
+      const result = await getAvailableSlots(
+        selectedBarber,
+        date,
+        totalDuration,
+        selectedServices,
+      )
       setSlots(result)
     } catch {
       setSlots([])
@@ -120,6 +177,9 @@ export function BookingPage() {
     setSubmitError('')
     try {
       const result = await createPublicAppointment({
+        outreachToken:
+          new URLSearchParams(window.location.search).get('outreach') ||
+          undefined,
         clientName,
         clientPhone,
         clientEmail: clientEmail || undefined,
@@ -131,18 +191,21 @@ export function BookingPage() {
       })
       setAppointment(result)
       setStep(6)
-    } catch (err: any) {
-      setSubmitError(err.response?.data?.message || 'Erro ao criar agendamento. Tente novamente.')
+    } catch (err: unknown) {
+      setSubmitError(
+        (isAxiosError(err) && err.response?.data?.message) ||
+          'Erro ao criar agendamento. Tente novamente.',
+      )
     } finally {
       setSubmitting(false)
     }
   }
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toLocaleDateString('sv-SE')
   const barberName =
     selectedBarber === 'any'
       ? 'Sem preferência'
-      : barbers.find((b) => b.id === selectedBarber)?.name ?? ''
+      : (barbers.find((b) => b.id === selectedBarber)?.name ?? '')
 
   const canNextStep1 = selectedServices.length > 0
   const canNextStep2 = selectedBarber !== ''
@@ -157,20 +220,33 @@ export function BookingPage() {
     )
   }
 
+  if (loadError)
+    return (
+      <main className="p-10 text-center">
+        <p>Não foi possível carregar este salão.</p>
+        <button
+          className="underline mt-4"
+          onClick={() => window.location.reload()}
+        >
+          Tentar novamente
+        </button>
+      </main>
+    )
+
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
       {/* Header */}
       <header className="border-b border-zinc-800 bg-zinc-900">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <img src="/logo.jpeg" alt="Barbearia do Rei" className="h-10 w-10 rounded-xl object-cover" />
+          <img
+            src={info?.shopLogo || '/favicon.svg'}
+            alt="Logo do salão"
+            className="h-10 w-10 rounded-xl object-cover"
+          />
           <div>
-            <p className="font-bold text-white leading-tight">{info?.shopName ?? 'Barbearia do Rei'}</p>
-            <div className="flex items-center gap-1 mt-0.5">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />
-              ))}
-              <span className="text-xs text-amber-400 font-semibold ml-1">5.0</span>
-            </div>
+            <p className="font-bold text-white leading-tight">
+              {info?.shopName ?? 'Agendamento online'}
+            </p>
           </div>
         </div>
       </header>
@@ -184,30 +260,43 @@ export function BookingPage() {
                 <CheckCircle2 className="h-16 w-16 text-amber-500" />
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Agendamento confirmado!</h2>
-            <p className="text-zinc-400 mb-8">Até logo, {appointment.client.name.split(' ')[0]}! Te esperamos na barbearia.</p>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Agendamento confirmado!
+            </h2>
+            <p className="text-zinc-400 mb-8">
+              Até logo, {appointment.client.name.split(' ')[0]}! Te esperamos no
+              salão.
+            </p>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-left space-y-4 mb-8">
               <div className="flex items-center gap-3 pb-4 border-b border-zinc-800">
                 <Scissors className="h-5 w-5 text-amber-500 flex-shrink-0" />
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wide">Serviços</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wide">
+                    Serviços
+                  </p>
                   <p className="text-white font-medium">
-                    {appointment.services.map((s: any) => s.service.name).join(', ')}
+                    {appointment.services.map((s) => s.service.name).join(', ')}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-3 pb-4 border-b border-zinc-800">
                 <User className="h-5 w-5 text-amber-500 flex-shrink-0" />
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wide">Barbeiro</p>
-                  <p className="text-white font-medium">{appointment.barber.name}</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wide">
+                    Profissional
+                  </p>
+                  <p className="text-white font-medium">
+                    {appointment.barber.name}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3 pb-4 border-b border-zinc-800">
                 <Calendar className="h-5 w-5 text-amber-500 flex-shrink-0" />
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wide">Data e Hora</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wide">
+                    Data e Hora
+                  </p>
                   <p className="text-white font-medium">
                     {formatDateBR(selectedDate)} às {selectedTime}
                   </p>
@@ -216,7 +305,9 @@ export function BookingPage() {
               <div className="flex items-center gap-3">
                 <MapPin className="h-5 w-5 text-amber-500 flex-shrink-0" />
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wide">Endereço</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-wide">
+                    Endereço
+                  </p>
                   <p className="text-white font-medium">{info?.shopAddress}</p>
                 </div>
               </div>
@@ -256,8 +347,8 @@ export function BookingPage() {
                         s < step
                           ? 'bg-amber-500 text-zinc-900'
                           : s === step
-                          ? 'bg-amber-500 text-zinc-900 ring-2 ring-amber-500/30'
-                          : 'bg-zinc-800 text-zinc-500'
+                            ? 'bg-amber-500 text-zinc-900 ring-2 ring-amber-500/30'
+                            : 'bg-zinc-800 text-zinc-500'
                       }`}
                     >
                       {s < step ? <CheckCircle2 className="h-4 w-4" /> : s}
@@ -273,7 +364,10 @@ export function BookingPage() {
                 ))}
               </div>
               <p className="text-center text-sm text-zinc-400">
-                Passo {step} de 5 — <span className="text-white font-medium">{STEP_LABELS[step]}</span>
+                Passo {step} de 5 —{' '}
+                <span className="text-white font-medium">
+                  {STEP_LABELS[step]}
+                </span>
               </p>
             </div>
 
@@ -281,8 +375,12 @@ export function BookingPage() {
             {step === 1 && (
               <div className="space-y-4">
                 <div className="mb-6">
-                  <h2 className="text-xl font-bold text-white">Escolha os serviços</h2>
-                  <p className="text-zinc-400 text-sm mt-1">Selecione um ou mais serviços</p>
+                  <h2 className="text-xl font-bold text-white">
+                    Escolha os serviços
+                  </h2>
+                  <p className="text-zinc-400 text-sm mt-1">
+                    Selecione um ou mais serviços
+                  </p>
                 </div>
 
                 <div className="space-y-3">
@@ -301,13 +399,17 @@ export function BookingPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex-1 min-w-0 mr-4">
                             <div className="flex items-center gap-2">
-                              <p className="font-semibold text-white">{service.name}</p>
+                              <p className="font-semibold text-white">
+                                {service.name}
+                              </p>
                               {selected && (
                                 <CheckCircle2 className="h-4 w-4 text-amber-500 flex-shrink-0" />
                               )}
                             </div>
                             {service.description && (
-                              <p className="text-sm text-zinc-400 mt-0.5 truncate">{service.description}</p>
+                              <p className="text-sm text-zinc-400 mt-0.5 truncate">
+                                {service.description}
+                              </p>
                             )}
                             <div className="flex items-center gap-3 mt-1.5">
                               <span className="flex items-center gap-1 text-xs text-zinc-500">
@@ -333,24 +435,31 @@ export function BookingPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-zinc-400 font-medium">Total</span>
-                      <span className="text-amber-400 font-bold text-lg">{formatCurrency(totalPrice)}</span>
+                      <span className="text-amber-400 font-bold text-lg">
+                        {formatCurrency(totalPrice)}
+                      </span>
                     </div>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Step 2: Barbeiro */}
+            {/* Step 2: Profissional */}
             {step === 2 && (
               <div className="space-y-4">
                 <div className="mb-6">
-                  <h2 className="text-xl font-bold text-white">Escolha o barbeiro</h2>
-                  <p className="text-zinc-400 text-sm mt-1">Ou deixe que escolhemos para você</p>
+                  <h2 className="text-xl font-bold text-white">
+                    Escolha o profissional
+                  </h2>
+                  <p className="text-zinc-400 text-sm mt-1">
+                    Ou deixe que escolhemos para você
+                  </p>
                 </div>
 
                 <div className="space-y-3">
                   {/* Sem preferência */}
                   <button
+                    disabled={hasSpecialPricing}
                     onClick={() => handleBarberSelect('any')}
                     className={`w-full text-left p-4 rounded-2xl border transition-all ${
                       selectedBarber === 'any'
@@ -364,51 +473,67 @@ export function BookingPage() {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold text-white">Sem preferência</p>
+                          <p className="font-semibold text-white">
+                            Sem preferência
+                          </p>
                           {selectedBarber === 'any' && (
                             <CheckCircle2 className="h-4 w-4 text-amber-500" />
                           )}
                         </div>
-                        <p className="text-sm text-zinc-400">Qualquer barbeiro disponível</p>
+                        <p className="text-sm text-zinc-400">
+                          {hasSpecialPricing
+                            ? 'Selecione um profissional para consultar preço e duração.'
+                            : 'Qualquer profissional disponível'}
+                        </p>
                       </div>
                     </div>
                   </button>
 
-                  {barbers.map((barber) => (
-                    <button
-                      key={barber.id}
-                      onClick={() => handleBarberSelect(barber.id)}
-                      className={`w-full text-left p-4 rounded-2xl border transition-all ${
-                        selectedBarber === barber.id
-                          ? 'border-amber-500 bg-amber-500/10'
-                          : 'border-zinc-800 bg-zinc-900 hover:border-zinc-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-zinc-800 overflow-hidden flex-shrink-0">
-                          {barber.avatarUrl ? (
-                            <img
-                              src={barber.avatarUrl}
-                              alt={barber.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <User className="h-5 w-5 text-zinc-400" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold text-white">{barber.name}</p>
-                            {selectedBarber === barber.id && (
-                              <CheckCircle2 className="h-4 w-4 text-amber-500" />
+                  {barbers
+                    .filter(
+                      (b) =>
+                        !b.serviceIds?.length ||
+                        selectedServices.every((id) =>
+                          b.serviceIds.includes(id),
+                        ),
+                    )
+                    .map((barber) => (
+                      <button
+                        key={barber.id}
+                        onClick={() => handleBarberSelect(barber.id)}
+                        className={`w-full text-left p-4 rounded-2xl border transition-all ${
+                          selectedBarber === barber.id
+                            ? 'border-amber-500 bg-amber-500/10'
+                            : 'border-zinc-800 bg-zinc-900 hover:border-zinc-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-full bg-zinc-800 overflow-hidden flex-shrink-0">
+                            {barber.avatarUrl ? (
+                              <img
+                                src={barber.avatarUrl}
+                                alt={barber.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <User className="h-5 w-5 text-zinc-400" />
+                              </div>
                             )}
                           </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-white">
+                                {barber.name}
+                              </p>
+                              {selectedBarber === barber.id && (
+                                <CheckCircle2 className="h-4 w-4 text-amber-500" />
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    ))}
                 </div>
               </div>
             )}
@@ -417,19 +542,33 @@ export function BookingPage() {
             {step === 3 && (
               <div className="space-y-6">
                 <div className="mb-6">
-                  <h2 className="text-xl font-bold text-white">Escolha a data</h2>
-                  <p className="text-zinc-400 text-sm mt-1">Selecione o dia para ver os horários disponíveis</p>
+                  <h2 className="text-xl font-bold text-white">
+                    Escolha a data
+                  </h2>
+                  <p className="text-zinc-400 text-sm mt-1">
+                    Selecione o dia para ver os horários disponíveis
+                  </p>
                 </div>
 
                 {/* Horários de funcionamento */}
                 {info && (
                   <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-                    <p className="text-xs text-zinc-500 uppercase tracking-wide mb-3 font-medium">Horários de funcionamento</p>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wide mb-3 font-medium">
+                      Horários de funcionamento
+                    </p>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
                       {Object.entries(info.hours).map(([day, hours]) => (
                         <div key={day} className="flex justify-between text-sm">
-                          <span className="text-zinc-400">{DAY_NAMES[day]}</span>
-                          <span className={hours === 'closed' ? 'text-zinc-600' : 'text-white'}>
+                          <span className="text-zinc-400">
+                            {DAY_NAMES[day]}
+                          </span>
+                          <span
+                            className={
+                              hours === 'closed'
+                                ? 'text-zinc-600'
+                                : 'text-white'
+                            }
+                          >
                             {formatHours(hours)}
                           </span>
                         </div>
@@ -440,12 +579,14 @@ export function BookingPage() {
 
                 {/* Date picker */}
                 <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">Data</label>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    Data
+                  </label>
                   <input
                     type="date"
                     min={today}
                     value={selectedDate}
-                    onChange={(e) => handleDateChange(e.target.value)}
+                    onInput={(e) => handleDateChange(e.currentTarget.value)}
                     className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
                   />
                 </div>
@@ -464,8 +605,13 @@ export function BookingPage() {
                     ) : slots.length === 0 ? (
                       <div className="text-center py-8 bg-zinc-900 border border-zinc-800 rounded-2xl">
                         <Clock className="h-10 w-10 text-zinc-700 mx-auto mb-3" />
-                        <p className="text-zinc-400 font-medium">Nenhum horário disponível</p>
-                        <p className="text-zinc-600 text-sm mt-1">Escolha outra data</p>
+                        <p className="text-zinc-400 font-medium">
+                          Nenhum horário disponível
+                        </p>
+                        <p className="text-zinc-600 text-sm mt-1">
+                          Escolha outra data
+                        </p>
+                        <PublicWaitlist key={`${selectedDate}:${selectedBarber}:${selectedServices.join(',')}`} date={selectedDate} barberId={selectedBarber} serviceIds={selectedServices} />
                       </div>
                     ) : (
                       <div className="grid grid-cols-4 gap-2">
@@ -494,7 +640,9 @@ export function BookingPage() {
               <div className="space-y-5">
                 <div className="mb-6">
                   <h2 className="text-xl font-bold text-white">Seus dados</h2>
-                  <p className="text-zinc-400 text-sm mt-1">Para identificar e confirmar seu agendamento</p>
+                  <p className="text-zinc-400 text-sm mt-1">
+                    Para identificar e confirmar seu agendamento
+                  </p>
                 </div>
 
                 <div>
@@ -515,7 +663,8 @@ export function BookingPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    Telefone / WhatsApp <span className="text-amber-500">*</span>
+                    Telefone / WhatsApp{' '}
+                    <span className="text-amber-500">*</span>
                   </label>
                   <div className="relative">
                     <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
@@ -531,7 +680,10 @@ export function BookingPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    E-mail <span className="text-zinc-600 text-xs font-normal">(opcional)</span>
+                    E-mail{' '}
+                    <span className="text-zinc-600 text-xs font-normal">
+                      (opcional)
+                    </span>
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
@@ -547,7 +699,10 @@ export function BookingPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    Observações <span className="text-zinc-600 text-xs font-normal">(opcional)</span>
+                    Observações{' '}
+                    <span className="text-zinc-600 text-xs font-normal">
+                      (opcional)
+                    </span>
                   </label>
                   <div className="relative">
                     <MessageSquare className="absolute left-3.5 top-3.5 h-4 w-4 text-zinc-500" />
@@ -567,34 +722,55 @@ export function BookingPage() {
             {step === 5 && (
               <div className="space-y-5">
                 <div className="mb-6">
-                  <h2 className="text-xl font-bold text-white">Confirmar agendamento</h2>
-                  <p className="text-zinc-400 text-sm mt-1">Revise os detalhes antes de confirmar</p>
+                  <h2 className="text-xl font-bold text-white">
+                    Confirmar agendamento
+                  </h2>
+                  <p className="text-zinc-400 text-sm mt-1">
+                    Revise os detalhes antes de confirmar
+                  </p>
                 </div>
 
                 <div className="bg-zinc-900 border border-zinc-800 rounded-2xl divide-y divide-zinc-800">
                   <div className="flex items-start gap-3 p-4">
                     <Scissors className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-zinc-500 uppercase tracking-wide mb-1">Serviços</p>
+                      <p className="text-xs text-zinc-500 uppercase tracking-wide mb-1">
+                        Serviços
+                      </p>
                       <div className="space-y-1">
                         {selectedServices.map((id) => {
                           const s = services.find((sv) => sv.id === id)
                           return s ? (
-                            <div key={id} className="flex justify-between text-sm">
+                            <div
+                              key={id}
+                              className="flex justify-between text-sm"
+                            >
                               <span className="text-white">{s.name}</span>
-                              <span className="text-amber-400 font-medium">{formatCurrency(Number(s.price))}</span>
+                              <span className="text-amber-400 font-medium">
+                                {formatCurrency(
+                                  Number(
+                                    barbers.find((b) => b.id === selectedBarber)
+                                      ?.serviceOverrides?.[id]?.price ??
+                                      s.price,
+                                  ),
+                                )}
+                              </span>
                             </div>
                           ) : null
                         })}
                       </div>
-                      <p className="text-xs text-zinc-500 mt-2">{totalDuration} min no total</p>
+                      <p className="text-xs text-zinc-500 mt-2">
+                        {totalDuration} min no total
+                      </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3 p-4">
                     <User className="h-5 w-5 text-amber-500 flex-shrink-0" />
                     <div>
-                      <p className="text-xs text-zinc-500 uppercase tracking-wide mb-0.5">Barbeiro</p>
+                      <p className="text-xs text-zinc-500 uppercase tracking-wide mb-0.5">
+                        Profissional
+                      </p>
                       <p className="text-white font-medium">{barberName}</p>
                     </div>
                   </div>
@@ -602,7 +778,9 @@ export function BookingPage() {
                   <div className="flex items-center gap-3 p-4">
                     <Calendar className="h-5 w-5 text-amber-500 flex-shrink-0" />
                     <div>
-                      <p className="text-xs text-zinc-500 uppercase tracking-wide mb-0.5">Data e Hora</p>
+                      <p className="text-xs text-zinc-500 uppercase tracking-wide mb-0.5">
+                        Data e Hora
+                      </p>
                       <p className="text-white font-medium">
                         {formatDateBR(selectedDate)} às {selectedTime}
                       </p>
@@ -612,7 +790,9 @@ export function BookingPage() {
                   <div className="flex items-center gap-3 p-4">
                     <Phone className="h-5 w-5 text-amber-500 flex-shrink-0" />
                     <div>
-                      <p className="text-xs text-zinc-500 uppercase tracking-wide mb-0.5">Cliente</p>
+                      <p className="text-xs text-zinc-500 uppercase tracking-wide mb-0.5">
+                        Cliente
+                      </p>
                       <p className="text-white font-medium">{clientName}</p>
                       <p className="text-zinc-400 text-sm">{clientPhone}</p>
                     </div>
@@ -621,7 +801,9 @@ export function BookingPage() {
 
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex justify-between items-center">
                   <span className="text-amber-300 font-medium">Total</span>
-                  <span className="text-amber-400 font-bold text-2xl">{formatCurrency(totalPrice)}</span>
+                  <span className="text-amber-400 font-bold text-2xl">
+                    {formatCurrency(totalPrice)}
+                  </span>
                 </div>
 
                 {submitError && (

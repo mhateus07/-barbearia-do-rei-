@@ -4,9 +4,12 @@ import { AppointmentStatus } from '@prisma/client'
 export const createAppointmentSchema = z.object({
   clientId: z.string().uuid(),
   barberId: z.string().uuid(),
-  serviceIds: z.array(z.string().uuid()).min(1, 'Selecione pelo menos um serviço'),
+  serviceIds: z
+    .array(z.string().uuid())
+    .min(1, 'Selecione pelo menos um serviço'),
   startsAt: z.string().min(1, 'Data/hora obrigatória'),
-  notes: z.string().optional(),
+  returnOfId: z.string().uuid().optional(),
+  notes: z.string().max(4000).optional(),
 })
 
 export const updateAppointmentSchema = z.object({

@@ -1,145 +1,147 @@
-# 💈 Barbearia do Rei — Painel Administrativo
+# Gestão para salões e barbearias
 
-Sistema completo de gestão para barbearia, com painel administrativo web, API REST e banco de dados PostgreSQL.
+React + Vite no painel, Express + Prisma + PostgreSQL na API. A tela **Agenda e
+operação** reúne agenda por profissional, escalas, bloqueios, serviços por etapas,
+recursos, fichas técnicas, comanda, retornos, reativação e lista de espera.
 
-## Estrutura do Projeto
+## Preparação
 
-```
-Barbearia do Rei/
-├── barbearia-rei-api/   # Backend (Node.js + Express + Prisma + PostgreSQL)
-└── barbearia-rei-web/   # Frontend (React + Vite + Tailwind CSS)
-```
+Use Node 22.12+ (LTS recomendado) e PostgreSQL. Em cada pasta, execute `npm ci`.
+Copie os arquivos `.env.example` para `.env` e configure as credenciais localmente.
 
-## Funcionalidades
+Na API:
 
-- **Dashboard** — Resumo do dia: agendamentos, receita, próximos horários
-- **Agendamentos** — Criação, listagem, atualização de status, filtros por data e barbeiro
-- **Clientes** — Cadastro com busca por nome ou telefone
-- **Barbeiros** — Gerenciamento de equipe
-- **Serviços** — Catálogo com preço e duração
-- **Autenticação** — Login seguro com JWT
-
-## Tecnologias
-
-| Camada | Tecnologia |
-|--------|------------|
-| Frontend | React 18, Vite, Tailwind CSS, React Query, React Hook Form |
-| Backend | Node.js, Express 5, TypeScript, Prisma 7 |
-| Banco de Dados | PostgreSQL |
-| Autenticação | JWT (jsonwebtoken) |
-| Validação | Zod |
-
-## Como Rodar Localmente
-
-### Pré-requisitos
-- Node.js 18+
-- PostgreSQL
-
-### Backend
-
-```bash
-cd barbearia-rei-api
-npm install
-cp .env.example .env
-# Edite o .env com suas credenciais do banco
-npx prisma migrate dev --name init
+```sh
+npm run db:generate
+npm run db:deploy
 npm run db:seed
 npm run dev
-# API disponível em http://localhost:3333
 ```
 
-### Frontend
+O seed exige `ADMIN_EMAIL`, `ADMIN_PASSWORD` com pelo menos 10 caracteres e
+`SHOP_NAME`. Não existe senha administrativa padrão no novo provisionamento.
+Em banco já existente, não execute o seed para atualizar a versão: aplique somente
+as migrações e confira as configurações existentes.
 
-```bash
-cd barbearia-rei-web
-npm install
-cp .env.example .env
+No painel:
+
+```sh
 npm run dev
-# Interface disponível em http://localhost:5173
 ```
 
-### Acesso padrão
+Entre em `/login`, informe o identificador do salão e as credenciais criadas.
+O agendamento público usa `/agendar?salon=identificador`.
 
-| Campo | Valor |
-|-------|-------|
-| E-mail | admin@barbeariadorei.com |
-| Senha | admin123 |
+## Vários salões e acessos
 
-> **Importante:** Troque a senha após o primeiro acesso em produção.
+Cada salão tem um banco PostgreSQL próprio. Configure `SALON_DATABASES` como um
+objeto JSON que associa slug a URL de conexão. O servidor recusa dois slugs com a
+mesma identidade de banco (host, porta e nome). `DATABASE_URL` continua sendo
+usada pelo CLI para migrar e provisionar um banco específico.
 
-## Variáveis de Ambiente
+Execute `npm run db:deploy:all` para migrar os bancos registrados. Cadastre novos
+salões criando um banco vazio, aplicando as migrações, executando o seed com os
+dados daquele salão e adicionando sua conexão à configuração do servidor.
+Reinicie a API após alterar a lista. Não coloque URLs de banco no frontend.
 
-### Backend (`barbearia-rei-api/.env`)
+A seleção pública via `X-Salon` não concede acesso administrativo. O JWT está
+vinculado ao salão; a cada requisição, o usuário é consultado no respectivo banco.
 
-```env
-DATABASE_URL="postgresql://user:password@host:5432/barbearia_rei"
-JWT_SECRET="sua_chave_secreta_aqui"
-PORT=3333
-NODE_ENV=development
+- **Dono:** configurações e gestão de acessos, além da operação.
+- **Recepção:** agenda, clientes, comanda, financeiro e relacionamento; não altera
+  configurações nem administra usuários.
+- **Profissional:** sua agenda, sua comissão do mês e fichas dos clientes que atende.
+
+A implantação atual usa o mesmo fuso `SALON_TIMEZONE` para todos os bancos do
+processo (padrão `America/Sao_Paulo`). Para fusos diferentes, use processos separados.
+
+## Regras da operação
+
+- Mudanças de agenda, reservas temporárias e recebimentos são serializados por
+  bloqueio transacional PostgreSQL dentro de cada salão. Não há bloqueio entre bancos.
+- A criação pública, interna e o reagendamento validam expediente, escala,
+  especialidade, sobreposições, equipamentos e vagas temporariamente reservadas.
+- Aplicação, pausa e finalização são etapas distintas. A pausa libera o profissional,
+  mas mantém o recurso associado ao serviço reservado.
+- Uma visita pode criar atendimentos de profissionais diferentes numa transação.
+  Cada atendimento mantém sua comanda e comissão; não há comanda unificada da visita.
+- Preço e duração podem variar por profissional. Reagendar preserva os snapshots do
+  atendimento; substituir serviços atualiza os valores e exige estorno prévio.
+- Concluir credita fidelidade uma única vez. Resgates concorrentes não deixam saldo
+  negativo. Atendimentos encerrados não podem voltar a estados anteriores.
+- Recebimentos aceitam sinal e divisão entre meios, com limite pelo saldo. O sistema
+  registra o pagamento; não processa cobranças Pix/cartão. Estornos são registros
+  integrais: a devolução real é feita no provedor/caixa.
+- Comissões usam a taxa registrada na reserva e o valor de serviços após desconto.
+  Produtos não geram comissão nesta versão. Pagamento de comissão gera despesa e
+  impede sobreposição de períodos já pagos.
+- A taxa histórica anterior à migração não existia: a migração usa a taxa atual como
+  referência para esses registros antigos. Mudanças passadas não são reconstruídas.
+
+## WhatsApp e relacionamento
+
+O dono configura URL, chave e instância de um provedor compatível com o endpoint
+Evolution `POST /message/sendText/:instance`, autenticação `apikey`. Valide o contrato
+com o provedor contratado antes de habilitar o envio. Nenhuma credencial acompanha o
+repositório. O WhatsApp inicia desabilitado.
+
+O worker roda a cada minuto, persiste a fila e tenta enviar até cinco vezes com
+intervalos crescentes. `NOTIFICATION_WORKER=false` desliga o worker, por exemplo em
+uma demonstração. `PUBLIC_WEB_URL` é obrigatório para links de retorno e ofertas.
+`SENT` significa aceito pelo provedor, não confirmação de entrega ao aparelho.
+Uma queda após o provedor aceitar e antes do registro local pode duplicar mensagens
+se o provedor não respeitar o cabeçalho `Idempotency-Key`.
+
+- Configure retorno em dias por serviço. A lista de oportunidades exclui clientes
+  com nova visita marcada. Convites exigem autorização registrada e intervalo mínimo
+  de sete dias entre contatos. Revogar autorização também impede convites pendentes.
+- O link identifica reservas originadas por reativação por até 30 dias. Os indicadores
+  medem atribuição, não causalidade nem lucro.
+- A lista de espera registra serviço, intervalo e profissional opcional. Ofertas
+  reservam a vaga por 15 minutos e a aceitação é transacional.
+- O dono pode habilitar ofertas automáticas: a cada minuto, cancelamentos futuros
+  dos próximos 14 dias são cruzados com candidatos por ordem de inscrição. Serviços
+  precisam caber integralmente na vaga. Uma pessoa não recebe novamente a mesma vaga
+  expirada automaticamente. Também é possível oferecer manualmente.
+- Fotos da ficha técnica são links HTTPS com autorização registrada; esta versão
+  não faz upload nem gerencia armazenamento de imagens. Use armazenamento privado
+  apropriado para conteúdo restrito.
+
+## Atualização de instalação existente
+
+Faça backup e ensaie a atualização em uma cópia antes do deploy. A migração inclui
+restrições de saldo, horários e papéis; dados antigos inválidos precisam ser
+corrigidos antes da aplicação. A identidade existente é preservada. Tokens antigos
+não têm vínculo de salão, portanto será necessário entrar novamente após atualizar.
+
+O `deploy.sh` usa os diretórios deste repositório e migra todos os salões registrados.
+Ele continua apontando para a infraestrutura original: revise o destino antes de
+executá-lo. A implementação local não executa deploy automaticamente.
+
+## Verificação
+
+```sh
+# API
+npm run build
+# Painel
+npm run build
+npm run lint
 ```
 
-### Frontend (`barbearia-rei-web/.env`)
+Os testes de integração exigem dois bancos locais descartáveis cujo nome começa com
+`salon_test_`. Nunca usam a `DATABASE_URL` de produção:
 
-```env
-VITE_API_URL=http://localhost:3333/api/v1
+```sh
+TEST_DATABASE_URL=postgresql://usuario:senha@127.0.0.1:5432/salon_test_a \
+TEST_DATABASE_URL_B=postgresql://usuario:senha@127.0.0.1:5432/salon_test_b npm test
 ```
 
-## Scripts Disponíveis
+Para o contêiner local `salon-operations-test` na porta 55439, use
+`sh scripts/test-local.sh` dentro da API. A suíte aplica as migrações e usa dados de
+teste com identificadores únicos; chamadas de envio são simuladas, sem mensagens
+reais. Abrange concorrência, permissões, filas, dinheiro, inventário e agendamento.
 
-### Backend
-
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev` | Inicia em modo desenvolvimento |
-| `npm run build` | Compila para produção |
-| `npm run db:migrate` | Roda as migrations |
-| `npm run db:seed` | Popula o banco com dados iniciais |
-| `npm run db:studio` | Abre o Prisma Studio |
-
-### Frontend
-
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev` | Inicia em modo desenvolvimento |
-| `npm run build` | Build para produção |
-| `npm run preview` | Preview do build |
-
-## Rotas da API
-
-```
-POST   /api/v1/auth/login
-GET    /api/v1/auth/me
-
-GET    /api/v1/dashboard/summary
-GET    /api/v1/dashboard/stats
-
-GET    /api/v1/barbers
-POST   /api/v1/barbers
-PATCH  /api/v1/barbers/:id
-DELETE /api/v1/barbers/:id
-
-GET    /api/v1/services
-POST   /api/v1/services
-PATCH  /api/v1/services/:id
-DELETE /api/v1/services/:id
-
-GET    /api/v1/clients
-POST   /api/v1/clients
-PATCH  /api/v1/clients/:id
-DELETE /api/v1/clients/:id
-
-GET    /api/v1/appointments
-POST   /api/v1/appointments
-PATCH  /api/v1/appointments/:id
-PATCH  /api/v1/appointments/:id/status
-DELETE /api/v1/appointments/:id
-```
-
-## Roadmap
-
-- [ ] Notificações via WhatsApp (Evolution API / Z-API)
-- [ ] Programa de fidelidade (cartão digital)
-- [ ] Controle de estoque de produtos
-- [ ] Relatórios financeiros com gráficos
-- [ ] Perfil de acesso para barbeiros
-- [ ] Agendamento online para clientes
+Após os testes, `node scripts/preview-demo.cjs` inicia uma API de demonstração usando
+somente o banco descartável `salon_test_b`. Inicie o Vite em paralelo e acesse
+`/login?salon=demo` com `demo@salon.local` / `Demo-salon-2026`. O worker fica desligado.
+As credenciais de demonstração não são criadas em nenhum banco real.

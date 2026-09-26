@@ -5,6 +5,16 @@ export const createBarberSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
   avatarUrl: z.string().url().optional().or(z.literal('')),
+  serviceOverrides: z
+    .record(
+      z.string().uuid(),
+      z.object({
+        price: z.number().positive().optional(),
+        durationMin: z.number().int().positive().max(480).optional(),
+      }),
+    )
+    .optional(),
+  serviceIds: z.array(z.string().uuid()).max(100).optional(),
   commissionRate: z.number().min(0).max(100).optional(),
 })
 

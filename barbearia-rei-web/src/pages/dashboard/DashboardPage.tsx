@@ -41,12 +41,12 @@ function StatCard({
   )
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: readonly { value?: string | number }[]; label?: string | number }) => {
   if (active && payload?.length) {
     return (
       <div className="rounded-xl bg-zinc-900 border border-zinc-700 px-3 py-2 shadow-xl">
         <p className="text-xs text-zinc-400 mb-1">{label}</p>
-        <p className="text-sm font-bold text-amber-400">{formatCurrency(payload[0].value)}</p>
+        <p className="text-sm font-bold text-amber-400">{formatCurrency(Number(payload[0].value ?? 0))}</p>
       </div>
     )
   }
@@ -75,12 +75,12 @@ export function DashboardPage() {
     )
   }
 
-  const revenueData = stats?.revenueByDay?.slice(-7).map((d: any) => ({
+  const revenueData = stats?.revenueByDay?.slice(-7).map((d) => ({
     name: new Date(d.date).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }),
     value: d.total,
   })) ?? []
 
-  const statusData = stats?.appointmentsByStatus?.map((s: any) => ({
+  const statusData = stats?.appointmentsByStatus?.map((s) => ({
     name: s.status,
     value: s.count,
   })) ?? []
@@ -142,7 +142,7 @@ export function DashboardPage() {
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie data={statusData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value">
-                  {statusData.map((_: any, index: number) => (
+                  {statusData.map((_, index) => (
                     <Cell key={index} fill={STATUS_COLORS[index % STATUS_COLORS.length]} />
                   ))}
                 </Pie>
@@ -163,7 +163,7 @@ export function DashboardPage() {
             <p className="text-sm text-zinc-400 py-4 text-center">Nenhum dado ainda</p>
           ) : (
             <div className="space-y-3">
-              {stats.topServices.map((s: any, i: number) => (
+              {stats.topServices.map((s, i) => (
                 <div key={s.name} className="flex items-center gap-3">
                   <span className="text-xs font-bold text-zinc-400 w-4">{i + 1}</span>
                   <div className="flex-1">

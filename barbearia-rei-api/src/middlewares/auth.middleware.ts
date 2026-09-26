@@ -1,12 +1,19 @@
 import { Request, Response, NextFunction } from 'express'
+import { prisma, currentSalon } from '../lib/prisma'
 import { verifyToken } from '../config/jwt'
 
 export interface AuthRequest extends Request<Record<string, string>> {
   adminId?: string
   adminEmail?: string
+  role?: string
+  barberId?: string
 }
 
-export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
+export async function authMiddleware(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+) {
   const authHeader = req.headers.authorization
 
   if (!authHeader?.startsWith('Bearer ')) {
@@ -17,10 +24,27 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
 
   try {
     const payload = verifyToken(token)
+    if (payload.salon !== currentSalon().slug) throw new Error('Salão inválido')
+    const user = await prisma.admin.findUnique({ where: { id: payload.sub } })
+    if (!user || !user.isActive) throw new Error('Usuário inativo')
+    req.role = user.role
+    req.barberId = user.barberId ?? undefined
     req.adminId = payload.sub
     req.adminEmail = payload.email
     return next()
   } catch {
-    return res.status(401).json({ error: { message: 'Token inválido ou expirado' } })
+    return res
+      .status(401)
+      .json({ error: { message: 'Token inválido ou expirado' } })
+  }
+}
+
+export function allowRoles(...roles: string[]) {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.role || !roles.includes(req.role))
+      return res
+        .status(403)
+        .json({ error: { message: 'Acesso não permitido' } })
+    next()
   }
 }

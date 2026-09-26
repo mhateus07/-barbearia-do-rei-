@@ -3,8 +3,9 @@ set -e
 
 VPS="root@31.97.160.94"
 DOMAIN="rei.impulsiodigital.com"
-API_LOCAL="/Users/mateushenrique/Documents/01_Clientes/Barbearias/Barbearia do Rei/barbearia-rei-api"
-WEB_LOCAL="/Users/mateushenrique/Documents/01_Clientes/Barbearias/Barbearia do Rei/barbearia-rei-web"
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+API_LOCAL="$PROJECT_DIR/barbearia-rei-api"
+WEB_LOCAL="$PROJECT_DIR/barbearia-rei-web"
 
 echo "======================================"
 echo "  DEPLOY - Barbearia do Rei"
@@ -31,7 +32,7 @@ ssh "$VPS" bash << 'REMOTE'
   cd /var/www/barbearia/api
 
   echo "  → Instalando dependências..."
-  npm install
+  npm ci
 
   echo "  → Gerando Prisma client..."
   npx prisma generate
@@ -40,7 +41,7 @@ ssh "$VPS" bash << 'REMOTE'
   npm run build
 
   echo "  → Rodando migrations..."
-  npx prisma migrate deploy
+  npm run db:deploy:all
 
   echo "  → Configurando PM2..."
   if ! command -v pm2 &> /dev/null; then

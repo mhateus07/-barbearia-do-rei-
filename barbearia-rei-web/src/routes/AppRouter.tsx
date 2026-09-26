@@ -1,3 +1,5 @@
+import { OperationsPage } from '../pages/operations/OperationsPage'
+import { OfferPage } from '../pages/operations/OfferPage'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { PrivateRoute } from './PrivateRoute'
 import { AdminLayout } from '../components/layout/AdminLayout'
@@ -17,10 +19,12 @@ export function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/oferta" element={<OfferPage />} />
         <Route path="/agendar" element={<BookingPage />} />
         <Route element={<PrivateRoute />}>
           <Route element={<AdminLayout />}>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to="/operacao" replace />} />
+            <Route path="/operacao" element={<OperationsPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/barbeiros" element={<BarbersPage />} />
             <Route path="/servicos" element={<ServicesPage />} />
@@ -31,7 +35,7 @@ export function AppRouter() {
             <Route path="/configuracoes" element={<SettingsPage />} />
           </Route>
         </Route>
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/operacao" replace />} />
       </Routes>
     </BrowserRouter>
   )

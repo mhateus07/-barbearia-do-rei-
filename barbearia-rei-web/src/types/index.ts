@@ -7,6 +7,9 @@ export type AppointmentStatus =
   | 'NO_SHOW'
 
 export interface Admin {
+  role: 'OWNER' | 'RECEPTION' | 'PROFESSIONAL'
+  barberId?: string
+  salon: string
   id: string
   name: string
   email: string
@@ -92,7 +95,14 @@ export interface PaginatedResponse<T> {
 }
 
 export type PaymentMethod = 'CASH' | 'PIX' | 'CREDIT_CARD' | 'DEBIT_CARD'
-export type ExpenseCategory = 'RENT' | 'UTILITIES' | 'SUPPLIES' | 'SALARY' | 'EQUIPMENT' | 'MARKETING' | 'OTHER'
+export type ExpenseCategory =
+  | 'RENT'
+  | 'UTILITIES'
+  | 'SUPPLIES'
+  | 'SALARY'
+  | 'EQUIPMENT'
+  | 'MARKETING'
+  | 'OTHER'
 export type ExpenseStatus = 'PENDING' | 'PAID' | 'OVERDUE'
 
 export interface Payment {
@@ -180,6 +190,11 @@ export interface FinancialSummary {
   totalOverdue: number
   incomeByMethod: Record<string, number>
   expensesByCategory: Record<string, number>
-  cashFlowByDay: { date: string; income: number; expenses: number; balance: number }[]
+  cashFlowByDay: {
+    date: string
+    income: number
+    expenses: number
+    balance: number
+  }[]
   period: { from: string; to: string }
 }

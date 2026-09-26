@@ -1,3 +1,4 @@
+import { normalizePhone } from '../../utils/phone'
 import { prisma } from '../../lib/prisma'
 import { CreateClientInput, UpdateClientInput } from './clients.schema'
 
@@ -34,6 +35,7 @@ export async function createClient(input: CreateClientInput) {
   return prisma.client.create({
     data: {
       ...input,
+      ...(input.phone ? { phone: normalizePhone(input.phone) } : {}),
       birthDate: input.birthDate ? new Date(input.birthDate) : undefined,
       email: input.email || undefined,
     },
@@ -46,6 +48,7 @@ export async function updateClient(id: string, input: UpdateClientInput) {
     where: { id },
     data: {
       ...input,
+      ...(input.phone ? { phone: normalizePhone(input.phone) } : {}),
       birthDate: input.birthDate ? new Date(input.birthDate) : undefined,
       email: input.email || undefined,
     },
@@ -54,8 +57,11 @@ export async function updateClient(id: string, input: UpdateClientInput) {
 
 export async function deleteClient(id: string) {
   await getClientById(id)
-  const hasAppointments = await prisma.appointment.count({ where: { clientId: id } })
-  if (hasAppointments > 0) throw new Error('Cliente possui agendamentos e não pode ser excluído')
+  const hasAppointments = await prisma.appointment.count({
+    where: { clientId: id },
+  })
+  if (hasAppointments > 0)
+    throw new Error('Cliente possui agendamentos e não pode ser excluído')
   return prisma.client.delete({ where: { id } })
 }
 
@@ -75,7 +81,13 @@ export async function getClientLoyalty(clientId: string) {
   await getClientById(clientId)
   const card = await prisma.loyaltyCard.findUnique({ where: { clientId } })
   if (!card) {
-    return { clientId, visitCount: 0, pointsBalance: 0, pointsEarned: 0, pointsRedeemed: 0 }
+    return {
+      clientId,
+      visitCount: 0,
+      pointsBalance: 0,
+      pointsEarned: 0,
+      pointsRedeemed: 0,
+    }
   }
   return card
 }
@@ -83,20 +95,24 @@ export async function getClientLoyalty(clientId: string) {
 export async function redeemLoyaltyPoints(clientId: string, points: number) {
   await getClientById(clientId)
 
-  const card = await prisma.loyaltyCard.findUnique({ where: { clientId } })
-  if (!card) throw new Error('Cliente ainda não tem cartão fidelidade')
-  if (card.pointsBalance < points) throw new Error(`Pontos insuficientes. Saldo: ${card.pointsBalance}`)
-
-  return prisma.loyaltyCard.update({
-    where: { clientId },
+  if (!Number.isInteger(points) || points <= 0)
+    throw new Error('Pontos devem ser inteiros positivos')
+  const changed = await prisma.loyaltyCard.updateMany({
+    where: { clientId, pointsBalance: { gte: points } },
     data: {
       pointsBalance: { decrement: points },
       pointsRedeemed: { increment: points },
     },
   })
+  if (!changed.count) throw new Error('Saldo insuficiente')
+  return prisma.loyaltyCard.findUnique({ where: { clientId } })
 }
 
-export async function listClientsWithLoyalty(search?: string, page = 1, limit = 20) {
+export async function listClientsWithLoyalty(
+  search?: string,
+  page = 1,
+  limit = 20,
+) {
   const where = search
     ? {
         OR: [

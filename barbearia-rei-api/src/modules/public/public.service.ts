@@ -1,9 +1,18 @@
+import {
+  assertAvailability,
+  runSchedule,
+  bookInTransaction,
+  parseHours,
+} from '../appointments/scheduling'
+import { normalizePhone } from '../../utils/phone'
 import { prisma } from '../../lib/prisma'
 import { getSettings } from '../settings/settings.service'
 
 export async function getPublicInfo() {
   const settings = await getSettings()
   return {
+    shopLogo: settings.shop_logo,
+    shopDescription: settings.shop_description,
     shopName: settings.shop_name,
     shopPhone: settings.shop_phone,
     shopAddress: settings.shop_address,
@@ -24,7 +33,15 @@ export async function getPublicServices() {
   return prisma.service.findMany({
     where: { isActive: true },
     orderBy: { name: 'asc' },
-    select: { id: true, name: true, description: true, price: true, durationMin: true },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      price: true,
+      durationMin: true,
+      processingMin: true,
+      finishingMin: true,
+    },
   })
 }
 
@@ -32,84 +49,77 @@ export async function getPublicBarbers() {
   return prisma.barber.findMany({
     where: { isActive: true },
     orderBy: { name: 'asc' },
-    select: { id: true, name: true, avatarUrl: true },
-  })
-}
-
-function parseHours(hoursStr: string): { open: number; close: number } | null {
-  if (!hoursStr || hoursStr === 'closed') return null
-  const [openStr, closeStr] = hoursStr.split('-')
-  const [openH, openM] = openStr.split(':').map(Number)
-  const [closeH, closeM] = closeStr.split(':').map(Number)
-  return { open: openH * 60 + openM, close: closeH * 60 + closeM }
-}
-
-export async function getAvailableSlots(barberId: string, date: string, totalDuration: number) {
-  const settings = await getSettings()
-
-  const dateObj = new Date(`${date}T00:00:00`)
-  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-  const dayKey = `hours_${dayNames[dateObj.getDay()]}`
-  const hours = parseHours(settings[dayKey])
-
-  if (!hours) return []
-
-  const startOfDay = new Date(`${date}T00:00:00`)
-  startOfDay.setHours(0, 0, 0, 0)
-  const endOfDay = new Date(`${date}T00:00:00`)
-  endOfDay.setHours(23, 59, 59, 999)
-
-  const isAny = barberId === 'any'
-
-  const existingAppointments = await prisma.appointment.findMany({
-    where: {
-      ...(isAny ? {} : { barberId }),
-      startsAt: { gte: startOfDay, lte: endOfDay },
-      status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+    select: {
+      id: true,
+      name: true,
+      avatarUrl: true,
+      serviceIds: true,
+      serviceOverrides: true,
     },
-    select: { startsAt: true, endsAt: true, barberId: true },
   })
+}
 
-  let barberIds: string[] = []
-  if (isAny) {
-    const activeBarbers = await prisma.barber.findMany({ where: { isActive: true }, select: { id: true } })
-    barberIds = activeBarbers.map((b) => b.id)
-  } else {
-    barberIds = [barberId]
-  }
-
-  const now = new Date()
+export async function getAvailableSlots(
+  barberId: string,
+  date: string,
+  totalDuration: number,
+  serviceIds?: string[],
+) {
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+    !Number.isInteger(totalDuration) ||
+    totalDuration <= 0 ||
+    totalDuration > 1440
+  )
+    throw new Error('Data ou duração inválida')
+  const settings = await getSettings()
+  const day = new Date(`${date}T12:00:00`)
+  const names = [
+    'sunday',
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday',
+  ]
+  const hours = parseHours(settings[`hours_${names[day.getDay()]}`])
+  if (!hours) return []
+  const barbers = await prisma.barber.findMany({
+    where: { isActive: true, ...(barberId === 'any' ? {} : { id: barberId }) },
+  })
   const slots: string[] = []
-
-  for (let min = hours.open; min + totalDuration <= hours.close; min += 30) {
-    const slotH = Math.floor(min / 60)
-    const slotM = min % 60
-    const slotStr = `${String(slotH).padStart(2, '0')}:${String(slotM).padStart(2, '0')}`
-    const slotStart = new Date(`${date}T${slotStr}:00`)
-    const slotEnd = new Date(slotStart.getTime() + totalDuration * 60 * 1000)
-
-    if (slotStart <= now) continue
-
-    if (isAny) {
-      const available = barberIds.some((bid) => {
-        const barberAppts = existingAppointments.filter((a) => a.barberId === bid)
-        return !barberAppts.some((appt) => {
-          const s = new Date(appt.startsAt)
-          const e = new Date(appt.endsAt)
-          return s < slotEnd && e > slotStart
-        })
-      })
-      if (available) slots.push(slotStr)
-    } else {
-      const hasConflict = existingAppointments.some((appt) => {
-        const s = new Date(appt.startsAt)
-        const e = new Date(appt.endsAt)
-        return s < slotEnd && e > slotStart
-      })
-      if (!hasConflict) slots.push(slotStr)
+  for (
+    let minute = hours.open;
+    minute + totalDuration <= hours.close;
+    minute += 15
+  ) {
+    const time = `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`
+    const start = new Date(`${date}T${time}:00`)
+    if (start <= new Date()) continue
+    for (const barber of barbers) {
+      if (!serviceIds?.length)
+        throw new Error('Informe os serviços para consultar disponibilidade')
+      try {
+        await assertAvailability(prisma, barber.id, serviceIds, start)
+        slots.push(time)
+        break
+      } catch (error) {
+        if (
+          !(error instanceof Error) ||
+          ![
+            'horário',
+            'expediente',
+            'Profissional',
+            'Recurso',
+            'Serviço',
+            'reservado',
+          ].some((word) => error.message.includes(word))
+        )
+          throw error
+      }
     }
   }
-
   return slots
 }
 
@@ -122,96 +132,81 @@ export async function createPublicAppointment(data: {
   date: string
   time: string
   notes?: string
+  outreachToken?: string
 }) {
-  let client = await prisma.client.findUnique({ where: { phone: data.clientPhone } })
-
-  if (!client) {
-    client = await prisma.client.create({
-      data: {
-        name: data.clientName,
-        phone: data.clientPhone,
-        ...(data.clientEmail ? { email: data.clientEmail } : {}),
-      },
-    })
-  }
-
-  const services = await prisma.service.findMany({
-    where: { id: { in: data.serviceIds }, isActive: true },
-  })
-
-  if (services.length !== data.serviceIds.length) {
-    throw new Error('Um ou mais serviços não encontrados ou inativos')
-  }
-
-  const totalDuration = services.reduce((sum, s) => sum + s.durationMin, 0)
-  const totalPrice = services.reduce((sum, s) => sum + Number(s.price), 0)
-
-  const startsAt = new Date(`${data.date}T${data.time}:00`)
-  const endsAt = new Date(startsAt.getTime() + totalDuration * 60 * 1000)
-
-  let barberId = data.barberId
-
-  if (barberId === 'any') {
-    const activeBarbers = await prisma.barber.findMany({ where: { isActive: true }, select: { id: true } })
-    let found = false
-    for (const barber of activeBarbers) {
-      const conflict = await prisma.appointment.findFirst({
-        where: {
-          barberId: barber.id,
-          status: { notIn: ['CANCELLED', 'NO_SHOW'] },
-          OR: [
-            { startsAt: { gte: startsAt, lt: endsAt } },
-            { endsAt: { gt: startsAt, lte: endsAt } },
-            { startsAt: { lte: startsAt }, endsAt: { gte: endsAt } },
-          ],
+  return runSchedule(async (tx) => {
+    const phone = normalizePhone(data.clientPhone)
+    const matches = await tx.$queryRaw<
+      { id: string }[]
+    >`SELECT id FROM clients WHERE regexp_replace(phone, '[^0-9]', '', 'g') IN (${phone}, ${phone.slice(2)})`
+    if (matches.length > 1)
+      throw new Error(
+        'Entre em contato com o salão para atualizar seu cadastro',
+      )
+    let client = matches[0]
+      ? await tx.client.findUnique({ where: { id: matches[0].id } })
+      : null
+    if (!client)
+      client = await tx.client.create({
+        data: {
+          name: data.clientName,
+          phone,
+          email: data.clientEmail || undefined,
         },
       })
-      if (!conflict) {
-        barberId = barber.id
-        found = true
-        break
+    let barberId = data.barberId
+    const startsAt = new Date(`${data.date}T${data.time}:00`)
+    if (barberId === 'any') {
+      const barbers = await tx.barber.findMany({
+        where: { isActive: true },
+        orderBy: { id: 'asc' },
+      })
+      barberId = ''
+      for (const barber of barbers) {
+        try {
+          await assertAvailability(tx, barber.id, data.serviceIds, startsAt)
+          barberId = barber.id
+          break
+        } catch (error) {
+          if (!(error instanceof Error) || error.message.includes('prisma'))
+            throw error
+        }
       }
+      if (!barberId)
+        throw new Error('Nenhum profissional disponível neste horário')
     }
-    if (!found) throw new Error('Nenhum barbeiro disponível neste horário')
-  } else {
-    const conflict = await prisma.appointment.findFirst({
-      where: {
-        barberId,
-        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
-        OR: [
-          { startsAt: { gte: startsAt, lt: endsAt } },
-          { endsAt: { gt: startsAt, lte: endsAt } },
-          { startsAt: { lte: startsAt }, endsAt: { gte: endsAt } },
-        ],
-      },
+    const outreach = data.outreachToken
+      ? await tx.outreach.findFirst({
+          where: {
+            token: data.outreachToken,
+            clientId: client.id,
+            appointmentId: null,
+            createdAt: { gte: new Date(Date.now() - 30 * 86400000) },
+          },
+        })
+      : null
+    const appointment = await bookInTransaction(tx, {
+      clientId: client.id,
+      barberId,
+      serviceIds: data.serviceIds,
+      startsAt: startsAt.toISOString(),
+      notes: data.notes,
+      source: outreach ? 'REACTIVATION' : 'ONLINE',
     })
-    if (conflict) throw new Error('Horário não disponível. Por favor, escolha outro horário.')
-  }
-
-  return prisma.$transaction(async (tx) => {
-    return tx.appointment.create({
-      data: {
-        clientId: client!.id,
-        barberId,
-        startsAt,
-        endsAt,
-        totalPrice,
-        notes: data.notes,
-        services: {
-          create: services.map((s) => ({
-            serviceId: s.id,
-            priceSnapshot: Number(s.price),
-            durationSnapshot: s.durationMin,
-          })),
-        },
-      },
-      include: {
-        client: { select: { id: true, name: true, phone: true } },
-        barber: { select: { id: true, name: true } },
-        services: {
-          include: { service: { select: { id: true, name: true } } },
-        },
-      },
-    })
+    if (outreach)
+      await tx.outreach.update({
+        where: { id: outreach.id },
+        data: { appointmentId: appointment.id },
+      })
+    // Public responses never expose details from an existing client record.
+    return {
+      id: appointment.id,
+      startsAt: appointment.startsAt,
+      endsAt: appointment.endsAt,
+      totalPrice: appointment.totalPrice,
+      barber: appointment.barber,
+      services: appointment.services,
+      client: { name: data.clientName },
+    }
   })
 }

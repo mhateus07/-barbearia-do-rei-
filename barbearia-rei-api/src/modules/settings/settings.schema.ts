@@ -8,10 +8,12 @@ export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>
 
 // Valores padrão das configurações
 export const SETTING_DEFAULTS: Record<string, string> = {
-  shop_name: 'Barbearia do Rei',
-  shop_phone: '(32) 99160-8852',
-  shop_address: 'Rua Jose Narcisio Silva 1003, Fabricas, São João del Rei, MG',
-  shop_instagram: '@opedro.seubarbeiro',
+  shop_name: 'Meu salão',
+  shop_logo: '',
+  shop_description: 'Conheça nossos serviços e escolha seu próximo horário.',
+  shop_phone: '',
+  shop_address: '',
+  shop_instagram: '',
   hours_monday: '08:00-19:00',
   hours_tuesday: '08:00-19:00',
   hours_wednesday: '08:00-19:00',
@@ -23,6 +25,7 @@ export const SETTING_DEFAULTS: Record<string, string> = {
   loyalty_points_per_visit: '10',
   loyalty_redemption_points: '100',
   loyalty_redemption_value: '10',
+  waitlist_auto_offer: 'false',
   whatsapp_enabled: 'false',
   whatsapp_api_url: '',
   whatsapp_api_key: '',

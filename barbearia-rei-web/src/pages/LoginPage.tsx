@@ -1,11 +1,13 @@
+import { getSalon } from '../api/salon'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../contexts/auth-state'
 import { Scissors, Mail, Lock, ArrowRight } from 'lucide-react'
 
 export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const [salon, setSalon] = useState(getSalon())
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -16,8 +18,9 @@ export function LoginPage() {
     setError('')
     setLoading(true)
     try {
+      localStorage.setItem('salon', salon)
       await login(email, password)
-      navigate('/dashboard')
+      navigate('/operacao')
     } catch {
       setError('E-mail ou senha inválidos.')
     } finally {
@@ -33,15 +36,16 @@ export function LoginPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 shadow-lg shadow-amber-500/30">
             <Scissors className="h-5 w-5 text-white" strokeWidth={2.5} />
           </div>
-          <span className="text-white font-bold text-lg">Barbearia do Rei</span>
+          <span className="text-white font-bold text-lg">Gestão do salão</span>
         </div>
         <div>
           <h2 className="text-4xl font-bold text-white leading-tight mb-4">
-            Não é só corte,<br />
+            Não é só corte,
+            <br />
             <span className="text-amber-400">é cuidado.</span>
           </h2>
           <p className="text-zinc-400 text-lg leading-relaxed">
-            Na Barbearia do Rei, sua imagem é prioridade.
+            Agenda, equipe e relacionamento em um só lugar.
           </p>
         </div>
         <div className="flex gap-8">
@@ -65,13 +69,29 @@ export function LoginPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 shadow-lg shadow-amber-500/30 mb-6 lg:hidden">
               <Scissors className="h-6 w-6 text-white" strokeWidth={2.5} />
             </div>
-            <h1 className="text-2xl font-bold text-white mb-1">Bem-vindo de volta</h1>
-            <p className="text-zinc-400 text-sm">Entre com suas credenciais para acessar</p>
+            <h1 className="text-2xl font-bold text-white mb-1">
+              Bem-vindo de volta
+            </h1>
+            <p className="text-zinc-400 text-sm">
+              Entre com suas credenciais para acessar
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <label className="block text-sm text-zinc-300">
+              Identificador do salão
+              <input
+                required
+                pattern="[a-z0-9-]+"
+                value={salon}
+                onChange={(e) => setSalon(e.target.value)}
+                className="mt-1 w-full rounded-xl bg-zinc-800 border border-zinc-700 p-3 text-white"
+              />
+            </label>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-zinc-300">E-mail</label>
+              <label className="text-sm font-medium text-zinc-300">
+                E-mail
+              </label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                 <input

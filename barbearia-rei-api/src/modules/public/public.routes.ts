@@ -1,3 +1,7 @@
+import { z } from 'zod'
+import { normalizePhone } from '../../utils/phone'
+import { prisma } from '../../lib/prisma'
+import { runSchedule, bookInTransaction } from '../appointments/scheduling'
 import { Router } from 'express'
 import * as PublicController from './public.controller'
 
@@ -8,5 +12,133 @@ router.get('/services', PublicController.getServices)
 router.get('/barbers', PublicController.getBarbers)
 router.get('/barbers/:barberId/slots', PublicController.getSlots)
 router.post('/appointments', PublicController.createAppointment)
+
+router.post('/waitlist', async (req, res) => {
+  try {
+    const data = z
+      .object({
+        name: z.string().trim().min(2).max(120),
+        phone: z.string().max(30),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        barberId: z.union([z.string().uuid(), z.literal('any')]),
+        serviceIds: z.array(z.string().uuid()).min(1).max(10),
+        contactConsent: z.literal(true),
+      })
+      .parse(req.body)
+    const from = new Date(`${data.date}T00:00:00`),
+      to = new Date(`${data.date}T23:59:59`)
+    if (!Number.isFinite(to.getTime()) || to <= new Date())
+      throw new Error('Escolha uma data futura')
+    const phone = normalizePhone(data.phone)
+    await runSchedule(async (tx) => {
+      if (
+        new Set(data.serviceIds).size !== data.serviceIds.length ||
+        (await tx.service.count({
+          where: { id: { in: data.serviceIds }, isActive: true },
+        })) !== data.serviceIds.length
+      )
+        throw new Error('Serviços inválidos')
+      if (data.barberId !== 'any') {
+        const barber = await tx.barber.findFirst({
+          where: { id: data.barberId, isActive: true },
+        })
+        if (
+          !barber ||
+          (barber.serviceIds.length &&
+            data.serviceIds.some((id) => !barber.serviceIds.includes(id)))
+        )
+          throw new Error('Profissional indisponível')
+      }
+      const matches = await tx.$queryRaw<
+        { id: string }[]
+      >`SELECT id FROM clients WHERE regexp_replace(phone, '[^0-9]', '', 'g') IN (${phone}, ${phone.slice(2)})`
+      if (matches.length > 1)
+        throw new Error(
+          'Entre em contato com o salão para atualizar seu cadastro',
+        )
+      const client =
+        matches[0] ||
+        (await tx.client.create({ data: { name: data.name, phone } }))
+      const existing = await tx.waitlistEntry.findFirst({
+        where: {
+          clientId: client.id,
+          from,
+          to,
+          status: { in: ['WAITING', 'OFFERED'] },
+          serviceIds: { equals: data.serviceIds },
+          barberId: data.barberId === 'any' ? null : data.barberId,
+        },
+      })
+      if (!existing)
+        await tx.waitlistEntry.create({
+          data: {
+            clientId: client.id,
+            barberId: data.barberId === 'any' ? null : data.barberId,
+            serviceIds: data.serviceIds,
+            from,
+            to,
+          },
+        })
+    })
+    res.status(201).json({ registered: true })
+  } catch (error) {
+    res
+      .status(400)
+      .json({
+        message:
+          error instanceof z.ZodError
+            ? 'Revise os dados e autorize o aviso da vaga'
+            : error instanceof Error && !('code' in error)
+              ? error.message
+              : 'Não foi possível entrar na lista',
+      })
+  }
+})
+
+router.get('/offers/:token', async (req, res) => {
+  const entry = await prisma.waitlistEntry.findFirst({
+    where: {
+      token: req.params.token,
+      status: 'OFFERED',
+      expiresAt: { gt: new Date() },
+    },
+  })
+  if (!entry)
+    return res.status(410).json({ message: 'Oferta expirada ou indisponível' })
+  res.json({ startsAt: entry.reservedStart, expiresAt: entry.expiresAt })
+})
+router.post('/offers/:token/accept', async (req, res) => {
+  try {
+    const result = await runSchedule(async (tx) => {
+      const entry = await tx.waitlistEntry.findFirst({
+        where: {
+          token: req.params.token,
+          status: 'OFFERED',
+          expiresAt: { gt: new Date() },
+        },
+      })
+      if (!entry?.reservedStart || !entry.reservedBarberId)
+        throw new Error('Oferta expirada ou indisponível')
+      const a = await bookInTransaction(tx, {
+        clientId: entry.clientId,
+        barberId: entry.reservedBarberId,
+        serviceIds: entry.serviceIds,
+        startsAt: entry.reservedStart.toISOString(),
+        source: 'WAITLIST',
+        holdToken: entry.token!,
+      })
+      await tx.waitlistEntry.update({
+        where: { id: entry.id },
+        data: { status: 'BOOKED', appointmentId: a.id },
+      })
+      return { id: a.id, startsAt: a.startsAt }
+    })
+    res.status(201).json(result)
+  } catch (error) {
+    res.status(409).json({
+      message: error instanceof Error ? error.message : 'Oferta indisponível',
+    })
+  }
+})
 
 export default router

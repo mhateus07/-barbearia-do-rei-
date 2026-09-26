@@ -1,3 +1,4 @@
+import { getPublicInfo } from '../../api/public.api'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -117,14 +118,14 @@ function StatCard({
 
 // ─── CUSTOM TOOLTIP ──────────────────────────────────────────────────────────
 
-const CashFlowTooltip = ({ active, payload, label }: any) => {
+const CashFlowTooltip = ({ active, payload, label }: { active?: boolean; payload?: readonly { name?: string; value?: number | string; color?: string }[]; label?: string | number }) => {
   if (active && payload?.length) {
     return (
       <div className="rounded-xl bg-zinc-900 border border-zinc-700 px-3 py-2 shadow-xl text-xs space-y-1">
         <p className="text-zinc-400 mb-1">{label}</p>
-        {payload.map((p: any) => (
+        {payload.map((p) => (
           <p key={p.name} style={{ color: p.color }} className="font-medium">
-            {p.name === 'income' ? 'Receita' : p.name === 'expenses' ? 'Despesas' : 'Saldo'}: {formatCurrency(p.value)}
+            {p.name === 'income' ? 'Receita' : p.name === 'expenses' ? 'Despesas' : 'Saldo'}: {formatCurrency(Number(p.value ?? 0))}
           </p>
         ))}
       </div>
@@ -399,7 +400,7 @@ function PaymentsTab() {
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => {
-                          if (confirm('Remover este pagamento?')) deleteMutation.mutate(p.id)
+                          if (confirm('Registrar estorno integral deste pagamento? O histórico será preservado; devolva o valor pelo meio de pagamento original.')) deleteMutation.mutate(p.id)
                         }}
                         className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-colors"
                       >
@@ -977,9 +978,10 @@ async function exportPDF(from: string, to: string) {
   const { default: jsPDF } = await import('jspdf')
   const { default: autoTable } = await import('jspdf-autotable')
 
-  const [summary, commissions] = await Promise.all([
+  const [summary, commissions, identity] = await Promise.all([
     getFinancialSummary(from, to),
     getCommissions(from, to),
+    getPublicInfo(),
   ])
 
   const doc = new jsPDF()
@@ -989,7 +991,7 @@ async function exportPDF(from: string, to: string) {
   // Header
   doc.setFontSize(18)
   doc.setFont('helvetica', 'bold')
-  doc.text('Barbearia do Rei', 14, 18)
+  doc.text(identity.shopName, 14, 18)
   doc.setFontSize(11)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(100)
@@ -1033,7 +1035,7 @@ async function exportPDF(from: string, to: string) {
   })
 
   // Commissions table
-  const afterCashFlow = (doc as any).lastAutoTable?.finalY ?? 120
+  const afterCashFlow = (doc as typeof doc & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 120
   doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
   doc.text('Comissões dos Barbeiros', 14, afterCashFlow + 10)

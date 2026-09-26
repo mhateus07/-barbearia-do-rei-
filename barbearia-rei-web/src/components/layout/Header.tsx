@@ -1,5 +1,5 @@
 import { LogOut, User, Menu } from 'lucide-react'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/auth-state'
 
 interface HeaderProps {
   onMenuClick: () => void
@@ -26,7 +26,9 @@ export function Header({ onMenuClick }: HeaderProps) {
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500">
             <User className="h-3.5 w-3.5 text-white" />
           </div>
-          <span className="text-sm font-medium text-zinc-700 hidden sm:block">{admin?.name}</span>
+          <span className="text-sm font-medium text-zinc-700 hidden sm:block">
+            {admin?.name}
+          </span>
         </div>
         <button
           onClick={logout}

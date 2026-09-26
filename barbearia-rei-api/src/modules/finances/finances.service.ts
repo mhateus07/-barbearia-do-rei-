@@ -1,3 +1,4 @@
+import { runSchedule } from '../appointments/scheduling'
 import { ExpenseStatus } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
 import {
@@ -19,7 +20,7 @@ export async function listPayments(filters: {
 }) {
   const { from, to, method, page = 1, limit = 50 } = filters
 
-  const where: Record<string, unknown> = {}
+  const where: Record<string, unknown> = { refundedAt: null }
 
   if (from || to) {
     where.paidAt = {
@@ -41,7 +42,9 @@ export async function listPayments(filters: {
             totalPrice: true,
             client: { select: { id: true, name: true } },
             barber: { select: { id: true, name: true } },
-            services: { include: { service: { select: { id: true, name: true } } } },
+            services: {
+              include: { service: { select: { id: true, name: true } } },
+            },
           },
         },
       },
@@ -56,45 +59,50 @@ export async function listPayments(filters: {
 }
 
 export async function createPayment(input: CreatePaymentInput) {
-  if (input.appointmentId) {
-    const existing = await prisma.payment.findUnique({
-      where: { appointmentId: input.appointmentId },
-    })
-    if (existing) throw new Error('Este agendamento já possui um pagamento registrado')
-
-    const appointment = await prisma.appointment.findUnique({
-      where: { id: input.appointmentId },
-    })
-    if (!appointment) throw new Error('Agendamento não encontrado')
-  }
-
-  return prisma.payment.create({
-    data: {
-      amount: input.amount,
-      method: input.method,
-      paidAt: input.paidAt ? new Date(input.paidAt) : new Date(),
-      notes: input.notes,
-      appointmentId: input.appointmentId,
-    },
-    include: {
-      appointment: {
-        select: {
-          id: true,
-          startsAt: true,
-          totalPrice: true,
-          client: { select: { id: true, name: true } },
-          barber: { select: { id: true, name: true } },
-          services: { include: { service: { select: { id: true, name: true } } } },
-        },
+  return runSchedule(async (tx) => {
+    if (input.appointmentId) {
+      const appointment = await tx.appointment.findUnique({
+        where: { id: input.appointmentId },
+        include: { payments: true, items: true },
+      })
+      if (!appointment) throw new Error('Agendamento não encontrado')
+      if (['CANCELLED', 'NO_SHOW'].includes(appointment.status))
+        throw new Error('Atendimento cancelado ou ausente')
+      const due =
+        Number(appointment.totalPrice) -
+        Number(appointment.discount) +
+        appointment.items.reduce(
+          (sum, item) => sum + item.quantity * Number(item.unitPrice),
+          0,
+        )
+      const paid = appointment.payments
+        .filter((p) => !p.refundedAt)
+        .reduce((sum, p) => sum + Number(p.amount), 0)
+      if (Math.round((paid + input.amount) * 100) > Math.round(due * 100))
+        throw new Error('Valor excede o saldo da comanda')
+    }
+    return tx.payment.create({
+      data: {
+        ...input,
+        paidAt: input.paidAt ? new Date(input.paidAt) : new Date(),
       },
-    },
+    })
   })
 }
 
 export async function deletePayment(id: string) {
-  const payment = await prisma.payment.findUnique({ where: { id } })
-  if (!payment) throw new Error('Pagamento não encontrado')
-  return prisma.payment.delete({ where: { id } })
+  return runSchedule(async (tx) => {
+    const payment = await tx.payment.findUnique({ where: { id } })
+    if (!payment) throw new Error('Pagamento não encontrado')
+    if (payment.refundedAt) return payment
+    return tx.payment.update({
+      where: { id },
+      data: {
+        refundedAt: new Date(),
+        refundReason: 'Estorno solicitado pelo operador',
+      },
+    })
+  })
 }
 
 // ─── EXPENSES ────────────────────────────────────────────────────────────────
@@ -166,7 +174,8 @@ export async function updateExpense(id: string, input: UpdateExpenseInput) {
 export async function payExpense(id: string, input: PayExpenseInput) {
   const expense = await prisma.expense.findUnique({ where: { id } })
   if (!expense) throw new Error('Despesa não encontrada')
-  if (expense.status === ExpenseStatus.PAID) throw new Error('Despesa já foi paga')
+  if (expense.status === ExpenseStatus.PAID)
+    throw new Error('Despesa já foi paga')
 
   return prisma.expense.update({
     where: { id },
@@ -186,7 +195,9 @@ export async function deleteExpense(id: string) {
 // ─── COMMISSIONS ─────────────────────────────────────────────────────────────
 
 export async function getCommissions(from?: string, to?: string) {
-  const fromDate = from ? new Date(`${from}T00:00:00`) : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  const fromDate = from
+    ? new Date(`${from}T00:00:00`)
+    : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   const toDate = to ? new Date(`${to}T23:59:59`) : new Date()
 
   const barbers = await prisma.barber.findMany({ where: { isActive: true } })
@@ -199,18 +210,32 @@ export async function getCommissions(from?: string, to?: string) {
     select: {
       barberId: true,
       totalPrice: true,
+      discount: true,
+      commissionRateSnapshot: true,
     },
   })
 
   return barbers.map((barber) => {
-    const barberAppointments = appointments.filter((a) => a.barberId === barber.id)
-    const totalRevenue = barberAppointments.reduce((sum, a) => sum + Number(a.totalPrice), 0)
+    const barberAppointments = appointments.filter(
+      (a) => a.barberId === barber.id,
+    )
+    const totalRevenue = barberAppointments.reduce(
+      (sum, a) => sum + Number(a.totalPrice) - Number(a.discount),
+      0,
+    )
     const rate = Number(barber.commissionRate ?? 0)
-    const commission = (totalRevenue * rate) / 100
+    const commission = barberAppointments.reduce(
+      (sum, a) =>
+        sum +
+        ((Number(a.totalPrice) - Number(a.discount)) *
+          Number(a.commissionRateSnapshot ?? 0)) /
+          100,
+      0,
+    )
     return {
       barberId: barber.id,
       barberName: barber.name,
-      commissionRate: rate,
+      commissionRate: totalRevenue ? (commission / totalRevenue) * 100 : rate,
       totalRevenue,
       commission,
       appointmentsCount: barberAppointments.length,
@@ -221,27 +246,81 @@ export async function getCommissions(from?: string, to?: string) {
 // ─── COMMISSION PAYMENTS ─────────────────────────────────────────────────────
 
 export async function payCommission(input: PayCommissionInput) {
-  const barber = await prisma.barber.findUnique({ where: { id: input.barberId } })
-  if (!barber) throw new Error('Barbeiro não encontrado')
-
-  return prisma.commissionPayment.create({
-    data: {
-      barberId: input.barberId,
-      periodFrom: new Date(`${input.periodFrom}T00:00:00`),
-      periodTo: new Date(`${input.periodTo}T23:59:59`),
-      totalRevenue: input.totalRevenue,
-      commissionAmount: input.commissionAmount,
-      commissionRate: input.commissionRate,
-      notes: input.notes,
-      paidAt: input.paidAt ? new Date(input.paidAt) : new Date(),
-    },
-    include: {
-      barber: { select: { id: true, name: true } },
-    },
+  return runSchedule(async (tx) => {
+    const periodFrom = new Date(`${input.periodFrom}T00:00:00`),
+      periodTo = new Date(`${input.periodTo}T23:59:59`)
+    if (
+      !Number.isFinite(periodFrom.getTime()) ||
+      !Number.isFinite(periodTo.getTime()) ||
+      periodFrom > periodTo
+    )
+      throw new Error('Período inválido')
+    const overlap = await tx.commissionPayment.findFirst({
+      where: {
+        barberId: input.barberId,
+        periodFrom: { lte: periodTo },
+        periodTo: { gte: periodFrom },
+      },
+    })
+    if (overlap)
+      throw new Error('Já existe pagamento de comissão que inclui este período')
+    const appointments = await tx.appointment.findMany({
+      where: {
+        barberId: input.barberId,
+        status: 'COMPLETED',
+        startsAt: { gte: periodFrom, lte: periodTo },
+      },
+    })
+    const totalRevenue = appointments.reduce(
+      (sum, a) => sum + Number(a.totalPrice) - Number(a.discount),
+      0,
+    )
+    const commissionAmount = appointments.reduce(
+      (sum, a) =>
+        sum +
+        ((Number(a.totalPrice) - Number(a.discount)) *
+          Number(a.commissionRateSnapshot ?? 0)) /
+          100,
+      0,
+    )
+    if (!appointments.length)
+      throw new Error('Sem atendimentos concluídos no período')
+    const payment = await tx.commissionPayment.create({
+      data: {
+        barberId: input.barberId,
+        periodFrom,
+        periodTo,
+        totalRevenue,
+        commissionAmount,
+        commissionRate: totalRevenue
+          ? (commissionAmount / totalRevenue) * 100
+          : 0,
+        notes: input.notes,
+        paidAt: input.paidAt ? new Date(input.paidAt) : new Date(),
+      },
+      include: { barber: { select: { id: true, name: true } } },
+    })
+    if (commissionAmount > 0)
+      await tx.expense.create({
+        data: {
+          description: `Comissão: ${payment.barber.name}`,
+          amount: commissionAmount,
+          category: 'SALARY',
+          dueDate: payment.paidAt,
+          paidAt: payment.paidAt,
+          status: 'PAID',
+          notes: `Pagamento de comissão ${payment.id}`,
+        },
+      })
+    return payment
   })
 }
 
-export async function listCommissionPayments(barberId?: string, from?: string, to?: string) {
+export async function listCommissionPayments(
+  barberId?: string,
+  from?: string,
+  to?: string,
+) {
   const where: Record<string, unknown> = {}
   if (barberId) where.barberId = barberId
   if (from || to) {
@@ -261,13 +340,20 @@ export async function listCommissionPayments(barberId?: string, from?: string, t
 // ─── FINANCIAL SUMMARY ───────────────────────────────────────────────────────
 
 export async function getFinancialSummary(from?: string, to?: string) {
-  const fromDate = from ? new Date(from) : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  const fromDate = from
+    ? new Date(`${from}T00:00:00`)
+    : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   const toDate = to ? new Date(`${to}T23:59:59`) : new Date()
 
-  const [payments, expenses, pendingExpenses] = await Promise.all([
+  const [paymentRows, expenses, pendingExpenses] = await Promise.all([
     prisma.payment.findMany({
-      where: { paidAt: { gte: fromDate, lte: toDate } },
-      select: { amount: true, method: true, paidAt: true },
+      where: {
+        OR: [
+          { paidAt: { gte: fromDate, lte: toDate } },
+          { refundedAt: { gte: fromDate, lte: toDate } },
+        ],
+      },
+      select: { amount: true, method: true, paidAt: true, refundedAt: true },
     }),
     prisma.expense.findMany({
       where: {
@@ -282,6 +368,14 @@ export async function getFinancialSummary(from?: string, to?: string) {
     }),
   ])
 
+  const payments = paymentRows.flatMap((p) => [
+    ...(p.paidAt >= fromDate && p.paidAt <= toDate
+      ? [{ amount: Number(p.amount), method: p.method, paidAt: p.paidAt }]
+      : []),
+    ...(p.refundedAt && p.refundedAt >= fromDate && p.refundedAt <= toDate
+      ? [{ amount: -Number(p.amount), method: p.method, paidAt: p.refundedAt }]
+      : []),
+  ])
   const totalIncome = payments.reduce((sum, p) => sum + Number(p.amount), 0)
   const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0)
   const balance = totalIncome - totalExpenses
@@ -291,19 +385,26 @@ export async function getFinancialSummary(from?: string, to?: string) {
     .reduce((sum, e) => sum + Number(e.amount), 0)
 
   const totalOverdue = pendingExpenses
-    .filter((e) => e.status === ExpenseStatus.OVERDUE || (e.status === ExpenseStatus.PENDING && new Date(e.dueDate) < new Date()))
+    .filter(
+      (e) =>
+        e.status === ExpenseStatus.OVERDUE ||
+        (e.status === ExpenseStatus.PENDING &&
+          new Date(e.dueDate) < new Date()),
+    )
     .reduce((sum, e) => sum + Number(e.amount), 0)
 
   // Income by payment method
   const incomeByMethod: Record<string, number> = {}
   for (const p of payments) {
-    incomeByMethod[p.method] = (incomeByMethod[p.method] ?? 0) + Number(p.amount)
+    incomeByMethod[p.method] =
+      (incomeByMethod[p.method] ?? 0) + Number(p.amount)
   }
 
   // Expenses by category
   const expensesByCategory: Record<string, number> = {}
   for (const e of expenses) {
-    expensesByCategory[e.category] = (expensesByCategory[e.category] ?? 0) + Number(e.amount)
+    expensesByCategory[e.category] =
+      (expensesByCategory[e.category] ?? 0) + Number(e.amount)
   }
 
   // Cash flow by day (last 30 days or the period)
@@ -322,7 +423,11 @@ export async function getFinancialSummary(from?: string, to?: string) {
   }
 
   const cashFlowByDay = Object.entries(dayMap)
-    .map(([date, values]) => ({ date, ...values, balance: values.income - values.expenses }))
+    .map(([date, values]) => ({
+      date,
+      ...values,
+      balance: values.income - values.expenses,
+    }))
     .sort((a, b) => a.date.localeCompare(b.date))
 
   return {

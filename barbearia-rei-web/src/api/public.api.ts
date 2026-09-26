@@ -1,7 +1,13 @@
+import { getSalon } from './salon'
 import axios from 'axios'
 
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3333/api/v1'
-const api = axios.create({ baseURL: `${BASE}/public` })
+export const publicApi = axios.create({ baseURL: `${BASE}/public` })
+const api = publicApi
+api.interceptors.request.use((config) => {
+  config.headers['X-Salon'] = getSalon()
+  return config
+})
 
 export interface PublicService {
   id: string
@@ -9,15 +15,21 @@ export interface PublicService {
   description?: string
   price: number
   durationMin: number
+  processingMin: number
+  finishingMin: number
 }
 
 export interface PublicBarber {
   id: string
   name: string
   avatarUrl?: string
+  serviceIds: string[]
+  serviceOverrides: Record<string, { price?: number; durationMin?: number }>
 }
 
 export interface PublicInfo {
+  shopLogo: string
+  shopDescription: string
   shopName: string
   shopPhone: string
   shopAddress: string
@@ -40,8 +52,15 @@ export async function getPublicBarbers(): Promise<PublicBarber[]> {
   return data
 }
 
-export async function getAvailableSlots(barberId: string, date: string, duration: number): Promise<string[]> {
-  const { data } = await api.get(`/barbers/${barberId}/slots`, { params: { date, duration } })
+export async function getAvailableSlots(
+  barberId: string,
+  date: string,
+  duration: number,
+  serviceIds: string[],
+): Promise<string[]> {
+  const { data } = await api.get(`/barbers/${barberId}/slots`, {
+    params: { date, duration, serviceIds: serviceIds.join(',') },
+  })
   return data.slots
 }
 
@@ -53,6 +72,7 @@ export async function createPublicAppointment(payload: {
   serviceIds: string[]
   date: string
   time: string
+  outreachToken?: string
   notes?: string
 }) {
   const { data } = await api.post('/appointments', payload)

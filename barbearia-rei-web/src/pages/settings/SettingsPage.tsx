@@ -1,8 +1,16 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Settings, Clock, Star, MessageCircle, Save, RefreshCw,
-  CheckCircle2, AlertCircle, Send, Loader2,
+  Settings,
+  Clock,
+  Star,
+  MessageCircle,
+  Save,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+  Send,
+  Loader2,
 } from 'lucide-react'
 import { getSettings, updateSettings } from '../../api/settings.api'
 import { Button } from '../../components/ui/Button'
@@ -28,17 +36,30 @@ const DAYS = [
   { key: 'sunday', label: 'Domingo' },
 ]
 
-function parseHours(value: string): { open: string; close: string; closed: boolean } {
-  if (!value || value === 'closed') return { open: '08:00', close: '18:00', closed: true }
+function parseHours(value: string): {
+  open: string
+  close: string
+  closed: boolean
+} {
+  if (!value || value === 'closed')
+    return { open: '08:00', close: '18:00', closed: true }
   const [open, close] = value.split('-')
   return { open: open ?? '08:00', close: close ?? '18:00', closed: false }
 }
 
 // ─── TAB: INFORMAÇÕES ────────────────────────────────────────────────────────
 
-function InfoTab({ settings, onSave }: { settings: Record<string, string>; onSave: (s: Record<string, string>) => void }) {
+function InfoTab({
+  settings,
+  onSave,
+}: {
+  settings: Record<string, string>
+  onSave: (s: Record<string, string>) => void
+}) {
   const [form, setForm] = useState({
     shop_name: settings.shop_name ?? '',
+    shop_logo: settings.shop_logo ?? '',
+    shop_description: settings.shop_description ?? '',
     shop_phone: settings.shop_phone ?? '',
     shop_address: settings.shop_address ?? '',
     shop_instagram: settings.shop_instagram ?? '',
@@ -48,20 +69,55 @@ function InfoTab({ settings, onSave }: { settings: Record<string, string>; onSav
     <div className="space-y-5 max-w-xl">
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5 col-span-2">
-          <label className="text-xs font-medium text-zinc-600">Nome da Barbearia</label>
-          <Input value={form.shop_name} onChange={(e) => setForm({ ...form, shop_name: e.target.value })} placeholder="Barbearia do Rei" />
+          <label className="text-xs font-medium text-zinc-600">
+            Nome da Barbearia
+          </label>
+          <Input
+            value={form.shop_name}
+            onChange={(e) => setForm({ ...form, shop_name: e.target.value })}
+            placeholder="Nome do salão"
+          />
+          <label className="block text-sm mt-3">Logo (URL HTTPS)</label>
+          <Input
+            value={form.shop_logo}
+            onChange={(e) => setForm({ ...form, shop_logo: e.target.value })}
+            placeholder="https://..."
+          />
+          <label className="block text-sm mt-3">Descrição pública</label>
+          <Input
+            value={form.shop_description}
+            onChange={(e) =>
+              setForm({ ...form, shop_description: e.target.value })
+            }
+          />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-zinc-600">Telefone / WhatsApp</label>
-          <Input value={form.shop_phone} onChange={(e) => setForm({ ...form, shop_phone: e.target.value })} placeholder="(32) 99160-8852" />
+          <label className="text-xs font-medium text-zinc-600">
+            Telefone / WhatsApp
+          </label>
+          <Input
+            value={form.shop_phone}
+            onChange={(e) => setForm({ ...form, shop_phone: e.target.value })}
+            placeholder="(32) 99160-8852"
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-zinc-600">Instagram</label>
-          <Input value={form.shop_instagram} onChange={(e) => setForm({ ...form, shop_instagram: e.target.value })} placeholder="@usuario" />
+          <Input
+            value={form.shop_instagram}
+            onChange={(e) =>
+              setForm({ ...form, shop_instagram: e.target.value })
+            }
+            placeholder="@usuario"
+          />
         </div>
         <div className="flex flex-col gap-1.5 col-span-2">
           <label className="text-xs font-medium text-zinc-600">Endereço</label>
-          <Input value={form.shop_address} onChange={(e) => setForm({ ...form, shop_address: e.target.value })} placeholder="Rua, número, bairro, cidade" />
+          <Input
+            value={form.shop_address}
+            onChange={(e) => setForm({ ...form, shop_address: e.target.value })}
+            placeholder="Rua, número, bairro, cidade"
+          />
         </div>
       </div>
       <div className="flex justify-end">
@@ -76,9 +132,18 @@ function InfoTab({ settings, onSave }: { settings: Record<string, string>; onSav
 
 // ─── TAB: HORÁRIOS ───────────────────────────────────────────────────────────
 
-function HoursTab({ settings, onSave }: { settings: Record<string, string>; onSave: (s: Record<string, string>) => void }) {
+function HoursTab({
+  settings,
+  onSave,
+}: {
+  settings: Record<string, string>
+  onSave: (s: Record<string, string>) => void
+}) {
   const [hours, setHours] = useState(() => {
-    const result: Record<string, { open: string; close: string; closed: boolean }> = {}
+    const result: Record<
+      string,
+      { open: string; close: string; closed: boolean }
+    > = {}
     for (const day of DAYS) {
       result[day.key] = parseHours(settings[`hours_${day.key}`] ?? '')
     }
@@ -100,10 +165,18 @@ function HoursTab({ settings, onSave }: { settings: Record<string, string>; onSa
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-100 bg-zinc-50">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">Dia</th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-zinc-500 uppercase">Fechado</th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-zinc-500 uppercase">Abertura</th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-zinc-500 uppercase">Fechamento</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase">
+                Dia
+              </th>
+              <th className="px-4 py-3 text-center text-xs font-semibold text-zinc-500 uppercase">
+                Fechado
+              </th>
+              <th className="px-4 py-3 text-center text-xs font-semibold text-zinc-500 uppercase">
+                Abertura
+              </th>
+              <th className="px-4 py-3 text-center text-xs font-semibold text-zinc-500 uppercase">
+                Fechamento
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
@@ -111,12 +184,19 @@ function HoursTab({ settings, onSave }: { settings: Record<string, string>; onSa
               const h = hours[day.key]
               return (
                 <tr key={day.key} className="hover:bg-zinc-50/50">
-                  <td className="px-4 py-3 font-medium text-zinc-700">{day.label}</td>
+                  <td className="px-4 py-3 font-medium text-zinc-700">
+                    {day.label}
+                  </td>
                   <td className="px-4 py-3 text-center">
                     <input
                       type="checkbox"
                       checked={h.closed}
-                      onChange={(e) => setHours({ ...hours, [day.key]: { ...h, closed: e.target.checked } })}
+                      onChange={(e) =>
+                        setHours({
+                          ...hours,
+                          [day.key]: { ...h, closed: e.target.checked },
+                        })
+                      }
                       className="h-4 w-4 rounded accent-amber-500"
                     />
                   </td>
@@ -125,7 +205,12 @@ function HoursTab({ settings, onSave }: { settings: Record<string, string>; onSa
                       type="time"
                       value={h.open}
                       disabled={h.closed}
-                      onChange={(e) => setHours({ ...hours, [day.key]: { ...h, open: e.target.value } })}
+                      onChange={(e) =>
+                        setHours({
+                          ...hours,
+                          [day.key]: { ...h, open: e.target.value },
+                        })
+                      }
                       className="rounded-lg border border-zinc-200 px-2 py-1 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400 disabled:opacity-40"
                     />
                   </td>
@@ -134,7 +219,12 @@ function HoursTab({ settings, onSave }: { settings: Record<string, string>; onSa
                       type="time"
                       value={h.close}
                       disabled={h.closed}
-                      onChange={(e) => setHours({ ...hours, [day.key]: { ...h, close: e.target.value } })}
+                      onChange={(e) =>
+                        setHours({
+                          ...hours,
+                          [day.key]: { ...h, close: e.target.value },
+                        })
+                      }
                       className="rounded-lg border border-zinc-200 px-2 py-1 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400 disabled:opacity-40"
                     />
                   </td>
@@ -156,7 +246,13 @@ function HoursTab({ settings, onSave }: { settings: Record<string, string>; onSa
 
 // ─── TAB: FIDELIDADE ─────────────────────────────────────────────────────────
 
-function LoyaltyTab({ settings, onSave }: { settings: Record<string, string>; onSave: (s: Record<string, string>) => void }) {
+function LoyaltyTab({
+  settings,
+  onSave,
+}: {
+  settings: Record<string, string>
+  onSave: (s: Record<string, string>) => void
+}) {
   const [form, setForm] = useState({
     loyalty_enabled: settings.loyalty_enabled ?? 'true',
     loyalty_points_per_visit: settings.loyalty_points_per_visit ?? '10',
@@ -164,9 +260,13 @@ function LoyaltyTab({ settings, onSave }: { settings: Record<string, string>; on
     loyalty_redemption_value: settings.loyalty_redemption_value ?? '10',
   })
 
-  const redemptionRatio = Number(form.loyalty_redemption_points) > 0
-    ? (Number(form.loyalty_redemption_value) / Number(form.loyalty_redemption_points)).toFixed(2)
-    : '0'
+  const redemptionRatio =
+    Number(form.loyalty_redemption_points) > 0
+      ? (
+          Number(form.loyalty_redemption_value) /
+          Number(form.loyalty_redemption_points)
+        ).toFixed(2)
+      : '0'
 
   return (
     <div className="space-y-5 max-w-xl">
@@ -174,26 +274,42 @@ function LoyaltyTab({ settings, onSave }: { settings: Record<string, string>; on
       <div className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-5 py-4">
         <div>
           <p className="font-medium text-zinc-800">Programa de Fidelidade</p>
-          <p className="text-xs text-zinc-500 mt-0.5">Clientes acumulam pontos a cada atendimento concluído</p>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Clientes acumulam pontos a cada atendimento concluído
+          </p>
         </div>
         <button
-          onClick={() => setForm({ ...form, loyalty_enabled: form.loyalty_enabled === 'true' ? 'false' : 'true' })}
+          onClick={() =>
+            setForm({
+              ...form,
+              loyalty_enabled:
+                form.loyalty_enabled === 'true' ? 'false' : 'true',
+            })
+          }
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.loyalty_enabled === 'true' ? 'bg-amber-500' : 'bg-zinc-300'}`}
         >
-          <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.loyalty_enabled === 'true' ? 'translate-x-6' : 'translate-x-1'}`} />
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.loyalty_enabled === 'true' ? 'translate-x-6' : 'translate-x-1'}`}
+          />
         </button>
       </div>
 
       {/* Config */}
-      <div className={`space-y-4 ${form.loyalty_enabled !== 'true' ? 'opacity-50 pointer-events-none' : ''}`}>
+      <div
+        className={`space-y-4 ${form.loyalty_enabled !== 'true' ? 'opacity-50 pointer-events-none' : ''}`}
+      >
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-zinc-600">Pontos por atendimento concluído</label>
+          <label className="text-xs font-medium text-zinc-600">
+            Pontos por atendimento concluído
+          </label>
           <div className="flex items-center gap-2">
             <Input
               type="number"
               min="1"
               value={form.loyalty_points_per_visit}
-              onChange={(e) => setForm({ ...form, loyalty_points_per_visit: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, loyalty_points_per_visit: e.target.value })
+              }
               className="max-w-[120px]"
             />
             <span className="text-sm text-zinc-500">pontos</span>
@@ -202,26 +318,37 @@ function LoyaltyTab({ settings, onSave }: { settings: Record<string, string>; on
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-zinc-600">Pontos para resgate</label>
+            <label className="text-xs font-medium text-zinc-600">
+              Pontos para resgate
+            </label>
             <div className="flex items-center gap-2">
               <Input
                 type="number"
                 min="1"
                 value={form.loyalty_redemption_points}
-                onChange={(e) => setForm({ ...form, loyalty_redemption_points: e.target.value })}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    loyalty_redemption_points: e.target.value,
+                  })
+                }
               />
               <span className="text-sm text-zinc-500">pts</span>
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-zinc-600">Valor do resgate (R$)</label>
+            <label className="text-xs font-medium text-zinc-600">
+              Valor do resgate (R$)
+            </label>
             <div className="flex items-center gap-2">
               <Input
                 type="number"
                 min="0.01"
                 step="0.01"
                 value={form.loyalty_redemption_value}
-                onChange={(e) => setForm({ ...form, loyalty_redemption_value: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, loyalty_redemption_value: e.target.value })
+                }
               />
             </div>
           </div>
@@ -231,9 +358,19 @@ function LoyaltyTab({ settings, onSave }: { settings: Record<string, string>; on
         <div className="rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-sm">
           <p className="font-medium text-amber-800">Resumo do programa:</p>
           <ul className="mt-1.5 space-y-1 text-amber-700 text-xs">
-            <li>✅ Cliente ganha <strong>{form.loyalty_points_per_visit} pontos</strong> por atendimento</li>
-            <li>🎁 A cada <strong>{form.loyalty_redemption_points} pontos</strong> acumulados, pode resgatar <strong>R$ {form.loyalty_redemption_value}</strong></li>
-            <li>💰 Cada ponto equivale a <strong>R$ {redemptionRatio}</strong></li>
+            <li>
+              ✅ Cliente ganha{' '}
+              <strong>{form.loyalty_points_per_visit} pontos</strong> por
+              atendimento
+            </li>
+            <li>
+              🎁 A cada <strong>{form.loyalty_redemption_points} pontos</strong>{' '}
+              acumulados, pode resgatar{' '}
+              <strong>R$ {form.loyalty_redemption_value}</strong>
+            </li>
+            <li>
+              💰 Cada ponto equivale a <strong>R$ {redemptionRatio}</strong>
+            </li>
           </ul>
         </div>
       </div>
@@ -250,7 +387,13 @@ function LoyaltyTab({ settings, onSave }: { settings: Record<string, string>; on
 
 // ─── TAB: WHATSAPP ───────────────────────────────────────────────────────────
 
-function WhatsAppTab({ settings, onSave }: { settings: Record<string, string>; onSave: (s: Record<string, string>) => void }) {
+function WhatsAppTab({
+  settings,
+  onSave,
+}: {
+  settings: Record<string, string>
+  onSave: (s: Record<string, string>) => void
+}) {
   const [form, setForm] = useState({
     whatsapp_enabled: settings.whatsapp_enabled ?? 'false',
     whatsapp_api_url: settings.whatsapp_api_url ?? '',
@@ -260,11 +403,21 @@ function WhatsAppTab({ settings, onSave }: { settings: Record<string, string>; o
   })
 
   const [testPhone, setTestPhone] = useState('')
-  const [testMsg, setTestMsg] = useState('Olá! Esta é uma mensagem de teste da Barbearia do Rei 💈')
-  const [testResult, setTestResult] = useState<{ sent: boolean; error?: string } | null>(null)
+  const [testMsg, setTestMsg] = useState(
+    'Olá! Esta é uma mensagem de teste do nosso salão.',
+  )
+  const [testResult, setTestResult] = useState<{
+    sent: boolean
+    queued?: boolean
+    error?: string
+  } | null>(null)
   const [testLoading, setTestLoading] = useState(false)
 
-  const [reminderResult, setReminderResult] = useState<{ sent: number; failed: number } | null>(null)
+  const [reminderResult, setReminderResult] = useState<{
+    sent: number
+    failed: number
+    queued: number
+  } | null>(null)
   const [reminderLoading, setReminderLoading] = useState(false)
 
   async function handleTest() {
@@ -272,9 +425,18 @@ function WhatsAppTab({ settings, onSave }: { settings: Record<string, string>; o
     setTestLoading(true)
     setTestResult(null)
     try {
-      const { sendCustomNotification } = await import('../../api/notifications.api')
-      const result = await sendCustomNotification({ phone: testPhone, message: testMsg })
-      setTestResult({ sent: result.sent, error: result.error })
+      const { sendCustomNotification } = await import(
+        '../../api/notifications.api'
+      )
+      const result = await sendCustomNotification({
+        phone: testPhone,
+        message: testMsg,
+      })
+      setTestResult({
+        sent: result.sent,
+        queued: result.queued,
+        error: result.error,
+      })
     } catch (err) {
       setTestResult({ sent: false, error: (err as Error).message })
     } finally {
@@ -302,42 +464,95 @@ function WhatsAppTab({ settings, onSave }: { settings: Record<string, string>; o
       <div className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-5 py-4">
         <div>
           <p className="font-medium text-zinc-800">Notificações via WhatsApp</p>
-          <p className="text-xs text-zinc-500 mt-0.5">Enviar lembretes e confirmações automaticamente</p>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Enviar lembretes e confirmações automaticamente
+          </p>
         </div>
         <button
-          onClick={() => setForm({ ...form, whatsapp_enabled: form.whatsapp_enabled === 'true' ? 'false' : 'true' })}
+          onClick={() =>
+            setForm({
+              ...form,
+              whatsapp_enabled:
+                form.whatsapp_enabled === 'true' ? 'false' : 'true',
+            })
+          }
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.whatsapp_enabled === 'true' ? 'bg-green-500' : 'bg-zinc-300'}`}
         >
-          <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.whatsapp_enabled === 'true' ? 'translate-x-6' : 'translate-x-1'}`} />
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.whatsapp_enabled === 'true' ? 'translate-x-6' : 'translate-x-1'}`}
+          />
         </button>
       </div>
 
       {/* Info Evolution API */}
       <div className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 text-xs text-blue-700">
         <p className="font-semibold mb-1">Compatível com Evolution API</p>
-        <p>Configure sua instância da Evolution API (ou Z-API). A URL deve ser o endereço base, ex: <code>https://api.seudominio.com</code></p>
+        <p>
+          Configure sua instância da Evolution API (ou Z-API). A URL deve ser o
+          endereço base, ex: <code>https://api.seudominio.com</code>
+        </p>
       </div>
 
-      <div className={`space-y-4 ${form.whatsapp_enabled !== 'true' ? 'opacity-50 pointer-events-none' : ''}`}>
+      <div
+        className={`space-y-4 ${form.whatsapp_enabled !== 'true' ? 'opacity-50 pointer-events-none' : ''}`}
+      >
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-zinc-600">URL da API</label>
-          <Input value={form.whatsapp_api_url} onChange={(e) => setForm({ ...form, whatsapp_api_url: e.target.value })} placeholder="https://api.seudominio.com" />
+          <label className="text-xs font-medium text-zinc-600">
+            URL da API
+          </label>
+          <Input
+            value={form.whatsapp_api_url}
+            onChange={(e) =>
+              setForm({ ...form, whatsapp_api_url: e.target.value })
+            }
+            placeholder="https://api.seudominio.com"
+          />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-zinc-600">Chave da API (Bearer Token)</label>
-            <Input type="password" value={form.whatsapp_api_key} onChange={(e) => setForm({ ...form, whatsapp_api_key: e.target.value })} placeholder="sua-chave-secreta" />
+            <label className="text-xs font-medium text-zinc-600">
+              Chave da API (Bearer Token)
+            </label>
+            <Input
+              type="password"
+              value={form.whatsapp_api_key}
+              onChange={(e) =>
+                setForm({ ...form, whatsapp_api_key: e.target.value })
+              }
+              placeholder="sua-chave-secreta"
+            />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-zinc-600">Nome da Instância</label>
-            <Input value={form.whatsapp_instance} onChange={(e) => setForm({ ...form, whatsapp_instance: e.target.value })} placeholder="barbearia-rei" />
+            <label className="text-xs font-medium text-zinc-600">
+              Nome da Instância
+            </label>
+            <Input
+              value={form.whatsapp_instance}
+              onChange={(e) =>
+                setForm({ ...form, whatsapp_instance: e.target.value })
+              }
+              placeholder="barbearia-rei"
+            />
           </div>
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-zinc-600">Horas de antecedência para lembrete</label>
+          <label className="text-xs font-medium text-zinc-600">
+            Horas de antecedência para lembrete
+          </label>
           <div className="flex items-center gap-2">
-            <Input type="number" min="1" max="72" value={form.whatsapp_reminder_hours} onChange={(e) => setForm({ ...form, whatsapp_reminder_hours: e.target.value })} className="max-w-[100px]" />
-            <span className="text-sm text-zinc-500">horas antes do agendamento</span>
+            <Input
+              type="number"
+              min="1"
+              max="72"
+              value={form.whatsapp_reminder_hours}
+              onChange={(e) =>
+                setForm({ ...form, whatsapp_reminder_hours: e.target.value })
+              }
+              className="max-w-[100px]"
+            />
+            <span className="text-sm text-zinc-500">
+              horas antes do agendamento
+            </span>
           </div>
         </div>
       </div>
@@ -354,7 +569,12 @@ function WhatsAppTab({ settings, onSave }: { settings: Record<string, string>; o
         <div className="space-y-4 pt-2 border-t border-zinc-100">
           <p className="text-sm font-semibold text-zinc-700">Testar envio</p>
           <div className="flex gap-2">
-            <Input placeholder="Telefone (ex: 32991608852)" value={testPhone} onChange={(e) => setTestPhone(e.target.value)} className="flex-1" />
+            <Input
+              placeholder="Telefone (ex: 32991608852)"
+              value={testPhone}
+              onChange={(e) => setTestPhone(e.target.value)}
+              className="flex-1"
+            />
           </div>
           <textarea
             value={testMsg}
@@ -363,24 +583,52 @@ function WhatsAppTab({ settings, onSave }: { settings: Record<string, string>; o
             className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
           />
           {testResult && (
-            <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${testResult.sent ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-              {testResult.sent ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-              {testResult.sent ? 'Mensagem enviada com sucesso!' : `Erro: ${testResult.error}`}
+            <div
+              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${testResult.sent || testResult.queued ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
+            >
+              {testResult.sent ? (
+                <CheckCircle2 className="h-4 w-4" />
+              ) : (
+                <AlertCircle className="h-4 w-4" />
+              )}
+              {testResult.queued
+                ? 'Mensagem na fila. Consulte o histórico para acompanhar o envio.'
+                : testResult.sent
+                  ? 'Mensagem enviada com sucesso!'
+                  : `Erro: ${testResult.error}`}
             </div>
           )}
           <div className="flex gap-2">
-            <Button onClick={handleTest} disabled={testLoading || !testPhone} variant="secondary">
-              {testLoading ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Send className="h-4 w-4 mr-1.5" />}
+            <Button
+              onClick={handleTest}
+              disabled={testLoading || !testPhone}
+              variant="secondary"
+            >
+              {testLoading ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4 mr-1.5" />
+              )}
               Enviar Teste
             </Button>
-            <Button onClick={handleSendReminders} disabled={reminderLoading} variant="secondary">
-              {reminderLoading ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1.5" />}
+            <Button
+              onClick={handleSendReminders}
+              disabled={reminderLoading}
+              variant="secondary"
+            >
+              {reminderLoading ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-1.5" />
+              )}
               Enviar Lembretes Agora
             </Button>
           </div>
           {reminderResult && (
             <p className="text-sm text-zinc-600">
-              Lembretes: <strong>{reminderResult.sent} enviados</strong>, {reminderResult.failed} falhas
+              Lembretes na janela de envio:{' '}
+              <strong>{reminderResult.queued}</strong>. Acompanhe o resultado no
+              histórico.
             </p>
           )}
         </div>
@@ -426,7 +674,9 @@ export function SettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-zinc-800">Configurações</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">Gerencie informações, horários e integrações</p>
+          <p className="text-sm text-zinc-500 mt-0.5">
+            Gerencie informações, horários e integrações
+          </p>
         </div>
         {savedMsg && (
           <div className="flex items-center gap-2 rounded-xl bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
@@ -466,10 +716,16 @@ export function SettingsPage() {
           <HoursTab settings={s} onSave={(data) => saveMutation.mutate(data)} />
         )}
         {activeTab === 'loyalty' && (
-          <LoyaltyTab settings={s} onSave={(data) => saveMutation.mutate(data)} />
+          <LoyaltyTab
+            settings={s}
+            onSave={(data) => saveMutation.mutate(data)}
+          />
         )}
         {activeTab === 'whatsapp' && (
-          <WhatsAppTab settings={s} onSave={(data) => saveMutation.mutate(data)} />
+          <WhatsAppTab
+            settings={s}
+            onSave={(data) => saveMutation.mutate(data)}
+          />
         )}
       </div>
     </div>

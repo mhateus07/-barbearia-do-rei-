@@ -1,50 +1,8 @@
+import { fillCancelledSlots } from '../operations/waitlist.service'
 import { NotificationType, NotificationStatus } from '@prisma/client'
-import { prisma } from '../../lib/prisma'
-import { getSetting } from '../settings/settings.service'
-
-// ─── ENVIO WHATSAPP ───────────────────────────────────────────────────────────
-
-async function sendWhatsAppMessage(phone: string, message: string): Promise<{ ok: boolean; error?: string }> {
-  const enabled = await getSetting('whatsapp_enabled')
-  if (enabled !== 'true') return { ok: false, error: 'WhatsApp desativado nas configurações' }
-
-  const apiUrl = await getSetting('whatsapp_api_url')
-  const apiKey = await getSetting('whatsapp_api_key')
-  const instance = await getSetting('whatsapp_instance')
-
-  if (!apiUrl || !apiKey || !instance) {
-    return { ok: false, error: 'WhatsApp não configurado (URL, chave ou instância ausente)' }
-  }
-
-  // Normaliza número: remove não-dígitos, adiciona 55 se necessário
-  const cleanPhone = phone.replace(/\D/g, '')
-  const fullPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`
-
-  try {
-    const response = await fetch(`${apiUrl}/message/sendText/${instance}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        number: fullPhone,
-        text: message,
-      }),
-    })
-
-    if (!response.ok) {
-      const body = await response.text()
-      return { ok: false, error: `API retornou ${response.status}: ${body}` }
-    }
-
-    return { ok: true }
-  } catch (err) {
-    return { ok: false, error: (err as Error).message }
-  }
-}
-
-// ─── LOG + ENVIO ──────────────────────────────────────────────────────────────
+import { prisma, salons, salonContext } from '../../lib/prisma'
+import { getSettings } from '../settings/settings.service'
+import { normalizePhone } from '../../utils/phone'
 
 export async function sendAndLog(params: {
   type: NotificationType
@@ -52,108 +10,222 @@ export async function sendAndLog(params: {
   message: string
   clientId?: string
   appointmentId?: string
+  dedupeKey?: string
 }) {
-  const log = await prisma.notificationLog.create({
-    data: {
-      type: params.type,
-      phone: params.phone,
-      message: params.message,
-      clientId: params.clientId,
-      appointmentId: params.appointmentId,
-      status: NotificationStatus.PENDING,
-    },
-  })
-
-  const result = await sendWhatsAppMessage(params.phone, params.message)
-
-  const updated = await prisma.notificationLog.update({
-    where: { id: log.id },
-    data: {
-      status: result.ok ? NotificationStatus.SENT : NotificationStatus.FAILED,
-      error: result.error,
-      sentAt: result.ok ? new Date() : null,
-    },
-  })
-
-  return { log: updated, sent: result.ok, error: result.error }
+  const data = { ...params, phone: normalizePhone(params.phone) }
+  const log = params.dedupeKey
+    ? await prisma.notificationLog.upsert({
+        where: { dedupeKey: params.dedupeKey },
+        create: data,
+        update: {},
+      })
+    : await prisma.notificationLog.create({ data })
+  return { log, sent: log.status === 'SENT', queued: true }
 }
 
-// ─── TEMPLATES ────────────────────────────────────────────────────────────────
-
-export function buildConfirmationMessage(clientName: string, barberName: string, startsAt: Date, services: string[]): string {
-  const date = startsAt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })
-  const time = startsAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  return `✅ *Agendamento confirmado!*\n\nOlá, ${clientName}! Seu agendamento está confirmado.\n\n📅 *Data:* ${date}\n⏰ *Horário:* ${time}\n✂️ *Serviços:* ${services.join(', ')}\n💈 *Barbeiro:* ${barberName}\n\n_Barbearia do Rei - São João del Rei_`
-}
-
-export function buildReminderMessage(clientName: string, barberName: string, startsAt: Date, services: string[]): string {
-  const time = startsAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  return `⏰ *Lembrete de agendamento!*\n\nOlá, ${clientName}! Amanhã às ${time} você tem um horário marcado.\n\n✂️ *Serviços:* ${services.join(', ')}\n💈 *Barbeiro:* ${barberName}\n\nTe esperamos! 💈\n\n_Barbearia do Rei - São João del Rei_`
-}
-
-export function buildCancellationMessage(clientName: string, startsAt: Date): string {
-  const date = startsAt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })
-  const time = startsAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  return `❌ *Agendamento cancelado*\n\nOlá, ${clientName}. Seu agendamento de ${date} às ${time} foi cancelado.\n\nPara remarcar, entre em contato conosco.\n\n_Barbearia do Rei - São João del Rei_`
-}
-
-// ─── LEMBRETES AUTOMÁTICOS ───────────────────────────────────────────────────
-
-export async function sendPendingReminders(): Promise<{ sent: number; failed: number }> {
-  const hoursAhead = Number(await getSetting('whatsapp_reminder_hours')) || 24
-
-  const now = new Date()
-  const targetFrom = new Date(now.getTime() + (hoursAhead - 1) * 60 * 60 * 1000)
-  const targetTo = new Date(now.getTime() + (hoursAhead + 1) * 60 * 60 * 1000)
-
-  // Busca agendamentos que ainda não receberam lembrete
+export async function sendPendingReminders() {
+  const settings = await getSettings()
+  if (settings.whatsapp_enabled !== 'true')
+    return { sent: 0, failed: 0, queued: 0 }
+  const hours = Number(settings.whatsapp_reminder_hours || 24)
   const appointments = await prisma.appointment.findMany({
     where: {
       status: { in: ['SCHEDULED', 'CONFIRMED'] },
-      startsAt: { gte: targetFrom, lte: targetTo },
-      notificationLogs: {
-        none: { type: 'APPOINTMENT_REMINDER' },
-      },
+      startsAt: { gt: new Date(), lte: new Date(Date.now() + hours * 3600000) },
     },
-    include: {
-      client: true,
-      barber: true,
-      services: { include: { service: true } },
-    },
+    include: { client: true, barber: true },
   })
-
-  let sent = 0
-  let failed = 0
-
-  for (const appt of appointments) {
-    const services = appt.services.map((s) => s.service.name)
-    const message = buildReminderMessage(appt.client.name, appt.barber.name, appt.startsAt, services)
-    const result = await sendAndLog({
+  for (const a of appointments) {
+    const date = a.startsAt.toLocaleString('pt-BR')
+    await sendAndLog({
       type: 'APPOINTMENT_REMINDER',
-      phone: appt.client.phone,
-      message,
-      clientId: appt.client.id,
-      appointmentId: appt.id,
+      phone: a.client.phone,
+      clientId: a.clientId,
+      appointmentId: a.id,
+      dedupeKey: `reminder:${a.id}:${a.startsAt.toISOString()}`,
+      message: `Olá, ${a.client.name}! Lembrete do seu atendimento em ${date}, com ${a.barber.name}. ${settings.shop_name}. Para alterar, entre em contato: ${settings.shop_phone}.`,
     })
-    result.sent ? sent++ : failed++
   }
-
-  return { sent, failed }
+  return { sent: 0, failed: 0, queued: appointments.length }
 }
 
-// ─── LISTAGEM ─────────────────────────────────────────────────────────────────
-
+export async function processNotificationQueue() {
+  const settings = await getSettings()
+  if (settings.whatsapp_enabled !== 'true') return
+  const {
+    whatsapp_api_url: url,
+    whatsapp_api_key: key,
+    whatsapp_instance: instance,
+  } = settings
+  if (!url || !key || !instance) return
+  const logs = await prisma.notificationLog.findMany({
+    where: {
+      status: { in: ['PENDING', 'FAILED'] },
+      attempts: { lt: 5 },
+      nextAttemptAt: { lte: new Date() },
+      OR: [
+        { lockedAt: null },
+        { lockedAt: { lt: new Date(Date.now() - 120000) } },
+      ],
+    },
+    take: 20,
+    orderBy: { createdAt: 'asc' },
+  })
+  for (const log of logs) {
+    const claimed = await prisma.notificationLog.updateMany({
+      where: {
+        id: log.id,
+        attempts: log.attempts,
+        status: { not: 'SENT' },
+        OR: [
+          { lockedAt: null },
+          { lockedAt: { lt: new Date(Date.now() - 120000) } },
+        ],
+      },
+      data: { lockedAt: new Date(), attempts: { increment: 1 } },
+    })
+    if (!claimed.count) continue
+    try {
+      if (log.type === 'APPOINTMENT_REMINDER' && log.appointmentId) {
+        const a = await prisma.appointment.findUnique({
+          where: { id: log.appointmentId },
+        })
+        if (
+          !a ||
+          !['SCHEDULED', 'CONFIRMED'].includes(a.status) ||
+          a.startsAt <= new Date() ||
+          log.dedupeKey !== `reminder:${a.id}:${a.startsAt.toISOString()}`
+        ) {
+          await prisma.notificationLog.update({
+            where: { id: log.id },
+            data: {
+              status: 'FAILED',
+              attempts: 5,
+              lockedAt: null,
+              error: 'Lembrete obsoleto: atendimento alterado ou encerrado',
+            },
+          })
+          continue
+        }
+      }
+      if (log.dedupeKey?.startsWith('waitlist:')) {
+        const offer = await prisma.waitlistEntry.findFirst({
+          where: {
+            token: log.dedupeKey.slice(9),
+            status: 'OFFERED',
+            expiresAt: { gt: new Date() },
+          },
+        })
+        if (!offer) {
+          await prisma.notificationLog.update({
+            where: { id: log.id },
+            data: {
+              status: 'FAILED',
+              attempts: 5,
+              lockedAt: null,
+              error: 'Oferta expirada',
+            },
+          })
+          continue
+        }
+      }
+      if (log.dedupeKey?.startsWith('outreach:') && log.clientId) {
+        const client = await prisma.client.findUnique({
+          where: { id: log.clientId },
+        })
+        if (!client?.marketingConsent) {
+          await prisma.notificationLog.update({
+            where: { id: log.id },
+            data: {
+              status: 'FAILED',
+              attempts: 5,
+              lockedAt: null,
+              error: 'Autorização revogada',
+            },
+          })
+          continue
+        }
+      }
+      const response = await fetch(
+        `${url.replace(/\/$/, '')}/message/sendText/${encodeURIComponent(instance)}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: key,
+            'Idempotency-Key': log.id,
+          },
+          body: JSON.stringify({
+            number: normalizePhone(log.phone),
+            text: log.message,
+          }),
+          signal: AbortSignal.timeout(15000),
+        },
+      )
+      if (!response.ok)
+        throw new Error(`Provedor retornou HTTP ${response.status}`)
+      await prisma.notificationLog.update({
+        where: { id: log.id },
+        data: {
+          status: 'SENT',
+          sentAt: new Date(),
+          lockedAt: null,
+          error: null,
+        },
+      })
+    } catch (error) {
+      await prisma.notificationLog.update({
+        where: { id: log.id },
+        data: {
+          status: 'FAILED',
+          lockedAt: null,
+          error: error instanceof Error ? error.message : 'Falha de envio',
+          nextAttemptAt: new Date(
+            Date.now() + Math.pow(2, log.attempts + 1) * 60000,
+          ),
+        },
+      })
+    }
+  }
+}
+let running = false
+export function startNotificationWorker() {
+  const tick = async () => {
+    if (running) return
+    running = true
+    try {
+      for (const salon of salons.values())
+        await salonContext.run(salon, async () => {
+          try {
+            await fillCancelledSlots()
+            await sendPendingReminders()
+            await processNotificationQueue()
+          } catch {
+            console.error(`Falha no worker do salão ${salon.slug}`)
+          }
+        })
+    } finally {
+      running = false
+    }
+  }
+  const timer = setInterval(() => {
+    void tick()
+  }, 60000)
+  timer.unref()
+  return timer
+}
 export async function listNotificationLogs(filters: {
   status?: NotificationStatus
   type?: NotificationType
   page?: number
   limit?: number
 }) {
-  const { status, type, page = 1, limit = 50 } = filters
-  const where: Record<string, unknown> = {}
-  if (status) where.status = status
-  if (type) where.type = type
-
+  const page = Math.max(1, filters.page || 1),
+    limit = Math.min(100, Math.max(1, filters.limit || 50))
+  const where = {
+    ...(filters.status ? { status: filters.status } : {}),
+    ...(filters.type ? { type: filters.type } : {}),
+  }
   const [data, total] = await Promise.all([
     prisma.notificationLog.findMany({
       where,
@@ -167,6 +239,5 @@ export async function listNotificationLogs(filters: {
     }),
     prisma.notificationLog.count({ where }),
   ])
-
   return { data, total, page, limit }
 }
