@@ -65,7 +65,8 @@ EOF
   if [ -n "$(docker compose ps -q postgres 2>/dev/null)" ]; then
     echo "  → Backup do banco..."
     mkdir -p backups && chmod 700 backups
-    docker compose exec -T postgres pg_dump -U seubarbeiro -d seu_barbeiro --no-owner \
+    # < /dev/null: o exec não pode consumir o restante deste script (vem pelo stdin).
+    docker compose exec -T postgres pg_dump -U seubarbeiro -d seu_barbeiro --no-owner < /dev/null \
       | gzip > "backups/seu-barbeiro-$(date +%Y%m%d-%H%M%S).sql.gz"
     ls -1t backups/*.sql.gz | tail -n +11 | xargs -r rm -f
   fi
@@ -88,7 +89,7 @@ EOF
 
   if [ "$FIRST" = 1 ]; then
     echo "  → Criando o acesso do dono..."
-    docker compose exec -T app npm run db:seed
+    docker compose exec -T app npm run db:seed < /dev/null
     PASS=$(grep '^ADMIN_PASSWORD=' .env | cut -d= -f2-)
     umask 077
     printf 'Seu Barbeiro — acesso inicial\nURL: https://%s/login\nSalão: seu-barbeiro\nE-mail: %s\nSenha: %s\n' \
