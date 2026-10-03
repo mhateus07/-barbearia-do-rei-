@@ -1,5 +1,30 @@
 # Changelog — Seu Barbeiro
 
+## [03/10/2026] — Seu Barbeiro no ar
+
+### Novo nome e domínio
+- Sistema renomeado de Barbearia do Rei para **Seu Barbeiro** (pastas `seu-barbeiro-api/` e `seu-barbeiro-web/`, pacotes, títulos, tela de login)
+- Slug do salão `barbearia-do-rei` → `seu-barbeiro`; links e navegadores com o slug antigo são redirecionados no painel
+- Migração `20261003000000_rename_shop_seu_barbeiro` troca o nome gravado nas configurações
+- Domínio **seubarbeiro.impulsiodigital.com**; `rei.impulsiodigital.com` redireciona (301) mantendo caminho e query
+
+### Produção na VPS Contabo (Docker + Easypanel/Traefik)
+- `Dockerfile` único: o container serve a API e o painel no mesmo domínio e aplica as migrações ao iniciar
+- `docker-compose.yml` com PostgreSQL próprio e labels do Traefik (certificados Let's Encrypt automáticos)
+- `deploy.sh` refeito: envia para `/opt/seu-barbeiro`, faz backup do banco, reconstrói, espera o healthcheck; na primeira instalação gera o `.env` com senhas aleatórias e o acesso do dono
+- A VPS antiga da Hostinger (31.97.160.94) foi desativada; o banco de produção começou vazio na Contabo
+
+### Correções
+- Rate limit usa o IP real do cliente atrás do proxy (`trust proxy`)
+- `npm audit fix` na API e no painel
+- Rotas públicas com tratamento de erros único: mensagens amigáveis, falhas internas ocultadas; JSON malformado retorna 400
+- CSP libera imagens HTTPS externas (logos e fotos)
+
+### Organização
+- O sistema paralelo `saas-multi-tenant` foi arquivado na tag `arquivo/saas-multi-tenant` e removido da Contabo (backup em `/root/arquivo/`); só a `main` é desenvolvida
+
+---
+
 ## [31/03/2026] — Sessão de desenvolvimento
 
 ### Agendamento Online pelo Cliente (link público)
@@ -85,12 +110,11 @@
 ## Stack
 - **Backend**: Node.js + Express 5 + Prisma 7 + PostgreSQL + JWT + Zod
 - **Frontend**: React + Vite + Tailwind CSS 3 + React Query + Recharts + jsPDF
-- **Banco (VPS)**: 31.97.160.94 — `barbearia_rei`
+- **Produção**: VPS Contabo 173.212.208.109 (`/opt/seu-barbeiro`, Docker + Easypanel/Traefik) — https://seubarbeiro.impulsiodigital.com
+- **Domínios/DNS**: Hostinger (impulsiodigital.com)
 - **Repositório**: https://github.com/mhateus07/-barbearia-do-rei-
 
 ## Próximos passos planejados
-- Deploy na VPS
-- Agendamento pelo cliente (link público sem login)
-- Notificações via WhatsApp
-- Agenda semanal
-- Programa de fidelidade
+- Cadastrar serviços, profissionais e horários em produção
+- Configurar o provedor de WhatsApp e validar os lembretes
+- Recuperar os dados antigos da Barbearia do Rei, se a Hostinger tiver backup

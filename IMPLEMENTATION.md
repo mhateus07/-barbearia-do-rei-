@@ -33,11 +33,13 @@ agenda visual e escalas, financeiro, retorno, reativação, lista de espera e fi
 - Agenda e criação de atendimento verificadas no navegador; painel de oportunidades
   conferido em largura de celular (390 px).
 
-## Ativação operacional pendente
+## Ativação operacional
 
-- Aplicar as migrações no ambiente de produção, após backup e revisão da configuração.
-- Configurar e validar o provedor real de WhatsApp e a URL pública dos convites.
-- Realizar piloto com um salão e conferir as regras comerciais com a equipe.
+- [x] Produção no ar em 03/10/2026: https://seubarbeiro.impulsiodigital.com (VPS Contabo,
+  Docker + Traefik), migrações aplicadas, HTTPS ativo e acesso do dono criado.
+- [ ] Cadastrar serviços, profissionais e horários; o banco de produção começou vazio.
+- [ ] Configurar e validar o provedor real de WhatsApp.
+- [ ] Realizar piloto e conferir as regras comerciais com a equipe.
 
 A demonstração usa dados fictícios e mantém o envio automático desativado.
 Pagamentos são registros internos; não há cobrança Pix/cartão integrada.
