@@ -1,6 +1,6 @@
-# Barbearia do Rei — API
+# Seu Barbeiro — API
 
-Backend da aplicação de gestão para barbearia.
+Backend do Seu Barbeiro, sistema de gestão para barbearias.
 
 ## Stack
 

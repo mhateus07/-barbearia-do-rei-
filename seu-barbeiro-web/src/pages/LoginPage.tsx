@@ -98,7 +98,7 @@ export function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@barbeariadorei.com"
+                  placeholder="admin@seubarbeiro.com"
                   required
                   className="w-full rounded-xl bg-zinc-800/80 border border-zinc-700 pl-10 pr-4 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
                 />

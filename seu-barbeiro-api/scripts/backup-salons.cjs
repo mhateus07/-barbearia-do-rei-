@@ -5,10 +5,10 @@ const path = require('node:path')
 const databases = process.env.SALON_DATABASES
   ? JSON.parse(process.env.SALON_DATABASES)
   : {
-      [process.env.DEFAULT_SALON || 'barbearia-do-rei']:
+      [process.env.DEFAULT_SALON || 'seu-barbeiro']:
         process.env.DATABASE_URL,
     }
-const dir = process.env.BACKUP_DIR || '/var/backups/barbearia'
+const dir = process.env.BACKUP_DIR || '/var/backups/seu-barbeiro'
 const keep = Number(process.env.BACKUP_KEEP || 10)
 const stamp = new Date().toISOString().replace(/[:.]/g, '-')
 fs.mkdirSync(dir, { recursive: true, mode: 0o700 })

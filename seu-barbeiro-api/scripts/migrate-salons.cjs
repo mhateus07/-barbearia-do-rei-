@@ -4,7 +4,7 @@ const path = require('node:path')
 const databases = process.env.SALON_DATABASES
   ? JSON.parse(process.env.SALON_DATABASES)
   : {
-      [process.env.DEFAULT_SALON || 'barbearia-do-rei']:
+      [process.env.DEFAULT_SALON || 'seu-barbeiro']:
         process.env.DATABASE_URL,
     }
 for (const [slug, databaseUrl] of Object.entries(databases)) {

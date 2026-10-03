@@ -1,4 +1,6 @@
-# Gestão para salões e barbearias
+# Seu Barbeiro
+
+Gestão para salões e barbearias.
 
 React + Vite no painel, Express + Prisma + PostgreSQL na API. A tela **Agenda e
 operação** reúne agenda por profissional, escalas, bloqueios, serviços por etapas,

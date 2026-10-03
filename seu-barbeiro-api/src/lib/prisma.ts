@@ -10,7 +10,7 @@ export const salonContext = new AsyncLocalStorage<SalonContext>()
 const configs: Record<string, string> = process.env.SALON_DATABASES
   ? JSON.parse(process.env.SALON_DATABASES)
   : {
-      [process.env.DEFAULT_SALON || 'barbearia-do-rei']:
+      [process.env.DEFAULT_SALON || 'seu-barbeiro']:
         process.env.DATABASE_URL!,
     }
 if (!Object.keys(configs).length) throw new Error('Configure ao menos um salão')

@@ -1,4 +1,4 @@
-# Changelog — Barbearia do Rei
+# Changelog — Seu Barbeiro
 
 ## [31/03/2026] — Sessão de desenvolvimento
 

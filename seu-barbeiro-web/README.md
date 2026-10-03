@@ -1,4 +1,4 @@
-# Barbearia do Rei — Web
+# Seu Barbeiro — Web
 
 Frontend do painel administrativo.
 

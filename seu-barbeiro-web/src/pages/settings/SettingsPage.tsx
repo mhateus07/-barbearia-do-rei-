@@ -531,7 +531,7 @@ function WhatsAppTab({
               onChange={(e) =>
                 setForm({ ...form, whatsapp_instance: e.target.value })
               }
-              placeholder="barbearia-rei"
+              placeholder="seu-barbeiro"
             />
           </div>
         </div>
