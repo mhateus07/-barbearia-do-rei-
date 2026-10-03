@@ -1,0 +1,68 @@
+# Produção na VPS com Easypanel/Traefik (rede externa "easypanel").
+# Configuração em .env ao lado deste arquivo (ver .env.production.example).
+#   docker compose up -d --build
+name: seu-barbeiro
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: seubarbeiro
+      POSTGRES_DB: seu_barbeiro
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U seubarbeiro -d seu_barbeiro']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Sem porta publicada: todo o tráfego entra pelo Traefik (80/443).
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://seubarbeiro:${POSTGRES_PASSWORD}@postgres:5432/seu_barbeiro
+      PORT: 3333
+      TRUST_PROXY: 1
+    networks:
+      - default
+      - easypanel
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=easypanel
+      - traefik.http.services.seu-barbeiro.loadbalancer.server.port=3333
+      - traefik.http.routers.seu-barbeiro.rule=Host(`${APP_DOMAIN}`)
+      - traefik.http.routers.seu-barbeiro.entrypoints=https
+      - traefik.http.routers.seu-barbeiro.tls.certresolver=letsencrypt
+      - traefik.http.routers.seu-barbeiro.service=seu-barbeiro
+      - traefik.http.routers.seu-barbeiro-http.rule=Host(`${APP_DOMAIN}`)
+      - traefik.http.routers.seu-barbeiro-http.entrypoints=http
+      - traefik.http.routers.seu-barbeiro-http.middlewares=redirect-to-https@file
+      - traefik.http.routers.seu-barbeiro-http.service=seu-barbeiro
+      # Domínio antigo: redireciona (301) para o novo mantendo caminho e query.
+      - traefik.http.middlewares.seu-barbeiro-old-domain.redirectregex.regex=^https?://[^/]+/(.*)
+      - traefik.http.middlewares.seu-barbeiro-old-domain.redirectregex.replacement=https://${APP_DOMAIN}/$${1}
+      - traefik.http.middlewares.seu-barbeiro-old-domain.redirectregex.permanent=true
+      - traefik.http.routers.seu-barbeiro-old.rule=Host(`${OLD_DOMAIN}`)
+      - traefik.http.routers.seu-barbeiro-old.entrypoints=https
+      - traefik.http.routers.seu-barbeiro-old.tls.certresolver=letsencrypt
+      - traefik.http.routers.seu-barbeiro-old.middlewares=seu-barbeiro-old-domain
+      - traefik.http.routers.seu-barbeiro-old.service=seu-barbeiro
+      - traefik.http.routers.seu-barbeiro-old-http.rule=Host(`${OLD_DOMAIN}`)
+      - traefik.http.routers.seu-barbeiro-old-http.entrypoints=http
+      - traefik.http.routers.seu-barbeiro-old-http.middlewares=seu-barbeiro-old-domain
+      - traefik.http.routers.seu-barbeiro-old-http.service=seu-barbeiro
+
+volumes:
+  pgdata:
+
+networks:
+  easypanel:
+    external: true

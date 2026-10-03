@@ -1,5 +1,6 @@
 import { rateLimit } from './middlewares/rate-limit.middleware'
 import operationsRoutes from './modules/operations/operations.routes'
+import path from 'node:path'
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
@@ -20,9 +21,18 @@ import publicRoutes from './modules/public/public.routes'
 
 const app = express()
 
-// Atrás do Nginx: usa o IP real do cliente (X-Forwarded-For) no rate limit.
+// Atrás do proxy (Traefik): usa o IP real do cliente (X-Forwarded-For) no rate limit.
 app.set('trust proxy', Number(process.env.TRUST_PROXY ?? 1))
-app.use(helmet())
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        // Logos, fotos de profissionais e fichas técnicas são links HTTPS externos.
+        'img-src': ["'self'", 'data:', 'https:'],
+      },
+    },
+  }),
+)
 app.use(
   cors({
     origin: process.env.FRONTEND_URL
@@ -93,6 +103,22 @@ app.use(
 )
 
 app.use('/api/v1/operations', authMiddleware, operationsRoutes)
+
+// Em produção o mesmo container serve o painel (build do Vite em WEB_DIST).
+const webDist = process.env.WEB_DIST
+if (webDist) {
+  app.use(
+    '/assets',
+    express.static(path.join(webDist, 'assets'), {
+      immutable: true,
+      maxAge: '1y',
+    }),
+  )
+  app.use(express.static(webDist, { index: false }))
+  app.get(/^\/(?!api\/).*/, (_req, res) =>
+    res.sendFile(path.join(webDist, 'index.html')),
+  )
+}
 
 app.use(errorMiddleware)
 

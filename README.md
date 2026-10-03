@@ -116,11 +116,19 @@ restrições de saldo, horários e papéis; dados antigos inválidos precisam se
 corrigidos antes da aplicação. A identidade existente é preservada. Tokens antigos
 não têm vínculo de salão, portanto será necessário entrar novamente após atualizar.
 
-O `deploy.sh` gera o build do painel, faz backup de todos os bancos registrados com
-`pg_dump` (`npm run db:backup:all`, em `BACKUP_DIR`, mantendo os `BACKUP_KEEP` mais
-recentes) e só então migra todos os salões. O servidor precisa ter `pg_dump`.
-Ele continua apontando para a infraestrutura original: revise o destino antes de
-executá-lo. A implementação local não executa deploy automaticamente.
+## Produção (Docker)
+
+A produção roda na VPS com Easypanel/Traefik: um container serve a API e o painel
+(`Dockerfile` na raiz) e outro roda o PostgreSQL (`docker-compose.yml`). O Traefik
+emite os certificados e redireciona o domínio antigo (`OLD_DOMAIN`) para o atual
+(`APP_DOMAIN`). As migrações rodam a cada inicialização do container.
+
+O `deploy.sh` envia o código para `/opt/seu-barbeiro`, faz backup do banco em
+`backups/` (mantém os 10 mais recentes), reconstrói e sobe os containers e espera
+o app ficar saudável. Na primeira instalação, rode `ADMIN_EMAIL=voce@exemplo.com
+./deploy.sh`: ele gera o `.env` do servidor com senhas aleatórias (modelo em
+`.env.production.example`), cria o acesso do dono e salva a senha inicial em
+`/root/seu-barbeiro-acesso-inicial.txt`, fora do `.env`.
 
 ## Verificação
 

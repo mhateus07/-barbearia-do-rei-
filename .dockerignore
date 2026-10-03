@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+**/.env
+**/*.log
+.git
+.claude
+Fotos_seu_barbeiro
+agenda-demo.png
+backups

@@ -36,7 +36,7 @@ export function LoginPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 shadow-lg shadow-amber-500/30">
             <Scissors className="h-5 w-5 text-white" strokeWidth={2.5} />
           </div>
-          <span className="text-white font-bold text-lg">Gestão do salão</span>
+          <span className="text-white font-bold text-lg">Seu Barbeiro</span>
         </div>
         <div>
           <h2 className="text-4xl font-bold text-white leading-tight mb-4">
