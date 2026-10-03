@@ -114,7 +114,9 @@ restrições de saldo, horários e papéis; dados antigos inválidos precisam se
 corrigidos antes da aplicação. A identidade existente é preservada. Tokens antigos
 não têm vínculo de salão, portanto será necessário entrar novamente após atualizar.
 
-O `deploy.sh` usa os diretórios deste repositório e migra todos os salões registrados.
+O `deploy.sh` gera o build do painel, faz backup de todos os bancos registrados com
+`pg_dump` (`npm run db:backup:all`, em `BACKUP_DIR`, mantendo os `BACKUP_KEEP` mais
+recentes) e só então migra todos os salões. O servidor precisa ter `pg_dump`.
 Ele continua apontando para a infraestrutura original: revise o destino antes de
 executá-lo. A implementação local não executa deploy automaticamente.
 

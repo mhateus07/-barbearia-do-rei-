@@ -13,7 +13,8 @@
     "db:studio": "prisma studio",
     "test": "npm run build && node --test tests/*.test.cjs",
     "db:deploy": "prisma migrate deploy",
-    "db:deploy:all": "node scripts/migrate-salons.cjs"
+    "db:deploy:all": "node scripts/migrate-salons.cjs",
+    "db:backup:all": "node scripts/backup-salons.cjs"
   },
   "keywords": [],
   "author": "",

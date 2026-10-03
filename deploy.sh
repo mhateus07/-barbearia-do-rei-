@@ -12,7 +12,11 @@ echo "  DEPLOY - Barbearia do Rei"
 echo "======================================"
 
 echo ""
-echo "[1/5] Enviando API para o VPS..."
+echo "[1/6] Build do painel..."
+(cd "$WEB_LOCAL" && npm ci && npm run build)
+
+echo ""
+echo "[2/6] Enviando API para o VPS..."
 rsync -avz --checksum \
   --exclude 'node_modules' \
   --exclude 'dist' \
@@ -20,12 +24,12 @@ rsync -avz --checksum \
   "$API_LOCAL/" "$VPS:/var/www/barbearia/api/"
 
 echo ""
-echo "[2/5] Enviando frontend (dist) para o VPS..."
+echo "[3/6] Enviando frontend (dist) para o VPS..."
 rsync -avz --checksum \
   "$WEB_LOCAL/dist/" "$VPS:/var/www/barbearia/web/dist/"
 
 echo ""
-echo "[3/5] Build da API + Migrations + PM2..."
+echo "[4/6] Build da API + Backup + Migrations + PM2..."
 ssh "$VPS" bash << 'REMOTE'
   set -e
 
@@ -40,6 +44,9 @@ ssh "$VPS" bash << 'REMOTE'
   echo "  → Build TypeScript..."
   npm run build
 
+  echo "  → Backup dos bancos (antes das migrations)..."
+  npm run db:backup:all
+
   echo "  → Rodando migrations..."
   npm run db:deploy:all
 
@@ -48,14 +55,16 @@ ssh "$VPS" bash << 'REMOTE'
     npm install -g pm2
   fi
 
-  pm2 delete barbearia-api 2>/dev/null || true
-  pm2 start dist/server.js --name barbearia-api
+  # reload mantém o processo registrado; start só na primeira instalação.
+  # Fica em modo fork (uma instância): em cluster o worker de notificações duplicaria envios.
+  pm2 reload barbearia-api --update-env 2>/dev/null \
+    || pm2 start dist/server.js --name barbearia-api
   pm2 save
   pm2 startup systemd -u root --hp /root 2>/dev/null || true
 REMOTE
 
 echo ""
-echo "[4/5] Configurando Nginx + SSL..."
+echo "[5/6] Configurando Nginx + SSL..."
 ssh "$VPS" DOMAIN="$DOMAIN" bash << 'REMOTE'
   # Instalar Certbot se necessário
   if ! command -v certbot &> /dev/null; then
@@ -100,7 +109,7 @@ NGINX
 REMOTE
 
 echo ""
-echo "[5/5] Verificando status..."
+echo "[6/6] Verificando status..."
 ssh "$VPS" bash << 'REMOTE'
   echo "  → PM2:"
   pm2 list

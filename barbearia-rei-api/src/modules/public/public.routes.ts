@@ -1,11 +1,29 @@
 import { z } from 'zod'
+import { Router, Response, NextFunction } from 'express'
+import { isBusinessError } from '../../utils/http-error'
 import { normalizePhone } from '../../utils/phone'
 import { prisma } from '../../lib/prisma'
 import { runSchedule, bookInTransaction } from '../appointments/scheduling'
-import { Router } from 'express'
 import * as PublicController from './public.controller'
 
 const router = Router()
+
+// Resposta única para erros do site público: regras de negócio e validação
+// voltam com mensagem amigável; falhas internas são registradas e ocultadas.
+function sendPublicError(
+  error: unknown,
+  res: Response,
+  { status = 400, invalid = 'Revise os dados informados' } = {},
+) {
+  if (error instanceof z.ZodError)
+    return res.status(400).json({ message: invalid })
+  if (isBusinessError(error))
+    return res.status(status).json({ message: error.message })
+  console.error(error)
+  res
+    .status(500)
+    .json({ message: 'Não foi possível concluir a solicitação. Tente novamente.' })
+}
 
 router.get('/info', PublicController.getInfo)
 router.get('/services', PublicController.getServices)
@@ -82,16 +100,9 @@ router.post('/waitlist', async (req, res) => {
     })
     res.status(201).json({ registered: true })
   } catch (error) {
-    res
-      .status(400)
-      .json({
-        message:
-          error instanceof z.ZodError
-            ? 'Revise os dados e autorize o aviso da vaga'
-            : error instanceof Error && !('code' in error)
-              ? error.message
-              : 'Não foi possível entrar na lista',
-      })
+    sendPublicError(error, res, {
+      invalid: 'Revise os dados e autorize o aviso da vaga',
+    })
   }
 })
 
@@ -135,10 +146,13 @@ router.post('/offers/:token/accept', async (req, res) => {
     })
     res.status(201).json(result)
   } catch (error) {
-    res.status(409).json({
-      message: error instanceof Error ? error.message : 'Oferta indisponível',
-    })
+    sendPublicError(error, res, { status: 409 })
   }
 })
+
+router.use(
+  (error: unknown, _req: unknown, res: Response, _next: NextFunction) =>
+    sendPublicError(error, res),
+)
 
 export default router

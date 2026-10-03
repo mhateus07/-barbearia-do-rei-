@@ -20,6 +20,8 @@ import publicRoutes from './modules/public/public.routes'
 
 const app = express()
 
+// Atrás do Nginx: usa o IP real do cliente (X-Forwarded-For) no rate limit.
+app.set('trust proxy', Number(process.env.TRUST_PROXY ?? 1))
 app.use(helmet())
 app.use(
   cors({
