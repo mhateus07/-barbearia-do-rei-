@@ -17,9 +17,9 @@ import {
   Store,
 } from 'lucide-react'
 
-const PHOTO = '/portfolio/ab563fbd31804dcb99613648f91887-barbearia-do-rei-inspiration-921d0cb6497d45fcb708e0dde6d742-booksy.jpeg'
-const TOWEL = '/portfolio/177bdb3b33c44c0b856a514ec9fdb5-barbearia-do-rei-inspiration-c415e770790b482b9a5caf60d316ab-booksy.jpeg'
-const DESIGN = '/portfolio/f6d58acc317d49d29a878465f19725-barbearia-do-rei-inspiration-8911db80819341388ea0f189ef6f74-booksy.jpeg'
+const PHOTO = '/login/fundo.jpg'
+const TOWEL = '/login/toalha.jpg'
+const DESIGN = '/login/desenho.jpg'
 
 const features = [
   { icon: CalendarDays, title: 'Agenda inteligente', text: 'Dia e semana, arrastar para remarcar' },
@@ -70,6 +70,8 @@ export function LoginPage() {
         <img
           src={PHOTO}
           alt=""
+          fetchPriority="high"
+          decoding="async"
           className="absolute inset-0 h-full w-full scale-105 object-cover"
         />
         <div className="absolute inset-0 bg-linear-to-t from-zinc-950 via-zinc-950/75 to-zinc-950/30" />
