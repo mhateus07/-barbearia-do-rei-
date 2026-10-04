@@ -70,7 +70,8 @@ export async function createPayment(input: CreatePaymentInput) {
         throw new Error('Atendimento cancelado ou ausente')
       const due =
         Number(appointment.totalPrice) -
-        Number(appointment.discount) +
+        Number(appointment.discount) -
+        Number(appointment.subscriptionCovered) +
         appointment.items.reduce(
           (sum, item) => sum + item.quantity * Number(item.unitPrice),
           0,
@@ -201,6 +202,11 @@ export async function getCommissions(from?: string, to?: string) {
   const toDate = to ? new Date(`${to}T23:59:59`) : new Date()
 
   const barbers = await prisma.barber.findMany({ where: { isActive: true } })
+  const openAdvances = await prisma.barberAdvance.groupBy({
+    by: ['barberId'],
+    where: { settledInId: null },
+    _sum: { amount: true },
+  })
 
   const appointments = await prisma.appointment.findMany({
     where: {
@@ -239,6 +245,9 @@ export async function getCommissions(from?: string, to?: string) {
       totalRevenue,
       commission,
       appointmentsCount: barberAppointments.length,
+      openAdvances: Number(
+        openAdvances.find((a) => a.barberId === barber.id)?._sum.amount ?? 0,
+      ),
     }
   })
 }
@@ -285,6 +294,24 @@ export async function payCommission(input: PayCommissionInput) {
     )
     if (!appointments.length)
       throw new Error('Sem atendimentos concluídos no período')
+    // Vales em aberto até o fim do período são descontados, do mais antigo
+    // ao mais novo, enquanto couberem na comissão. O restante fica para o próximo.
+    const advances = await tx.barberAdvance.findMany({
+      where: {
+        barberId: input.barberId,
+        settledInId: null,
+        givenAt: { lte: periodTo },
+      },
+      orderBy: { givenAt: 'asc' },
+    })
+    const deducted: typeof advances = []
+    let advancesDeducted = 0
+    for (const advance of advances) {
+      const next = advancesDeducted + Number(advance.amount)
+      if (Math.round(next * 100) > Math.round(commissionAmount * 100)) break
+      advancesDeducted = next
+      deducted.push(advance)
+    }
     const payment = await tx.commissionPayment.create({
       data: {
         barberId: input.barberId,
@@ -296,15 +323,23 @@ export async function payCommission(input: PayCommissionInput) {
           ? (commissionAmount / totalRevenue) * 100
           : 0,
         notes: input.notes,
+        advancesDeducted,
         paidAt: input.paidAt ? new Date(input.paidAt) : new Date(),
       },
       include: { barber: { select: { id: true, name: true } } },
     })
-    if (commissionAmount > 0)
+    if (deducted.length)
+      await tx.barberAdvance.updateMany({
+        where: { id: { in: deducted.map((a) => a.id) } },
+        data: { settledInId: payment.id },
+      })
+    // Os vales já entraram como despesa quando foram dados: aqui sai só o líquido.
+    const net = Math.round((commissionAmount - advancesDeducted) * 100) / 100
+    if (net > 0)
       await tx.expense.create({
         data: {
           description: `Comissão: ${payment.barber.name}`,
-          amount: commissionAmount,
+          amount: net,
           category: 'SALARY',
           dueDate: payment.paidAt,
           paidAt: payment.paidAt,

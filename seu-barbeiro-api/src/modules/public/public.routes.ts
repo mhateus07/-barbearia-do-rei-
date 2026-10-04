@@ -5,6 +5,8 @@ import { normalizePhone } from '../../utils/phone'
 import { prisma } from '../../lib/prisma'
 import { runSchedule, bookInTransaction } from '../appointments/scheduling'
 import * as PublicController from './public.controller'
+import * as PublicService from './public.service'
+import { publicCharge } from '../payments/pix.service'
 
 const router = Router()
 
@@ -30,6 +32,71 @@ router.get('/services', PublicController.getServices)
 router.get('/barbers', PublicController.getBarbers)
 router.get('/barbers/:barberId/slots', PublicController.getSlots)
 router.post('/appointments', PublicController.createAppointment)
+
+// Autoatendimento: o token longo e aleatório do link é a credencial do cliente.
+const token = z.string().regex(/^[a-f0-9]{48}$/, 'Link inválido')
+router.get('/manage/:token', async (req, res) => {
+  try {
+    res.json(await PublicService.getManagedAppointment(token.parse(req.params.token)))
+  } catch (error) {
+    sendPublicError(error, res, { status: 404, invalid: 'Link inválido' })
+  }
+})
+router.get('/manage/:token/slots', async (req, res) => {
+  try {
+    const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).parse(req.query.date)
+    res.json({
+      slots: await PublicService.getManagedSlots(token.parse(req.params.token), date),
+    })
+  } catch (error) {
+    sendPublicError(error, res)
+  }
+})
+router.post('/manage/:token/confirm', async (req, res) => {
+  try {
+    await PublicService.confirmManagedAppointment(token.parse(req.params.token))
+    res.json({ confirmed: true })
+  } catch (error) {
+    sendPublicError(error, res, { status: 409 })
+  }
+})
+router.post('/manage/:token/cancel', async (req, res) => {
+  try {
+    await PublicService.cancelManagedAppointment(token.parse(req.params.token))
+    res.json({ cancelled: true })
+  } catch (error) {
+    sendPublicError(error, res, { status: 409 })
+  }
+})
+router.post('/manage/:token/reschedule', async (req, res) => {
+  try {
+    const data = z
+      .object({
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+      })
+      .parse(req.body)
+    await PublicService.rescheduleManagedAppointment(
+      token.parse(req.params.token),
+      data.date,
+      data.time,
+    )
+    res.json({ rescheduled: true })
+  } catch (error) {
+    sendPublicError(error, res, { status: 409 })
+  }
+})
+
+// Página de pagamento Pix (sinal ou mensalidade).
+router.get('/pix/:token', async (req, res) => {
+  try {
+    const charge = await publicCharge(token.parse(req.params.token))
+    if (!charge) return res.status(404).json({ message: 'Cobrança não encontrada' })
+    res.json(charge)
+  } catch (error) {
+    sendPublicError(error, res, { status: 404, invalid: 'Cobrança não encontrada' })
+  }
+})
 
 router.post('/waitlist', async (req, res) => {
   try {

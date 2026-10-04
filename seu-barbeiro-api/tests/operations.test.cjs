@@ -416,6 +416,17 @@ test('salon operations integration', async (t) => {
     })
     assert.equal(agenda.status, 200)
     assert.ok(agenda.data.appointments.every((a) => a.barberId === barber.id))
+    const week = await request(`/operations/agenda?date=${date}&days=7`, {
+      token: proToken,
+    })
+    assert.equal(week.status, 200)
+    assert.ok(week.data.appointments.length >= agenda.data.appointments.length)
+    assert.ok(week.data.appointments.every((a) => a.barberId === barber.id))
+    assert.notEqual(
+      (await request(`/operations/agenda?date=${date}&days=8`, { token: proToken }))
+        .status,
+      200,
+    )
     assert.equal(
       await salons.get('beta').db.client.count({ where: { id: client.id } }),
       0,

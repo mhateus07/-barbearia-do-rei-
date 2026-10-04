@@ -11,6 +11,7 @@ import {
   bookInTransaction,
 } from '../appointments/scheduling'
 import { getSettings } from '../settings/settings.service'
+import { pushPublicKey } from '../push/push.service'
 
 const router = Router()
 const uuid = z.string().uuid()
@@ -125,8 +126,11 @@ router.get('/agenda', async (req: AuthRequest, res) => {
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .parse(req.query.date)
+  // `days` permite a visão semanal: o período começa em `date` e cobre até 7 dias.
+  const days = z.coerce.number().int().min(1).max(7).default(1).parse(req.query.days)
   const from = new Date(`${day}T00:00:00`),
     to = new Date(`${day}T23:59:59.999`)
+  to.setDate(to.getDate() + days - 1)
   const scope =
     req.role === 'PROFESSIONAL' ? { barberId: req.barberId || 'none' } : {}
   const [appointments, blocks, barbers, services, resources, schedules] =
@@ -186,7 +190,8 @@ router.put('/schedules/:barberId', staff, async (req, res) => {
     }),
   )
 })
-router.post('/blocks', staff, async (req, res) => {
+// O profissional pode bloquear e liberar somente a própria agenda.
+router.post('/blocks', async (req: AuthRequest, res) => {
   const data = z
     .object({
       barberId: uuid,
@@ -199,6 +204,10 @@ router.post('/blocks', staff, async (req, res) => {
       'Intervalo inválido',
     )
     .parse(req.body)
+  if (req.role === 'PROFESSIONAL' && data.barberId !== req.barberId)
+    return res
+      .status(403)
+      .json({ error: { message: 'Você só pode bloquear a sua agenda' } })
   res.status(201).json(
     await runSchedule(async (tx) => {
       const startsAt = new Date(data.startsAt),
@@ -219,12 +228,52 @@ router.post('/blocks', staff, async (req, res) => {
     }),
   )
 })
-router.delete('/blocks/:id', staff, async (req, res) => {
+router.delete('/blocks/:id', async (req: AuthRequest, res) => {
   res.json(
-    await runSchedule((tx) =>
-      tx.scheduleBlock.delete({ where: { id: req.params.id } }),
-    ),
+    await runSchedule(async (tx) => {
+      const block = await tx.scheduleBlock.findUnique({
+        where: { id: req.params.id },
+      })
+      if (!block) throw new Error('Bloqueio não encontrado')
+      if (req.role === 'PROFESSIONAL' && block.barberId !== req.barberId)
+        throw new Error('Você só pode liberar a sua agenda')
+      return tx.scheduleBlock.delete({ where: { id: block.id } })
+    }),
   )
+})
+
+// Notificações push no celular de quem está logado.
+router.get('/push/key', (_req, res) => {
+  res.json({ publicKey: pushPublicKey() })
+})
+router.post('/push/subscribe', async (req: AuthRequest, res) => {
+  const data = z
+    .object({
+      endpoint: z.string().url().startsWith('https://').max(1000),
+      keys: z.object({
+        p256dh: z.string().min(10).max(200),
+        auth: z.string().min(8).max(100),
+      }),
+    })
+    .parse(req.body)
+  await prisma.pushSubscription.upsert({
+    where: { endpoint: data.endpoint },
+    create: {
+      adminId: req.adminId!,
+      endpoint: data.endpoint,
+      p256dh: data.keys.p256dh,
+      auth: data.keys.auth,
+    },
+    update: { adminId: req.adminId!, p256dh: data.keys.p256dh, auth: data.keys.auth },
+  })
+  res.status(201).json({ subscribed: true })
+})
+router.post('/push/unsubscribe', async (req: AuthRequest, res) => {
+  const { endpoint } = z.object({ endpoint: z.string().max(1000) }).parse(req.body)
+  await prisma.pushSubscription.deleteMany({
+    where: { endpoint, adminId: req.adminId },
+  })
+  res.json({ unsubscribed: true })
 })
 router.post('/resources', owner, async (req, res) => {
   res
@@ -373,7 +422,7 @@ router.patch('/orders/:id/discount', staff, async (req, res) => {
       if (!a || a.status === 'COMPLETED')
         throw new Error('Comanda encerrada ou não encontrada')
       if (
-        discount > Number(a.totalPrice) ||
+        discount > Number(a.totalPrice) - Number(a.subscriptionCovered) ||
         a.payments.some((p) => !p.refundedAt)
       )
         throw new Error('Desconto inválido ou comanda com recebimentos')
@@ -405,6 +454,14 @@ router.get(
         0,
       ),
       appointments: appointments.length,
+      openAdvances: Number(
+        (
+          await prisma.barberAdvance.aggregate({
+            where: { barberId: req.barberId || 'none', settledInId: null },
+            _sum: { amount: true },
+          })
+        )._sum.amount ?? 0,
+      ),
     })
   },
 )
@@ -487,7 +544,8 @@ router.get('/growth', staff, async (_req, res) => {
     .map((a) => {
       const total =
         Number(a.totalPrice) -
-        Number(a.discount) +
+        Number(a.discount) -
+        Number(a.subscriptionCovered) +
         a.items.reduce((sum, i) => sum + Number(i.unitPrice) * i.quantity, 0)
       const paid = a.payments
         .filter((p) => !p.refundedAt)

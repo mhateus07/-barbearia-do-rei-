@@ -32,12 +32,30 @@ export async function updateSettings(
         'loyalty_redemption_points',
         'loyalty_redemption_value',
         'whatsapp_reminder_hours',
+        'deposit_value',
+        'deposit_expire_minutes',
       ].includes(key) &&
       (!Number.isFinite(Number(value)) || Number(value) <= 0)
     )
       throw new Error('Valor de configuração inválido')
     if (key === 'shop_logo' && value && !value.startsWith('https://'))
       throw new Error('Use uma URL HTTPS para o logo')
+    if (key === 'deposit_mode' && !['off', 'all', 'no_show'].includes(value))
+      throw new Error('Modo de sinal inválido')
+    if (key === 'deposit_type' && !['percent', 'fixed'].includes(value))
+      throw new Error('Tipo de sinal inválido')
+    if (
+      key === 'deposit_expire_minutes' &&
+      (!Number.isInteger(Number(value)) || Number(value) < 10 || Number(value) > 1440)
+    )
+      throw new Error('Prazo do sinal deve ficar entre 10 e 1440 minutos')
+    if (
+      ['client_change_min_hours', 'subscription_notice_days', 'subscription_grace_days'].includes(key) &&
+      (!Number.isInteger(Number(value)) || Number(value) < 0 || Number(value) > 72)
+    )
+      throw new Error('Valor de configuração inválido')
+    if (key === 'mp_access_token' && value && !/^(APP_USR|TEST)-[\w-]{20,}$/.test(value))
+      throw new Error('Token do Mercado Pago inválido. Use o "Access Token" de produção.')
   }
   const ops = Object.entries(input.settings).map(([key, value]) =>
     prisma.settings.upsert({

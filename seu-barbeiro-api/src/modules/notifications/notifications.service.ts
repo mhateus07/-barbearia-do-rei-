@@ -3,6 +3,10 @@ import { NotificationType, NotificationStatus } from '@prisma/client'
 import { prisma, salons, salonContext } from '../../lib/prisma'
 import { getSettings } from '../settings/settings.service'
 import { normalizePhone } from '../../utils/phone'
+import { randomBytes } from 'node:crypto'
+import { manageUrl } from '../appointments/scheduling'
+import { expireDeposits } from '../payments/pix.service'
+import { runSubscriptionCycle } from '../subscriptions/subscriptions.service'
 
 export async function sendAndLog(params: {
   type: NotificationType
@@ -32,18 +36,29 @@ export async function sendPendingReminders() {
     where: {
       status: { in: ['SCHEDULED', 'CONFIRMED'] },
       startsAt: { gt: new Date(), lte: new Date(Date.now() + hours * 3600000) },
+      // Horário com sinal pendente ainda não está garantido.
+      OR: [{ depositAmount: null }, { depositPaidAt: { not: null } }],
     },
     include: { client: true, barber: true },
   })
   for (const a of appointments) {
     const date = a.startsAt.toLocaleString('pt-BR')
+    // Atendimentos antigos ganham o link de autoatendimento no primeiro lembrete.
+    const token =
+      a.manageToken ??
+      (
+        await prisma.appointment.update({
+          where: { id: a.id },
+          data: { manageToken: randomBytes(24).toString('hex') },
+        })
+      ).manageToken
     await sendAndLog({
       type: 'APPOINTMENT_REMINDER',
       phone: a.client.phone,
       clientId: a.clientId,
       appointmentId: a.id,
       dedupeKey: `reminder:${a.id}:${a.startsAt.toISOString()}`,
-      message: `Olá, ${a.client.name}! Lembrete do seu atendimento em ${date}, com ${a.barber.name}. ${settings.shop_name}. Para alterar, entre em contato: ${settings.shop_phone}.`,
+      message: `Olá, ${a.client.name}! Lembrete do seu atendimento em ${date}, com ${a.barber.name}. ${settings.shop_name}.${manageUrl(token) || ` Para alterar, entre em contato: ${settings.shop_phone}.`}`,
     })
   }
   return { sent: 0, failed: 0, queued: appointments.length }
@@ -197,7 +212,9 @@ export function startNotificationWorker() {
       for (const salon of salons.values())
         await salonContext.run(salon, async () => {
           try {
+            await expireDeposits()
             await fillCancelledSlots()
+            await runSubscriptionCycle()
             await sendPendingReminders()
             await processNotificationQueue()
           } catch {

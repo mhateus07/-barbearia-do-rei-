@@ -31,4 +31,19 @@ export const SETTING_DEFAULTS: Record<string, string> = {
   whatsapp_api_key: '',
   whatsapp_instance: '',
   whatsapp_reminder_hours: '24',
+  // Link do cliente: antecedência mínima (horas) para confirmar, remarcar ou cancelar.
+  client_change_min_hours: '2',
+  // Pix via Mercado Pago. O token nunca volta para o navegador.
+  mp_access_token: '',
+  // Sinal: off | all (todos) | no_show (só quem faltou nos últimos 12 meses)
+  deposit_mode: 'off',
+  deposit_type: 'percent',
+  deposit_value: '30',
+  deposit_expire_minutes: '30',
+  // Assinaturas: dias de antecedência da cobrança e prazo do Pix.
+  subscription_notice_days: '3',
+  subscription_grace_days: '5',
 }
+
+/** Configurações que só o servidor lê; o painel recebe apenas se estão preenchidas. */
+export const SECRET_SETTINGS = ['mp_access_token']

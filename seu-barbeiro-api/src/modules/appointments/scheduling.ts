@@ -1,5 +1,6 @@
+import { randomBytes } from 'node:crypto'
 import { Prisma } from '@prisma/client'
-import { prisma } from '../../lib/prisma'
+import { prisma, currentSalon } from '../../lib/prisma'
 import { getSettings } from '../settings/settings.service'
 
 export type Tx = Prisma.TransactionClient
@@ -245,6 +246,8 @@ export async function bookInTransaction(
     returnOfId?: string
     holdToken?: string
     visitId?: string
+    /** Sinal exigido: o horário fica reservado até o prazo de pagamento. */
+    deposit?: { amount: number; expiresAt: Date }
   },
 ) {
   const startsAt = new Date(input.startsAt)
@@ -289,6 +292,13 @@ export async function bookInTransaction(
       source: input.source ?? 'DIRECT',
       visitId: input.visitId,
       returnOfId: input.returnOfId,
+      manageToken: randomBytes(24).toString('hex'),
+      ...(input.deposit
+        ? {
+            depositAmount: input.deposit.amount,
+            depositExpiresAt: input.deposit.expiresAt,
+          }
+        : {}),
       services: {
         create: data.services.map((s) => ({
           serviceId: s.id,
@@ -308,7 +318,8 @@ export async function bookInTransaction(
     },
   })
   const settings = await getSettings(tx)
-  if (settings.whatsapp_enabled === 'true')
+  // Com sinal, a confirmação só sai depois que o Pix for pago.
+  if (settings.whatsapp_enabled === 'true' && !input.deposit)
     await tx.notificationLog.create({
       data: {
         type: 'APPOINTMENT_CONFIRMATION',
@@ -316,10 +327,16 @@ export async function bookInTransaction(
         clientId: input.clientId,
         phone: appointment.client.phone,
         dedupeKey: `confirmation:${appointment.id}`,
-        message: `Olá, ${appointment.client.name}! Agendamento registrado para ${startsAt.toLocaleString('pt-BR')}, com ${appointment.barber.name}. ${settings.shop_name}.`,
+        message: `Olá, ${appointment.client.name}! Agendamento registrado para ${startsAt.toLocaleString('pt-BR')}, com ${appointment.barber.name}. ${settings.shop_name}.${manageUrl(appointment.manageToken)}`,
       },
     })
   return appointment
+}
+/** Trecho da mensagem com o link de autoatendimento (vazio sem PUBLIC_WEB_URL). */
+export function manageUrl(token: string | null) {
+  const base = process.env.PUBLIC_WEB_URL
+  if (!token || !base) return ''
+  return ` Para confirmar, remarcar ou cancelar: ${base.replace(/\/$/, '')}/meu-horario/${token}?salon=${currentSalon().slug}`
 }
 export async function runSchedule<T>(work: (tx: Tx) => Promise<T>) {
   return prisma.$transaction(

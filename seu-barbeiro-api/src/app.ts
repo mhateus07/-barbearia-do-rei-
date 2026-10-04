@@ -18,6 +18,11 @@ import financesRoutes from './modules/finances/finances.routes'
 import settingsRoutes from './modules/settings/settings.routes'
 import notificationsRoutes from './modules/notifications/notifications.routes'
 import publicRoutes from './modules/public/public.routes'
+import subscriptionRoutes from './modules/subscriptions/subscriptions.routes'
+import cashRoutes from './modules/cash/cash.routes'
+import advancesRoutes from './modules/finances/advances.routes'
+import { salons, salonContext } from './lib/prisma'
+import { handleMercadoPagoNotification } from './modules/payments/pix.service'
 
 const app = express()
 
@@ -42,6 +47,27 @@ app.use(
   }),
 )
 app.use(express.json())
+
+// Aviso de pagamento do Mercado Pago. O salão vem na URL (o provedor não envia
+// cabeçalhos próprios) e o pagamento é sempre reconsultado na API do Mercado
+// Pago, então um aviso falso não confirma nada. Responde 200 rápido.
+app.post(
+  '/api/v1/webhooks/mercadopago/:salon',
+  rateLimit(300, 60000),
+  (req, res) => {
+    const salon = salons.get(String(req.params.salon))
+    const body = req.body as { type?: string; topic?: string; data?: { id?: unknown } }
+    const id = String(body?.data?.id ?? req.query['data.id'] ?? req.query.id ?? '')
+    const topic = body?.type ?? body?.topic ?? req.query.type ?? req.query.topic
+    res.sendStatus(200)
+    if (!salon || !/^\d{1,30}$/.test(id) || (topic && topic !== 'payment')) return
+    void salonContext.run(salon, () =>
+      handleMercadoPagoNotification(id).catch((error) =>
+        console.error('Falha ao processar aviso do Mercado Pago', error),
+      ),
+    )
+  },
+)
 
 app.use('/api/v1', salonMiddleware)
 
@@ -100,6 +126,25 @@ app.use(
   authMiddleware,
   allowRoles('OWNER', 'RECEPTION'),
   notificationsRoutes,
+)
+
+app.use(
+  '/api/v1/subscriptions',
+  authMiddleware,
+  allowRoles('OWNER', 'RECEPTION'),
+  subscriptionRoutes,
+)
+app.use(
+  '/api/v1/cash',
+  authMiddleware,
+  allowRoles('OWNER', 'RECEPTION'),
+  cashRoutes,
+)
+app.use(
+  '/api/v1/advances',
+  authMiddleware,
+  allowRoles('OWNER', 'RECEPTION'),
+  advancesRoutes,
 )
 
 app.use('/api/v1/operations', authMiddleware, operationsRoutes)

@@ -37,6 +37,7 @@ model Barber {
   blocks             ScheduleBlock[]
   appointments       Appointment[]
   commissionPayments CommissionPayment[]
+  advances           BarberAdvance[]
 
   @@map("barbers")
 }
@@ -76,6 +77,7 @@ model Client {
   appointments     Appointment[]
   loyaltyCard      LoyaltyCard?
   notificationLogs NotificationLog[]
+  subscriptions    Subscription[]
 
   @@map("clients")
 }
@@ -101,6 +103,17 @@ model Appointment {
   visitId String?
   returnOfId String?
   discount Decimal @default(0) @db.Decimal(10, 2)
+  // Link de autoatendimento do cliente (confirmar, remarcar, cancelar).
+  manageToken String? @unique
+  // Sinal via Pix: o horário fica reservado até `depositExpiresAt`.
+  depositAmount Decimal? @db.Decimal(10, 2)
+  depositExpiresAt DateTime?
+  depositPaidAt DateTime?
+  // Parte da comanda coberta pela assinatura do cliente.
+  subscriptionId String?
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  subscriptionCovered Decimal @default(0) @db.Decimal(10, 2)
+  pixCharges PixCharge[]
   items OrderItem[]
   segments AppointmentSegment[]
   totalPrice Decimal           @db.Decimal(10, 2)
@@ -237,11 +250,13 @@ model CommissionPayment {
   commissionAmount Decimal  @db.Decimal(10, 2)
   commissionRate   Decimal  @db.Decimal(5, 2)
   notes            String?
+  advancesDeducted Decimal  @default(0) @db.Decimal(10, 2)
   paidAt           DateTime @default(now())
   createdAt        DateTime @default(now())
 
   barber   Barber @relation(fields: [barberId], references: [id])
   barberId String
+  advances BarberAdvance[]
 
   @@index([barberId])
   @@map("commission_payments")
@@ -397,4 +412,157 @@ model OrderItem {
   unitPrice Decimal @db.Decimal(10, 2)
   unitCost Decimal @db.Decimal(10, 2)
   @@map("order_items")
+}
+
+
+// ─── VALES (ADIANTAMENTOS) ───────────────────────────────────────────────────
+
+model BarberAdvance {
+  id        String   @id @default(uuid())
+  barberId  String
+  barber    Barber   @relation(fields: [barberId], references: [id])
+  amount    Decimal  @db.Decimal(10, 2)
+  notes     String?
+  givenAt   DateTime @default(now())
+  createdById String?
+  // Pagamento de comissão em que o vale foi descontado.
+  settledInId String?
+  settledIn   CommissionPayment? @relation(fields: [settledInId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([barberId, settledInId])
+  @@map("barber_advances")
+}
+
+// ─── CAIXA ───────────────────────────────────────────────────────────────────
+
+model CashSession {
+  id             String    @id @default(uuid())
+  openedAt       DateTime  @default(now())
+  openedById     String
+  openingAmount  Decimal   @db.Decimal(10, 2)
+  closedAt       DateTime?
+  closedById     String?
+  expectedAmount Decimal?  @db.Decimal(10, 2)
+  countedAmount  Decimal?  @db.Decimal(10, 2)
+  notes          String?
+  movements      CashMovement[]
+
+  @@index([openedAt])
+  @@map("cash_sessions")
+}
+
+model CashMovement {
+  id          String      @id @default(uuid())
+  sessionId   String
+  session     CashSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  // SUPPLY = reforço (entra dinheiro); WITHDRAWAL = sangria (sai dinheiro).
+  kind        String
+  amount      Decimal     @db.Decimal(10, 2)
+  reason      String
+  createdById String?
+  createdAt   DateTime    @default(now())
+
+  @@index([sessionId])
+  @@map("cash_movements")
+}
+
+// ─── NOTIFICAÇÕES PUSH ───────────────────────────────────────────────────────
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  adminId   String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@map("push_subscriptions")
+}
+
+// ─── ASSINATURAS ─────────────────────────────────────────────────────────────
+
+model Plan {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  price        Decimal  @db.Decimal(10, 2)
+  serviceIds   String[] @default([])
+  // Usos por mês; nulo = ilimitado.
+  usesPerCycle Int?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                 String    @id @default(uuid())
+  clientId           String
+  client             Client    @relation(fields: [clientId], references: [id])
+  planId             String
+  plan               Plan      @relation(fields: [planId], references: [id])
+  // PENDING (aguarda 1º pagamento), ACTIVE, PAST_DUE, CANCELLED
+  status             String    @default("PENDING")
+  priceSnapshot      Decimal   @db.Decimal(10, 2)
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelledAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  charges            SubscriptionCharge[]
+  appointments       Appointment[]
+
+  @@index([status, currentPeriodEnd])
+  @@index([clientId])
+  @@map("subscriptions")
+}
+
+model SubscriptionCharge {
+  id             String       @id @default(uuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  periodStart    DateTime
+  periodEnd      DateTime
+  amount         Decimal      @db.Decimal(10, 2)
+  // PENDING, PAID, EXPIRED, CANCELLED
+  status         String       @default("PENDING")
+  paidAt         DateTime?
+  paymentId      String?      @unique
+  createdAt      DateTime     @default(now())
+  pixCharges     PixCharge[]
+
+  @@unique([subscriptionId, periodStart])
+  @@map("subscription_charges")
+}
+
+// ─── COBRANÇAS PIX (MERCADO PAGO) ────────────────────────────────────────────
+
+model PixCharge {
+  id            String    @id @default(uuid())
+  // DEPOSIT (sinal do agendamento) ou SUBSCRIPTION (mensalidade)
+  kind          String
+  // Token da página pública de pagamento.
+  token         String    @unique
+  providerId    String?   @unique
+  amount        Decimal   @db.Decimal(10, 2)
+  // PENDING, PAID, EXPIRED, CANCELLED, FAILED
+  status        String    @default("PENDING")
+  qrCode        String?
+  qrCodeBase64  String?
+  ticketUrl     String?
+  error         String?
+  expiresAt     DateTime
+  paidAt        DateTime?
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  subscriptionChargeId String?
+  subscriptionCharge   SubscriptionCharge? @relation(fields: [subscriptionChargeId], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now())
+
+  @@index([status, expiresAt])
+  @@map("pix_charges")
 }
