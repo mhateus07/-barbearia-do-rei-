@@ -57,7 +57,7 @@ export function AppointmentsPage() {
         </div>
         <button
           onClick={() => setModalOpen(true)}
-          className="flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-3 py-2.5 md:px-4 text-sm font-semibold text-white transition-colors shadow-sm shadow-amber-500/25 whitespace-nowrap"
+          className="flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-3 py-2.5 md:px-4 text-sm font-semibold text-white transition-colors shadow-xs shadow-amber-500/25 whitespace-nowrap"
         >
           <Plus className="h-4 w-4" />
           <span className="hidden sm:inline">Novo Agendamento</span>
@@ -68,12 +68,12 @@ export function AppointmentsPage() {
       {/* Filters */}
       <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-4 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="flex items-center gap-2">
-          <CalendarDays className="h-4 w-4 text-zinc-400 flex-shrink-0" />
+          <CalendarDays className="h-4 w-4 text-zinc-400 shrink-0" />
           <input
             type="date"
             value={filterDate}
             onChange={(e) => setFilterDate(e.target.value)}
-            className="flex-1 rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
+            className="flex-1 rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-hidden focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
           />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -112,7 +112,7 @@ export function AppointmentsPage() {
             const next = NEXT_STATUS[a.status]
             const NextIcon = next?.icon
             return (
-              <div key={a.id} className="rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 hover:shadow-sm transition-shadow">
+              <div key={a.id} className="rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 hover:shadow-xs transition-shadow">
                 {/* Linha superior: hora + cliente + ações */}
                 <div className="flex items-center gap-3">
                   <div className="text-center min-w-[46px]">
@@ -120,11 +120,11 @@ export function AppointmentsPage() {
                     <p className="text-[10px] text-zinc-400 mt-0.5">{formatTime(a.endsAt)}</p>
                   </div>
 
-                  <div className="h-8 w-px bg-zinc-100 flex-shrink-0" />
+                  <div className="h-8 w-px bg-zinc-100 shrink-0" />
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-amber-600 font-bold text-xs flex-shrink-0">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-amber-600 font-bold text-xs shrink-0">
                         {a.client.name.charAt(0).toUpperCase()}
                       </div>
                       <p className="font-semibold text-zinc-800 text-sm truncate">{a.client.name}</p>

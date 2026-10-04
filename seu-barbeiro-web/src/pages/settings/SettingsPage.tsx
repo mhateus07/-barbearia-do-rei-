@@ -11,19 +11,24 @@ import {
   AlertCircle,
   Send,
   Loader2,
+  QrCode,
 } from 'lucide-react'
+import { toast } from 'sonner'
+import { isAxiosError } from 'axios'
+import { PaymentsTab } from './PaymentsTab'
 import { getSettings, updateSettings } from '../../api/settings.api'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Spinner } from '../../components/ui/Spinner'
 
-type Tab = 'info' | 'hours' | 'loyalty' | 'whatsapp'
+type Tab = 'info' | 'hours' | 'loyalty' | 'whatsapp' | 'payments'
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'info', label: 'Informações', icon: Settings },
   { id: 'hours', label: 'Horários', icon: Clock },
   { id: 'loyalty', label: 'Fidelidade', icon: Star },
   { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
+  { id: 'payments', label: 'Pix e cliente', icon: QrCode },
 ]
 
 const DAYS = [
@@ -197,7 +202,7 @@ function HoursTab({
                           [day.key]: { ...h, closed: e.target.checked },
                         })
                       }
-                      className="h-4 w-4 rounded accent-amber-500"
+                      className="h-4 w-4 rounded-sm accent-amber-500"
                     />
                   </td>
                   <td className="px-4 py-3 text-center">
@@ -211,7 +216,7 @@ function HoursTab({
                           [day.key]: { ...h, open: e.target.value },
                         })
                       }
-                      className="rounded-lg border border-zinc-200 px-2 py-1 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400 disabled:opacity-40"
+                      className="rounded-lg border border-zinc-200 px-2 py-1 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400 disabled:opacity-40"
                     />
                   </td>
                   <td className="px-4 py-3 text-center">
@@ -225,7 +230,7 @@ function HoursTab({
                           [day.key]: { ...h, close: e.target.value },
                         })
                       }
-                      className="rounded-lg border border-zinc-200 px-2 py-1 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400 disabled:opacity-40"
+                      className="rounded-lg border border-zinc-200 px-2 py-1 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400 disabled:opacity-40"
                     />
                   </td>
                 </tr>
@@ -289,7 +294,7 @@ function LoyaltyTab({
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.loyalty_enabled === 'true' ? 'bg-amber-500' : 'bg-zinc-300'}`}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.loyalty_enabled === 'true' ? 'translate-x-6' : 'translate-x-1'}`}
+            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${form.loyalty_enabled === 'true' ? 'translate-x-6' : 'translate-x-1'}`}
           />
         </button>
       </div>
@@ -479,7 +484,7 @@ function WhatsAppTab({
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.whatsapp_enabled === 'true' ? 'bg-green-500' : 'bg-zinc-300'}`}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.whatsapp_enabled === 'true' ? 'translate-x-6' : 'translate-x-1'}`}
+            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${form.whatsapp_enabled === 'true' ? 'translate-x-6' : 'translate-x-1'}`}
           />
         </button>
       </div>
@@ -580,7 +585,7 @@ function WhatsAppTab({
             value={testMsg}
             onChange={(e) => setTestMsg(e.target.value)}
             rows={3}
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400 resize-none"
           />
           {testResult && (
             <div
@@ -656,6 +661,11 @@ export function SettingsPage() {
       setSavedMsg(true)
       setTimeout(() => setSavedMsg(false), 3000)
     },
+    onError: (error) =>
+      toast.error(
+        (isAxiosError(error) && error.response?.data?.error?.message) ||
+          'Não foi possível salvar.',
+      ),
   })
 
   if (isLoading) {
@@ -687,16 +697,16 @@ export function SettingsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-xl bg-zinc-100 p-1">
+      <div className="flex gap-1 overflow-x-auto rounded-xl bg-zinc-100 p-1">
         {TABS.map((tab) => {
           const Icon = tab.icon
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 flex-1 justify-center rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+              className={`flex shrink-0 items-center gap-2 flex-1 justify-center whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-all ${
                 activeTab === tab.id
-                  ? 'bg-white text-zinc-800 shadow-sm'
+                  ? 'bg-white text-zinc-800 shadow-xs'
                   : 'text-zinc-500 hover:text-zinc-700'
               }`}
             >
@@ -717,6 +727,13 @@ export function SettingsPage() {
         )}
         {activeTab === 'loyalty' && (
           <LoyaltyTab
+            settings={s}
+            onSave={(data) => saveMutation.mutate(data)}
+          />
+        )}
+        {activeTab === 'payments' && (
+          <PaymentsTab
+            key={s.mp_access_token_set}
             settings={s}
             onSave={(data) => saveMutation.mutate(data)}
           />

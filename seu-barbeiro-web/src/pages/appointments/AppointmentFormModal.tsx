@@ -75,7 +75,7 @@ export function AppointmentFormModal({ open, onClose, defaultDate, appointment }
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-zinc-700">Cliente *</label>
             <select {...register('clientId', { required: 'Obrigatório' })}
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-amber-500">
+              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-hidden focus:border-amber-500">
               <option value="">Selecione...</option>
               {clients.map((c) => <option key={c.id} value={c.id}>{c.name} — {c.phone}</option>)}
             </select>
@@ -85,7 +85,7 @@ export function AppointmentFormModal({ open, onClose, defaultDate, appointment }
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-zinc-700">Barbeiro *</label>
             <select {...register('barberId', { required: 'Obrigatório' })}
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-amber-500">
+              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-hidden focus:border-amber-500">
               <option value="">Selecione...</option>
               {barbers.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
@@ -110,7 +110,7 @@ export function AppointmentFormModal({ open, onClose, defaultDate, appointment }
               render={({ field }) => (
                 <>
                   {services.map((s) => (
-                    <label key={s.id} className="flex items-center gap-2 rounded px-2 py-1 hover:bg-zinc-50 cursor-pointer text-sm">
+                    <label key={s.id} className="flex items-center gap-2 rounded-sm px-2 py-1 hover:bg-zinc-50 cursor-pointer text-sm">
                       <input
                         type="checkbox"
                         value={s.id}
@@ -135,7 +135,7 @@ export function AppointmentFormModal({ open, onClose, defaultDate, appointment }
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-zinc-700">Observações</label>
           <textarea {...register('notes')} rows={2}
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-amber-500" />
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-hidden focus:border-amber-500" />
         </div>
 
         {mutation.error && <p className="text-sm text-red-500">{(mutation.error as Error).message}</p>}

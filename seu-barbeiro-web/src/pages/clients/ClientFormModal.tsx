@@ -55,7 +55,7 @@ export function ClientFormModal({ open, onClose, client }: Props) {
           <textarea
             {...register('notes')}
             rows={3}
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-hidden focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
             placeholder="Preferências, alergias..."
           />
         </div>

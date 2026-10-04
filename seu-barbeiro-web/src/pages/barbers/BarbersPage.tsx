@@ -39,7 +39,7 @@ export function BarbersPage() {
         </div>
         <button
           onClick={handleNew}
-          className="flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2.5 text-sm font-semibold text-white transition-colors shadow-sm shadow-amber-500/25"
+          className="flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2.5 text-sm font-semibold text-white transition-colors shadow-xs shadow-amber-500/25"
         >
           <Plus className="h-4 w-4" />
           Novo Barbeiro

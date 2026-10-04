@@ -17,7 +17,7 @@ interface TableProps<T> {
 
 export function Table<T>({ columns, data, loading, emptyMessage = 'Nenhum registro encontrado.', keyExtractor }: TableProps<T>) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+    <div className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-soft">
       <table className="w-full text-sm">
         <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
           <tr>
@@ -45,7 +45,7 @@ export function Table<T>({ columns, data, loading, emptyMessage = 'Nenhum regist
             </tr>
           ) : (
             data.map((row) => (
-              <tr key={keyExtractor(row)} className="hover:bg-zinc-50">
+              <tr key={keyExtractor(row)} className="transition-colors hover:bg-zinc-50">
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3 text-zinc-700">
                     {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '')}

@@ -24,6 +24,8 @@ import {
 } from '../../api/finances.api'
 import type { PaymentMethod, ExpenseCategory, CommissionPayment } from '../../types'
 import { Modal } from '../../components/ui/Modal'
+import { AdvancesPanel } from './AdvancesPanel'
+import { listOpenAdvances, previewDeduction } from '../../api/advances.api'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Spinner } from '../../components/ui/Spinner'
@@ -95,9 +97,9 @@ function StatCard({
   }
   const textVariants = {
     default: { title: 'text-zinc-500', value: 'text-zinc-800', sub: 'text-zinc-400', icon: 'bg-zinc-100 text-zinc-500' },
-    income: { title: 'text-emerald-100', value: 'text-white', sub: 'text-emerald-200', icon: 'bg-emerald-400/40 text-white' },
-    expense: { title: 'text-red-100', value: 'text-white', sub: 'text-red-200', icon: 'bg-red-400/40 text-white' },
-    warning: { title: 'text-amber-100', value: 'text-white', sub: 'text-amber-200', icon: 'bg-amber-400/40 text-white' },
+    income: { title: 'text-white/85', value: 'text-white', sub: 'text-white/70', icon: 'bg-emerald-400/40 text-white' },
+    expense: { title: 'text-white/85', value: 'text-white', sub: 'text-white/70', icon: 'bg-red-400/40 text-white' },
+    warning: { title: 'text-white/85', value: 'text-white', sub: 'text-white/70', icon: 'bg-amber-400/40 text-white' },
   }
   const t = textVariants[variant]
   return (
@@ -318,7 +320,7 @@ function PaymentsTab() {
             type="date"
             value={filterFrom}
             onChange={(e) => setFilterFrom(e.target.value)}
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -327,7 +329,7 @@ function PaymentsTab() {
             type="date"
             value={filterTo}
             onChange={(e) => setFilterTo(e.target.value)}
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -336,7 +338,7 @@ function PaymentsTab() {
             <select
               value={filterMethod}
               onChange={(e) => setFilterMethod(e.target.value)}
-              className="appearance-none rounded-lg border border-zinc-200 px-3 py-2 pr-8 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="appearance-none rounded-lg border border-zinc-200 px-3 py-2 pr-8 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400"
             >
               <option value="">Todas</option>
               {(Object.keys(METHOD_LABELS) as PaymentMethod[]).map((m) => (
@@ -437,7 +439,7 @@ function PaymentsTab() {
                 <select
                   value={form.method}
                   onChange={(e) => setForm({ ...form, method: e.target.value as PaymentMethod })}
-                  className="w-full appearance-none rounded-lg border border-zinc-200 px-3 py-2 pr-8 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="w-full appearance-none rounded-lg border border-zinc-200 px-3 py-2 pr-8 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400"
                 >
                   {(Object.keys(METHOD_LABELS) as PaymentMethod[]).map((m) => (
                     <option key={m} value={m}>{METHOD_LABELS[m]}</option>
@@ -453,7 +455,7 @@ function PaymentsTab() {
               type="date"
               value={form.paidAt}
               onChange={(e) => setForm({ ...form, paidAt: e.target.value })}
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -559,7 +561,7 @@ function ExpensesTab() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="appearance-none rounded-lg border border-zinc-200 px-3 py-2 pr-8 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="appearance-none rounded-lg border border-zinc-200 px-3 py-2 pr-8 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400"
             >
               <option value="">Todos</option>
               <option value="PENDING">Pendente</option>
@@ -575,7 +577,7 @@ function ExpensesTab() {
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="appearance-none rounded-lg border border-zinc-200 px-3 py-2 pr-8 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="appearance-none rounded-lg border border-zinc-200 px-3 py-2 pr-8 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400"
             >
               <option value="">Todas</option>
               {(Object.keys(CATEGORY_LABELS) as ExpenseCategory[]).map((c) => (
@@ -702,7 +704,7 @@ function ExpensesTab() {
                 <select
                   value={form.category}
                   onChange={(e) => setForm({ ...form, category: e.target.value as ExpenseCategory })}
-                  className="w-full appearance-none rounded-lg border border-zinc-200 px-3 py-2 pr-8 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="w-full appearance-none rounded-lg border border-zinc-200 px-3 py-2 pr-8 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400"
                 >
                   {(Object.keys(CATEGORY_LABELS) as ExpenseCategory[]).map((c) => (
                     <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
@@ -719,7 +721,7 @@ function ExpensesTab() {
               required
               value={form.dueDate}
               onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -753,6 +755,12 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
   const [selectedBarber, setSelectedBarber] = useState<{ barberId: string; barberName: string; totalRevenue: number; commission: number; commissionRate: number } | null>(null)
   const [payNotes, setPayNotes] = useState('')
   const [showHistory, setShowHistory] = useState(false)
+  const [advanceFor, setAdvanceFor] = useState<string | undefined>()
+  const [advanceOpen, setAdvanceOpen] = useState(false)
+  const { data: openAdvances = [] } = useQuery({
+    queryKey: ['advances', 'open'],
+    queryFn: listOpenAdvances,
+  })
 
   const { data, isLoading } = useQuery({
     queryKey: ['finances-commissions', from, to],
@@ -768,6 +776,8 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
     mutationFn: payCommission,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['commission-payments'] })
+      qc.invalidateQueries({ queryKey: ['advances'] })
+      qc.invalidateQueries({ queryKey: ['finances-commissions'] })
       setShowPayModal(false)
       setPayNotes('')
       setSelectedBarber(null)
@@ -822,6 +832,7 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
                 <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide">Receita Gerada</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-zinc-500 uppercase tracking-wide">Taxa</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide">Comissão</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide">Vales</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide">Ação</th>
               </tr>
             </thead>
@@ -848,7 +859,19 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
                     )}
                   </td>
                   <td className="px-4 py-3 text-right font-bold text-zinc-800">{formatCurrency(b.commission)}</td>
+                  <td className="px-4 py-3 text-right tabular text-red-600">
+                    {b.openAdvances ? `− ${formatCurrency(b.openAdvances)}` : <span className="text-zinc-300">—</span>}
+                  </td>
                   <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => {
+                        setAdvanceFor(b.barberId)
+                        setAdvanceOpen(true)
+                      }}
+                      className="mr-1.5 inline-flex items-center rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-600 hover:border-amber-400"
+                    >
+                      Vale
+                    </button>
                     {b.commission > 0 && (
                       <button
                         onClick={() => openPayModal(b)}
@@ -868,6 +891,7 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
                 <td className="px-4 py-3 text-right font-bold text-emerald-600">{formatCurrency(totalRevenue)}</td>
                 <td />
                 <td className="px-4 py-3 text-right font-bold text-zinc-800">{formatCurrency(totalCommissions)}</td>
+                <td />
                 <td />
               </tr>
             </tfoot>
@@ -919,6 +943,17 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
         </div>
       )}
 
+      <AdvancesPanel
+        key={advanceFor}
+        barbers={data ?? []}
+        barberId={advanceFor}
+        open={advanceOpen}
+        onOpenChange={(open) => {
+          setAdvanceOpen(open)
+          if (!open) setAdvanceFor(undefined)
+        }}
+      />
+
       <p className="text-xs text-zinc-400 text-center">
         Configure a taxa de comissão de cada barbeiro na tela de Barbeiros (botão Editar).
       </p>
@@ -937,10 +972,27 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
                 <span>Taxa de comissão:</span>
                 <span className="font-medium">{selectedBarber.commissionRate}%</span>
               </div>
-              <div className="flex items-center justify-between text-sm font-bold text-zinc-800 border-t border-zinc-200 pt-2 mt-2">
-                <span>Valor a pagar:</span>
-                <span className="text-amber-600">{formatCurrency(selectedBarber.commission)}</span>
-              </div>
+              {(() => {
+                const deduction = previewDeduction(openAdvances, selectedBarber.barberId, selectedBarber.commission, to)
+                return (
+                  <>
+                    <div className="flex items-center justify-between text-sm text-zinc-600">
+                      <span>Comissão:</span>
+                      <span className="font-medium">{formatCurrency(selectedBarber.commission)}</span>
+                    </div>
+                    {deduction > 0 && (
+                      <div className="flex items-center justify-between text-sm text-red-600">
+                        <span>Vales descontados:</span>
+                        <span className="font-medium">− {formatCurrency(deduction)}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between text-sm font-bold text-zinc-800 border-t border-zinc-200 pt-2 mt-2">
+                      <span>Valor a pagar agora:</span>
+                      <span className="text-amber-600">{formatCurrency(selectedBarber.commission - deduction)}</span>
+                    </div>
+                  </>
+                )
+              })()}
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-zinc-600">Período</label>
@@ -953,7 +1005,7 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
                 placeholder="Ex: Pago em dinheiro, transferência..."
                 value={payNotes}
                 onChange={(e) => setPayNotes(e.target.value)}
-                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-amber-400"
               />
             </div>
             {payMutation.isError && (
@@ -962,7 +1014,7 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="secondary" onClick={() => setShowPayModal(false)}>Cancelar</Button>
               <Button onClick={handlePay} disabled={payMutation.isPending}>
-                {payMutation.isPending ? 'Salvando...' : `Confirmar Pagamento de ${formatCurrency(selectedBarber.commission)}`}
+                {payMutation.isPending ? 'Salvando...' : 'Confirmar pagamento'}
               </Button>
             </div>
           </div>
@@ -1096,12 +1148,12 @@ export function FinancesPage() {
               <div className="flex flex-col gap-0.5">
                 <label className="text-[10px] text-zinc-400 uppercase tracking-wide">De</label>
                 <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
-                  className="rounded-lg border border-zinc-200 px-2.5 py-1.5 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                  className="rounded-lg border border-zinc-200 px-2.5 py-1.5 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400" />
               </div>
               <div className="flex flex-col gap-0.5">
                 <label className="text-[10px] text-zinc-400 uppercase tracking-wide">Até</label>
                 <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
-                  className="rounded-lg border border-zinc-200 px-2.5 py-1.5 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                  className="rounded-lg border border-zinc-200 px-2.5 py-1.5 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400" />
               </div>
             </>
           )}
@@ -1128,7 +1180,7 @@ export function FinancesPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-all duration-150 whitespace-nowrap flex-1 justify-center sm:flex-none sm:justify-start sm:px-4 ${
                 isActive
-                  ? 'bg-white text-zinc-800 shadow-sm'
+                  ? 'bg-white text-zinc-800 shadow-xs'
                   : 'text-zinc-500 hover:text-zinc-700'
               }`}
             >

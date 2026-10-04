@@ -1,12 +1,154 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/plus-jakarta-sans';
 
-* {
-  box-sizing: border-box;
+/*
+  Tema do Seu Barbeiro. As telas usam a escala `zinc` para superfícies e textos
+  e `amber` como cor da marca. No modo escuro, essas escalas são remapeadas
+  dentro de `.app-surface` (área de conteúdo do painel), então todas as telas
+  ganham o tema sem duplicar classes. A barra lateral e as páginas públicas
+  ficam fora desse escopo e mantêm o visual escuro próprio.
+*/
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans Variable', 'Inter Variable', ui-sans-serif, sans-serif;
+
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 16px -4px rgb(0 0 0 / 0.08);
+  --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.06), 0 12px 32px -8px rgb(0 0 0 / 0.18);
+
+  --animate-fade-in: fade-in 160ms ease-out;
+  --animate-pop-in: pop-in 180ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  --animate-slide-in: slide-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  }
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateX(24px); }
+  }
+  @keyframes shimmer {
+    50% { opacity: 0.55; }
+  }
 }
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-zinc-200, currentcolor);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv11', 'ss01';
+    background: var(--color-zinc-50);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-amber-500);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-amber-400) 35%, transparent);
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility skeleton {
+  border-radius: 0.5rem;
+  background: var(--color-zinc-200);
+  animation: var(--animate-shimmer);
+}
+
+/* Modo escuro do painel */
+:root[data-theme='dark'] .app-surface {
+  color-scheme: dark;
+
+  --color-white: #17171a;
+  --color-black: #000;
+  --color-zinc-50: #0e0e10;
+  --color-zinc-100: #212125;
+  --color-zinc-200: #2c2c31;
+  --color-zinc-300: #3c3c43;
+  --color-zinc-400: #71717a;
+  --color-zinc-500: #a1a1aa;
+  --color-zinc-600: #b6b6be;
+  --color-zinc-700: #d4d4d8;
+  --color-zinc-800: #e4e4e7;
+  --color-zinc-900: #f4f4f5;
+  --color-zinc-950: #fafafa;
+  --color-gray-100: var(--color-zinc-100);
+  --color-gray-200: var(--color-zinc-200);
+  --color-gray-700: var(--color-zinc-700);
+
+  --color-amber-50: rgb(245 158 11 / 0.1);
+  --color-amber-100: rgb(245 158 11 / 0.16);
+  --color-amber-200: rgb(245 158 11 / 0.28);
+  --color-amber-600: #fbbf24;
+  --color-amber-700: #fcd34d;
+  --color-amber-800: #fde68a;
+  --color-yellow-100: rgb(234 179 8 / 0.16);
+  --color-yellow-700: #fde047;
+
+  --color-red-50: rgb(239 68 68 / 0.12);
+  --color-red-100: rgb(239 68 68 / 0.18);
+  --color-red-200: rgb(239 68 68 / 0.3);
+  --color-red-700: #fca5a5;
+  --color-red-800: #fecaca;
+
+  --color-emerald-50: rgb(16 185 129 / 0.12);
+  --color-emerald-100: rgb(16 185 129 / 0.18);
+  --color-emerald-200: rgb(16 185 129 / 0.3);
+  --color-emerald-700: #6ee7b7;
+  --color-emerald-800: #a7f3d0;
+  --color-green-50: rgb(34 197 94 / 0.12);
+  --color-green-100: rgb(34 197 94 / 0.18);
+  --color-green-200: rgb(34 197 94 / 0.3);
+  --color-green-700: #86efac;
+
+  --color-sky-50: rgb(14 165 233 / 0.12);
+  --color-sky-100: rgb(14 165 233 / 0.18);
+  --color-sky-200: rgb(14 165 233 / 0.3);
+  --color-sky-700: #7dd3fc;
+  --color-blue-50: rgb(59 130 246 / 0.12);
+  --color-blue-100: rgb(59 130 246 / 0.18);
+  --color-blue-700: #93c5fd;
+  --color-violet-50: rgb(139 92 246 / 0.12);
+  --color-violet-100: rgb(139 92 246 / 0.18);
+  --color-violet-700: #c4b5fd;
+
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px -4px rgb(0 0 0 / 0.5);
+  --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.5), 0 12px 32px -8px rgb(0 0 0 / 0.7);
+
+  background: var(--color-zinc-50);
+  color: var(--color-zinc-800);
 }

@@ -1,10 +1,25 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Agenda, clientes e financeiro do seu salão ou barbearia." />
+    <meta name="theme-color" content="#09090b" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Seu Barbeiro" />
     <title>Seu Barbeiro</title>
+    <script>
+      // Aplica o tema salvo antes da primeira pintura para evitar piscar.
+      try {
+        var t = localStorage.getItem('sb-theme')
+        if (t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches))
+          document.documentElement.dataset.theme = 'dark'
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -17,13 +17,18 @@ import {
   Link2,
   Check,
   ExternalLink,
+  ClipboardList,
+  Repeat,
+  Landmark,
 } from 'lucide-react'
 
 const navItems = [
   { to: '/operacao', label: 'Agenda e operação', icon: CalendarDays },
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/agendamentos', label: 'Agendamentos', icon: CalendarDays },
+  { to: '/agendamentos', label: 'Agendamentos', icon: ClipboardList },
+  { to: '/caixa', label: 'Caixa', icon: Landmark },
   { to: '/financeiro', label: 'Financeiro', icon: Wallet },
+  { to: '/assinaturas', label: 'Assinaturas', icon: Repeat },
   { to: '/clientes', label: 'Clientes', icon: Users },
   { to: '/barbeiros', label: 'Profissionais', icon: Scissors },
   { to: '/servicos', label: 'Serviços', icon: Sparkles },
@@ -54,32 +59,32 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   return (
     <aside
       className={`
-        fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-col bg-zinc-950 border-r border-zinc-800/60
+        fixed inset-y-0 left-0 z-50 flex h-dvh w-64 shrink-0 flex-col bg-zinc-950
         transition-transform duration-300 ease-in-out
         ${open ? 'translate-x-0' : '-translate-x-full'}
         md:relative md:translate-x-0 md:z-auto
       `}
     >
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-zinc-800/60">
+      <div className="px-5 py-5">
         <div className="flex items-center gap-3">
           {identity?.logo ? (
             <img
               src={identity.logo}
               alt="Logo do salão"
-              className="h-10 w-10 rounded-xl object-cover"
+              className="h-10 w-10 rounded-xl object-cover ring-1 ring-white/10"
             />
           ) : (
-            <div className="h-10 w-10 rounded-xl bg-amber-500/20 text-amber-400 grid place-items-center">
+            <div className="h-10 w-10 rounded-xl bg-linear-to-br from-amber-300 to-amber-600 text-zinc-950 grid place-items-center shadow-lg shadow-amber-500/20">
               <Scissors className="h-5 w-5" />
             </div>
           )}
           <div className="flex-1">
-            <p className="font-bold text-white text-sm leading-tight">
+            <p className="font-display font-bold text-white text-sm leading-tight">
               {identity?.name || 'Meu salão'}
             </p>
             <p className="text-[11px] text-zinc-500 leading-tight">
-              Painel Administrativo
+              Painel do salão
             </p>
           </div>
           {/* Botão fechar no mobile */}
@@ -93,7 +98,10 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto" aria-label="Menu principal">
+        <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-600">
+          Menu
+        </p>
         {navItems
           .filter((item) =>
             admin?.role === 'PROFESSIONAL'
@@ -108,17 +116,17 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                 to={item.to}
                 onClick={onClose}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                  `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
                     isActive
-                      ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
-                      : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100 border border-transparent'
+                      ? 'bg-white/[0.07] text-white'
+                      : 'text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-100'
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
                     <Icon
-                      className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-amber-400' : 'text-zinc-500'}`}
+                      className={`h-4 w-4 shrink-0 ${isActive ? 'text-amber-400' : 'text-zinc-500'}`}
                       strokeWidth={isActive ? 2.5 : 2}
                     />
                     {item.label}
@@ -160,12 +168,11 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-4 border-t border-zinc-800/60 space-y-1">
+      <div className="px-5 py-4 space-y-1">
         <p className="text-[10px] text-zinc-600 leading-snug">
           {identity?.address}
         </p>
         <p className="text-[10px] text-zinc-600">{identity?.phone}</p>
-        <p className="text-[10px] text-zinc-700"></p>
       </div>
     </aside>
   )

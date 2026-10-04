@@ -1,0 +1,23 @@
+import type { ReactNode } from 'react'
+import { Scissors } from 'lucide-react'
+
+/** Moldura escura das páginas abertas pelo cliente (link do WhatsApp). */
+export function PublicShell({ title, children }: { title?: string; children: ReactNode }) {
+  return (
+    <div className="min-h-dvh bg-zinc-950 text-white">
+      <div
+        aria-hidden
+        className="pointer-events-none fixed -top-40 left-1/2 h-96 w-[36rem] -translate-x-1/2 rounded-full bg-amber-500/10 blur-3xl"
+      />
+      <header className="relative border-b border-zinc-800/80">
+        <div className="mx-auto flex max-w-lg items-center gap-3 px-5 py-4">
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-linear-to-br from-amber-300 to-amber-600 text-zinc-950">
+            <Scissors className="h-4 w-4" strokeWidth={2.5} />
+          </div>
+          <p className="font-display font-bold">{title || 'Seu horário'}</p>
+        </div>
+      </header>
+      <main className="relative mx-auto max-w-lg animate-pop-in px-5 py-8">{children}</main>
+    </div>
+  )
+}

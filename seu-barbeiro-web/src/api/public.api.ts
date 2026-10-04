@@ -78,3 +78,57 @@ export async function createPublicAppointment(payload: {
   const { data } = await api.post('/appointments', payload)
   return data
 }
+
+// ─── Pix e autoatendimento ───────────────────────────────────────────────────
+
+export interface PublicPix {
+  kind: 'DEPOSIT' | 'SUBSCRIPTION'
+  status: 'PENDING' | 'PAID' | 'EXPIRED' | 'CANCELLED' | 'FAILED'
+  amount: number
+  qrCode: string | null
+  qrCodeBase64: string | null
+  expiresAt: string
+  shopName: string
+}
+
+export async function getPix(token: string): Promise<PublicPix> {
+  const { data } = await api.get(`/pix/${token}`)
+  return data
+}
+
+export interface ManagedAppointment {
+  status: string
+  startsAt: string
+  endsAt: string
+  clientFirstName: string
+  barber: { id: string; name: string; avatarUrl?: string }
+  services: { id: string; name: string }[]
+  totalPrice: number
+  canChange: boolean
+  canConfirm: boolean
+  minNoticeHours: number
+  deposit: {
+    amount: number
+    paid: boolean
+    payToken: string | null
+    expiresAt: string | null
+  } | null
+  shop: { name: string; phone: string; address: string }
+}
+
+export async function getManaged(token: string): Promise<ManagedAppointment> {
+  const { data } = await api.get(`/manage/${token}`)
+  return data
+}
+export async function getManagedSlots(token: string, date: string): Promise<string[]> {
+  const { data } = await api.get(`/manage/${token}/slots`, { params: { date } })
+  return data.slots
+}
+export async function manageAction(
+  token: string,
+  action: 'confirm' | 'cancel' | 'reschedule',
+  body?: { date: string; time: string },
+) {
+  const { data } = await api.post(`/manage/${token}/${action}`, body)
+  return data
+}

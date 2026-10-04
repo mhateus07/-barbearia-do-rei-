@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from 'sonner'
 import { AuthProvider } from './contexts/AuthContext'
 import { AppRouter } from './routes/AppRouter'
 
@@ -17,6 +18,12 @@ export default function App() {
       <AuthProvider>
         <AppRouter />
       </AuthProvider>
+      <Toaster
+        position="top-right"
+        richColors
+        closeButton
+        toastOptions={{ style: { fontFamily: 'var(--font-sans)' } }}
+      />
     </QueryClientProvider>
   )
 }

@@ -28,6 +28,8 @@ import type {
   PublicInfo,
 } from '../../api/public.api'
 import { formatCurrency } from '../../utils/formatCurrency'
+import { PixPanel } from '../../components/public/PixPanel'
+import { getSalon } from '../../api/salon'
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6
 
@@ -88,7 +90,10 @@ export function BookingPage() {
     client: { name: string }
     barber: { name: string }
     services: { service: { name: string } }[]
+    manageToken?: string
+    deposit: { amount: number; payToken: string; expiresAt: string } | null
   } | null>(null)
+  const [depositPaid, setDepositPaid] = useState(false)
 
   useEffect(() => {
     Promise.all([getPublicInfo(), getPublicServices(), getPublicBarbers()])
@@ -253,7 +258,28 @@ export function BookingPage() {
 
       <div className="max-w-2xl mx-auto px-4 py-6">
         {/* Step 6 — Sucesso */}
-        {step === 6 && appointment && (
+        {step === 6 && appointment?.deposit && !depositPaid && (
+          <div className="py-6 animate-pop-in">
+            <h2 className="font-display text-2xl font-bold text-white">
+              Falta só o sinal
+            </h2>
+            <p className="mt-1 mb-6 text-zinc-400">
+              {appointment.client.name.split(' ')[0]}, seu horário de{' '}
+              {formatDateBR(selectedDate)} às {selectedTime} está reservado. Pague o
+              sinal de {formatCurrency(appointment.deposit.amount)} para confirmar. O
+              valor é descontado no dia do atendimento.
+            </p>
+            <PixPanel
+              token={appointment.deposit.payToken}
+              onPaid={() => setDepositPaid(true)}
+            />
+            <p className="mt-4 text-center text-xs text-zinc-500">
+              Sem o pagamento no prazo, o horário é liberado automaticamente.
+            </p>
+          </div>
+        )}
+
+        {step === 6 && appointment && (!appointment.deposit || depositPaid) && (
           <div className="text-center py-12">
             <div className="flex justify-center mb-6">
               <div className="bg-amber-500/20 rounded-full p-5">
@@ -270,7 +296,7 @@ export function BookingPage() {
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-left space-y-4 mb-8">
               <div className="flex items-center gap-3 pb-4 border-b border-zinc-800">
-                <Scissors className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                <Scissors className="h-5 w-5 text-amber-500 shrink-0" />
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wide">
                     Serviços
@@ -281,7 +307,7 @@ export function BookingPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3 pb-4 border-b border-zinc-800">
-                <User className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                <User className="h-5 w-5 text-amber-500 shrink-0" />
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wide">
                     Profissional
@@ -292,7 +318,7 @@ export function BookingPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3 pb-4 border-b border-zinc-800">
-                <Calendar className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                <Calendar className="h-5 w-5 text-amber-500 shrink-0" />
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wide">
                     Data e Hora
@@ -303,7 +329,7 @@ export function BookingPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <MapPin className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                <MapPin className="h-5 w-5 text-amber-500 shrink-0" />
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wide">
                     Endereço
@@ -313,8 +339,18 @@ export function BookingPage() {
               </div>
             </div>
 
+            {appointment.manageToken && (
+              <a
+                href={`/meu-horario/${appointment.manageToken}?salon=${encodeURIComponent(getSalon())}`}
+                className="mb-6 inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-700 px-4 py-3 text-sm font-semibold text-zinc-200 hover:border-amber-500/60"
+              >
+                <Calendar className="h-4 w-4" /> Ver, remarcar ou cancelar meu horário
+              </a>
+            )}
+            <br />
             <button
               onClick={() => {
+                setDepositPaid(false)
                 setStep(1)
                 setSelectedServices([])
                 setSelectedBarber('')
@@ -343,7 +379,7 @@ export function BookingPage() {
                 {[1, 2, 3, 4, 5].map((s) => (
                   <div key={s} className="flex items-center flex-1">
                     <div
-                      className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold flex-shrink-0 transition-colors ${
+                      className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold shrink-0 transition-colors ${
                         s < step
                           ? 'bg-amber-500 text-zinc-900'
                           : s === step
@@ -403,7 +439,7 @@ export function BookingPage() {
                                 {service.name}
                               </p>
                               {selected && (
-                                <CheckCircle2 className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                                <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0" />
                               )}
                             </div>
                             {service.description && (
@@ -418,7 +454,7 @@ export function BookingPage() {
                               </span>
                             </div>
                           </div>
-                          <span className="text-amber-400 font-bold text-lg flex-shrink-0">
+                          <span className="text-amber-400 font-bold text-lg shrink-0">
                             {formatCurrency(Number(service.price))}
                           </span>
                         </div>
@@ -468,7 +504,7 @@ export function BookingPage() {
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
                         <Scissors className="h-5 w-5 text-zinc-400" />
                       </div>
                       <div className="flex-1">
@@ -508,7 +544,7 @@ export function BookingPage() {
                         }`}
                       >
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-zinc-800 overflow-hidden flex-shrink-0">
+                          <div className="w-12 h-12 rounded-full bg-zinc-800 overflow-hidden shrink-0">
                             {barber.avatarUrl ? (
                               <img
                                 src={barber.avatarUrl}
@@ -587,7 +623,7 @@ export function BookingPage() {
                     min={today}
                     value={selectedDate}
                     onInput={(e) => handleDateChange(e.currentTarget.value)}
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-hidden focus:border-amber-500 transition-colors"
                   />
                 </div>
 
@@ -656,7 +692,7 @@ export function BookingPage() {
                       value={clientName}
                       onChange={(e) => setClientName(e.target.value)}
                       placeholder="Seu nome"
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500 transition-colors"
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-zinc-600 focus:outline-hidden focus:border-amber-500 transition-colors"
                     />
                   </div>
                 </div>
@@ -673,7 +709,7 @@ export function BookingPage() {
                       value={clientPhone}
                       onChange={(e) => setClientPhone(e.target.value)}
                       placeholder="(32) 99999-9999"
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500 transition-colors"
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-zinc-600 focus:outline-hidden focus:border-amber-500 transition-colors"
                     />
                   </div>
                 </div>
@@ -692,7 +728,7 @@ export function BookingPage() {
                       value={clientEmail}
                       onChange={(e) => setClientEmail(e.target.value)}
                       placeholder="seu@email.com"
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500 transition-colors"
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-zinc-600 focus:outline-hidden focus:border-amber-500 transition-colors"
                     />
                   </div>
                 </div>
@@ -711,7 +747,7 @@ export function BookingPage() {
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder="Alguma preferência ou informação para o barbeiro..."
                       rows={3}
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500 transition-colors resize-none"
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-zinc-600 focus:outline-hidden focus:border-amber-500 transition-colors resize-none"
                     />
                   </div>
                 </div>
@@ -732,7 +768,7 @@ export function BookingPage() {
 
                 <div className="bg-zinc-900 border border-zinc-800 rounded-2xl divide-y divide-zinc-800">
                   <div className="flex items-start gap-3 p-4">
-                    <Scissors className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                    <Scissors className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-zinc-500 uppercase tracking-wide mb-1">
                         Serviços
@@ -766,7 +802,7 @@ export function BookingPage() {
                   </div>
 
                   <div className="flex items-center gap-3 p-4">
-                    <User className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                    <User className="h-5 w-5 text-amber-500 shrink-0" />
                     <div>
                       <p className="text-xs text-zinc-500 uppercase tracking-wide mb-0.5">
                         Profissional
@@ -776,7 +812,7 @@ export function BookingPage() {
                   </div>
 
                   <div className="flex items-center gap-3 p-4">
-                    <Calendar className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                    <Calendar className="h-5 w-5 text-amber-500 shrink-0" />
                     <div>
                       <p className="text-xs text-zinc-500 uppercase tracking-wide mb-0.5">
                         Data e Hora
@@ -788,7 +824,7 @@ export function BookingPage() {
                   </div>
 
                   <div className="flex items-center gap-3 p-4">
-                    <Phone className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                    <Phone className="h-5 w-5 text-amber-500 shrink-0" />
                     <div>
                       <p className="text-xs text-zinc-500 uppercase tracking-wide mb-0.5">
                         Cliente

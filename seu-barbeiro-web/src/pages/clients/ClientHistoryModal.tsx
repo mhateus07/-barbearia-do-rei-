@@ -137,7 +137,7 @@ export function ClientHistoryModal({ open, onClose, client }: Props) {
               {/* Resgate */}
               {canRedeem && (
                 <div className="flex items-center gap-2 pt-1">
-                  <Gift className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                  <Gift className="h-4 w-4 text-amber-600 shrink-0" />
                   <input
                     type="number"
                     min={redemptionPoints}
@@ -146,13 +146,13 @@ export function ClientHistoryModal({ open, onClose, client }: Props) {
                     placeholder={`Ex: ${redemptionPoints}`}
                     value={redeemPoints}
                     onChange={(e) => setRedeemPoints(e.target.value)}
-                    className="w-24 rounded-lg border border-amber-300 px-2 py-1 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    className="w-24 rounded-lg border border-amber-300 px-2 py-1 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400"
                   />
                   <span className="text-xs text-amber-700">pontos</span>
                   <Button
                     onClick={handleRedeem}
                     disabled={redeemMutation.isPending || !redeemPoints}
-                    className="!py-1.5 !px-3 !text-xs"
+                    className="py-1.5! px-3! text-xs!"
                   >
                     Resgatar
                   </Button>
@@ -181,7 +181,7 @@ export function ClientHistoryModal({ open, onClose, client }: Props) {
                     </p>
                     <p className="text-xs text-zinc-400">{a.barber.name}</p>
                   </div>
-                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  <div className="flex flex-col items-end gap-1 shrink-0">
                     <span className="text-sm font-semibold text-zinc-700">{formatCurrency(Number(a.totalPrice))}</span>
                     <Badge status={a.status} />
                   </div>

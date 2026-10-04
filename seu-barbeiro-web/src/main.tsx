@@ -8,3 +8,9 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 )
+
+// Service worker: notificações push e instalação como aplicativo.
+if ('serviceWorker' in navigator)
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => undefined)
+  })

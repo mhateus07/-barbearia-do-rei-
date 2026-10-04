@@ -1,10 +1,31 @@
-import { AgendaTimeline } from './AgendaTimeline'
+import {
+  AgendaTimeline,
+  type AgendaColumn,
+  type SlotTarget,
+} from './AgendaTimeline'
+import { AgendaSummary, MiniCalendar } from './AgendaPanel'
 import { useState, useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { AnimatePresence, motion } from 'motion/react'
+import { toast } from 'sonner'
+import { addDays, format, isSameDay, parseISO, startOfWeek } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { api } from '../../api/axios'
 import { useAuth } from '../../contexts/auth-state'
 import { formatCurrency } from '../../utils/formatCurrency'
-import { CalendarDays, TrendingUp, Users, Package, X, Plus } from 'lucide-react'
+import { Skeleton } from '../../components/ui/Skeleton'
+import { AppointmentExtras } from './AppointmentExtras'
+import {
+  CalendarDays,
+  TrendingUp,
+  Users,
+  Package,
+  X,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Ban,
+} from 'lucide-react'
 
 type Option = { id: string; name: string }
 type Field = {
@@ -65,6 +86,11 @@ export type Appointment = {
     unitPrice: number
   }[]
   segments: { id: string; kind: string; startsAt: string; endsAt: string }[]
+  manageToken?: string | null
+  depositAmount?: number | string | null
+  depositExpiresAt?: string | null
+  depositPaidAt?: string | null
+  subscriptionCovered?: number | string
 }
 export type Agenda = {
   appointments: Appointment[]
@@ -115,9 +141,9 @@ type Growth = {
   }
 }
 const inputClass =
-  'w-full rounded-xl border border-zinc-300 bg-white p-2.5 text-sm focus:ring-2 focus:ring-amber-400 outline-none'
+  'mt-1.5 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm font-normal text-zinc-900 outline-hidden transition-all focus:border-amber-500 focus:ring-4 focus:ring-amber-500/15'
 const buttonClass =
-  'rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm hover:border-amber-500 disabled:opacity-50'
+  'inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-soft transition-colors hover:border-amber-400 hover:text-zinc-900 disabled:opacity-50'
 const statusLabels: Record<string, string> = {
   SCHEDULED: 'Agendado',
   CONFIRMED: 'Confirmado',
@@ -205,19 +231,24 @@ function ActionForm({
     }
   }
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-zinc-950/40 p-4 backdrop-blur-sm">
       <section
         ref={dialog}
         onKeyDown={dialogKey}
         role="dialog"
         aria-modal="true"
         aria-label={spec.title}
-        className="w-full max-w-lg max-h-[90vh] overflow-auto bg-white rounded-2xl p-6 shadow-xl"
+        className="w-full max-w-lg max-h-[90dvh] animate-pop-in overflow-auto rounded-2xl border border-zinc-200 bg-white p-6 shadow-lift"
       >
         <div className="flex justify-between gap-3 mb-4">
-          <h2 className="text-xl font-bold">{spec.title}</h2>
-          <button aria-label="Fechar" onClick={close} disabled={busy}>
-            <X />
+          <h2 className="text-xl font-bold text-zinc-900">{spec.title}</h2>
+          <button
+            aria-label="Fechar"
+            onClick={close}
+            disabled={busy}
+            className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
+          >
+            <X size={18} />
           </button>
         </div>
         {spec.description && (
@@ -225,7 +256,7 @@ function ActionForm({
         )}
         <form onSubmit={submit} className="space-y-4">
           {spec.fields.map((f) => (
-            <label key={f.key} className="block text-sm font-medium">
+            <label key={f.key} className="block text-sm font-medium text-zinc-700">
               {f.label}
               {f.type === 'checkbox' ? (
                 <input
@@ -269,13 +300,13 @@ function ActionForm({
             </label>
           ))}
           {error && (
-            <p role="alert" className="text-red-700 bg-red-50 rounded-lg p-3">
+            <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
               {error}
             </p>
           )}
           <button
             disabled={busy}
-            className="w-full bg-amber-500 font-semibold rounded-xl p-3 disabled:opacity-50"
+            className="w-full rounded-xl bg-amber-500 p-3 font-semibold text-zinc-950 shadow-soft transition-all hover:bg-amber-400 active:scale-[0.99] disabled:opacity-50"
           >
             {busy ? 'Salvando…' : 'Confirmar'}
           </button>
@@ -292,18 +323,33 @@ export function OperationsPage() {
     isOwner = admin?.role === 'OWNER'
   const [tab, setTab] = useState('agenda'),
     [date, setDate] = useState(localDate),
+    [view, setView] = useState<'day' | 'week'>(() =>
+      window.matchMedia('(min-width: 1024px)').matches ? 'week' : 'day',
+    ),
+    [barberFilter, setBarberFilter] = useState(''),
     [form, setForm] = useState<FormSpec | null>(null)
+  const rangeStart =
+      view === 'week'
+        ? format(startOfWeek(parseISO(date)), 'yyyy-MM-dd')
+        : date,
+    days = view === 'week' ? 7 : 1
   const [selected, setSelected] = useState<Appointment | null>(null),
     [records, setRecords] = useState<RecordEntry[] | null>(null),
     [notice, setNotice] = useState('')
   const {
     data: agenda,
     isLoading,
+    isPlaceholderData,
     error,
   } = useQuery<Agenda>({
-    queryKey: ['operations-agenda', date],
+    queryKey: ['operations-agenda', rangeStart, days],
     queryFn: async () =>
-      (await api.get('/operations/agenda', { params: { date } })).data,
+      (
+        await api.get('/operations/agenda', {
+          params: { date: rangeStart, days },
+        })
+      ).data,
+    placeholderData: (previous) => previous,
   })
   const { data: growth } = useQuery<Growth>({
     queryKey: ['operations-growth'],
@@ -350,6 +396,7 @@ export function OperationsPage() {
     queryFn: async () => (await api.get('/operations/my-commission')).data,
   })
   function saved() {
+    toast.success('Tudo certo, alteração salva.')
     void qc.invalidateQueries()
     setSelected(null)
     setRecords(null)
@@ -361,7 +408,7 @@ export function OperationsPage() {
   ) {
     setForm({ title, description, fields: [], submit })
   }
-  function book(a?: Appointment) {
+  function book(a?: Appointment, slot?: SlotTarget) {
     setForm({
       title: a ? 'Agendar próximo retorno' : 'Novo atendimento',
       description:
@@ -377,7 +424,7 @@ export function OperationsPage() {
           key: 'barberId',
           label: 'Profissional',
           options: agenda?.barbers,
-          value: a?.barber.id,
+          value: a?.barber.id ?? slot?.barberId,
         },
         {
           key: 'serviceId',
@@ -391,7 +438,7 @@ export function OperationsPage() {
           type: 'datetime-local',
           value: a
             ? `${new Date(new Date(a.startsAt).getTime() + (a.services[0]?.service.returnDays || 30) * 86400000).toLocaleDateString('sv-SE')}T${time(a.startsAt)}`
-            : `${date}T09:00`,
+            : (slot?.startsAt ?? `${date}T09:00`),
         },
         ...(!a
           ? [
@@ -525,28 +572,72 @@ export function OperationsPage() {
   }
   const selectedFresh =
     agenda?.appointments.find((a) => a.id === selected?.id) || selected
+  const day = parseISO(date)
+  const step = (direction: number) =>
+    setDate(format(addDays(day, direction * days), 'yyyy-MM-dd'))
+  const periodLabel =
+    view === 'week'
+      ? `${format(parseISO(rangeStart), "d 'de' MMM", { locale: ptBR })} – ${format(addDays(parseISO(rangeStart), 6), "d 'de' MMM 'de' yyyy", { locale: ptBR })}`
+      : format(day, "EEEE, d 'de' MMMM", { locale: ptBR })
+  const columns: AgendaColumn[] =
+    view === 'week'
+      ? Array.from({ length: 7 }, (_, i) => {
+          const d = addDays(parseISO(rangeStart), i)
+          return {
+            key: format(d, 'yyyy-MM-dd'),
+            date: format(d, 'yyyy-MM-dd'),
+            barberFilter: barberFilter || undefined,
+            title: format(d, 'EEE', { locale: ptBR }),
+            subtitle: format(d, 'd'),
+            today: isSameDay(d, new Date()),
+          }
+        })
+      : (agenda?.barbers || [])
+          .filter((b) => !barberFilter || b.id === barberFilter)
+          .map((b) => ({
+            key: b.id,
+            date,
+            barberId: b.id,
+            title: b.name,
+            today: isSameDay(day, new Date()),
+          }))
+  function moveAppointment(a: Appointment, target: SlotTarget) {
+    const barber = agenda?.barbers.find((b) => b.id === target.barberId)
+    const when = new Date(target.startsAt)
+    if (when.getTime() === new Date(a.startsAt).getTime() && target.barberId === a.barber.id)
+      return
+    confirm(
+      'Reagendar atendimento?',
+      () =>
+        api.patch(`/appointments/${a.id}`, {
+          barberId: target.barberId,
+          startsAt: iso(target.startsAt),
+        }),
+      `${a.client.name} passa para ${format(when, "EEEE, d 'de' MMMM 'às' HH:mm", { locale: ptBR })}${barber && barber.id !== a.barber.id ? ` com ${barber.name}` : ''}. O horário será validado com a escala e os bloqueios.`,
+    )
+  }
   return (
-    <div className="max-w-7xl mx-auto space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+    <div className="max-w-[1500px] mx-auto space-y-5">
+      <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">
+          <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 md:text-3xl">
             Agenda e operação
           </h1>
-          <p className="text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-zinc-500">
             Atendimentos, relacionamento e resultados do salão.
           </p>
         </div>
         {isStaff && (
           <button
             onClick={() => book()}
-            className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-3 font-semibold text-sm"
+            className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 shadow-soft transition-all hover:bg-amber-400 hover:shadow-lift active:scale-[0.98]"
           >
-            <Plus size={16} /> Novo atendimento
+            <Plus size={16} strokeWidth={2.5} /> Novo atendimento
           </button>
         )}
       </header>
       <nav
-        className="flex gap-2 overflow-x-auto"
+        className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-2xl border border-zinc-200 bg-white p-1 shadow-soft"
         aria-label="Áreas de operação"
       >
         {[
@@ -565,11 +656,12 @@ export function OperationsPage() {
         ].map((t) => (
           <button
             key={t.id}
+            aria-current={tab === t.id ? 'page' : undefined}
             onClick={() => {
               setTab(t.id)
               setSelected(null)
             }}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm whitespace-nowrap ${tab === t.id ? 'bg-zinc-900 text-white' : 'bg-white border border-zinc-200'}`}
+            className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${tab === t.id ? 'bg-zinc-900 text-white shadow-soft' : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'}`}
           >
             <t.icon size={16} />
             {t.label}
@@ -588,105 +680,195 @@ export function OperationsPage() {
         </div>
       )}
       {error && (
-        <p role="alert" className="text-red-700">
+        <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
           Não foi possível carregar a operação. Verifique a conexão e as
           migrações do servidor.
         </p>
       )}
-      {isLoading && <p>Carregando agenda…</p>}
       {tab === 'agenda' && (
-        <>
-          <div className="flex gap-3 flex-wrap items-center">
-            <input
-              aria-label="Data da agenda"
-              type="date"
-              value={date}
-              onInput={(e) => setDate(e.currentTarget.value)}
-              className={`${inputClass} max-w-48`}
-            />
-            {isStaff && (
-              <button
-                className={buttonClass}
-                onClick={() =>
-                  setForm({
-                    title: 'Bloquear horário',
-                    fields: [
-                      {
-                        key: 'barberId',
-                        label: 'Profissional',
-                        options: agenda?.barbers,
-                      },
-                      {
-                        key: 'startsAt',
-                        label: 'Início',
-                        type: 'datetime-local',
-                        value: `${date}T12:00`,
-                      },
-                      {
-                        key: 'endsAt',
-                        label: 'Fim',
-                        type: 'datetime-local',
-                        value: `${date}T13:00`,
-                      },
-                      { key: 'reason', label: 'Motivo', value: 'Intervalo' },
-                    ],
-                    submit: (v) =>
-                      api.post('/operations/blocks', {
-                        ...v,
-                        startsAt: iso(v.startsAt),
-                        endsAt: iso(v.endsAt),
-                      }),
-                  })
-                }
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+          <div className="min-w-0 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center rounded-xl border border-zinc-200 bg-white p-0.5 shadow-soft">
+                <button
+                  aria-label={view === 'week' ? 'Semana anterior' : 'Dia anterior'}
+                  onClick={() => step(-1)}
+                  className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button
+                  onClick={() => setDate(localDate())}
+                  className="rounded-lg px-2.5 py-1 text-sm font-semibold text-zinc-700 hover:bg-zinc-100"
+                >
+                  Hoje
+                </button>
+                <button
+                  aria-label={view === 'week' ? 'Próxima semana' : 'Próximo dia'}
+                  onClick={() => step(1)}
+                  className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+              <h2 className="mr-auto font-display text-base font-bold first-letter:uppercase text-zinc-900 md:text-lg">
+                {periodLabel}
+              </h2>
+              <input
+                aria-label="Ir para a data"
+                type="date"
+                value={date}
+                onChange={(e) => e.currentTarget.value && setDate(e.currentTarget.value)}
+                className="rounded-xl border border-zinc-200 bg-white px-2.5 py-1.5 text-sm text-zinc-700 shadow-soft xl:hidden"
+              />
+              {isStaff && (agenda?.barbers.length || 0) > 1 && (
+                <select
+                  aria-label="Filtrar profissional"
+                  value={barberFilter}
+                  onChange={(e) => setBarberFilter(e.currentTarget.value)}
+                  className="rounded-xl border border-zinc-200 bg-white px-2.5 py-1.5 text-sm text-zinc-700 shadow-soft"
+                >
+                  <option value="">Todos os profissionais</option>
+                  {agenda?.barbers.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <div
+                role="radiogroup"
+                aria-label="Visualização"
+                className="flex rounded-xl border border-zinc-200 bg-white p-0.5 shadow-soft"
               >
-                Bloquear horário
-              </button>
-            )}
+                {(
+                  [
+                    ['day', 'Dia'],
+                    ['week', 'Semana'],
+                  ] as const
+                ).map(([id, label]) => (
+                  <button
+                    key={id}
+                    role="radio"
+                    aria-checked={view === id}
+                    onClick={() => setView(id)}
+                    className={`rounded-lg px-3 py-1 text-sm font-medium transition-all ${view === id ? 'bg-amber-500 text-zinc-950 shadow-soft' : 'text-zinc-500 hover:text-zinc-900'}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {(isStaff || (agenda?.barbers.length ?? 0) > 0) && (
+                <button
+                  className={buttonClass}
+                  onClick={() =>
+                    setForm({
+                      title: 'Bloquear horário',
+                      fields: [
+                        {
+                          key: 'barberId',
+                          label: 'Profissional',
+                          options: agenda?.barbers,
+                          value:
+                            barberFilter ||
+                            (agenda?.barbers.length === 1 ? agenda.barbers[0].id : ''),
+                        },
+                        {
+                          key: 'startsAt',
+                          label: 'Início',
+                          type: 'datetime-local',
+                          value: `${date}T12:00`,
+                        },
+                        {
+                          key: 'endsAt',
+                          label: 'Fim',
+                          type: 'datetime-local',
+                          value: `${date}T13:00`,
+                        },
+                        { key: 'reason', label: 'Motivo', value: 'Intervalo' },
+                      ],
+                      submit: (v) =>
+                        api.post('/operations/blocks', {
+                          ...v,
+                          startsAt: iso(v.startsAt),
+                          endsAt: iso(v.endsAt),
+                        }),
+                    })
+                  }
+                >
+                  <Ban size={15} /> Bloquear horário
+                </button>
+              )}
+            </div>
             {myCommission && (
-              <p className="text-sm">
+              <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
                 Sua comissão no mês:{' '}
                 <strong>{money(myCommission.commission)}</strong> ·{' '}
                 {myCommission.appointments} atendimentos
               </p>
             )}
-          </div>
-          {agenda && (
-            <AgendaTimeline
-              agenda={agenda}
-              date={date}
-              canEdit={isStaff}
-              select={(a) => {
-                setSelected(a)
-                setRecords(null)
-              }}
-              removeBlock={(id) =>
-                confirm('Remover bloqueio?', () =>
-                  api.delete(`/operations/blocks/${id}`),
-                )
-              }
-            />
-          )}
-          {agenda &&
-            agenda.appointments.some((a) =>
-              ['CANCELLED', 'NO_SHOW'].includes(a.status),
-            ) && (
-              <details className="text-sm rounded-xl border bg-white p-3">
-                <summary>Cancelamentos e ausências</summary>
-                {agenda.appointments
-                  .filter((a) => ['CANCELLED', 'NO_SHOW'].includes(a.status))
-                  .map((a) => (
-                    <button
-                      key={a.id}
-                      className="block underline p-2"
-                      onClick={() => setSelected(a)}
-                    >
-                      {time(a.startsAt)} · {a.client.name} ·{' '}
-                      {statusLabels[a.status]}
-                    </button>
-                  ))}
-              </details>
+            {isStaff && (
+              <p className="hidden text-xs text-zinc-400 md:block">
+                Clique num horário livre para agendar. Arraste um atendimento
+                para reagendar.
+              </p>
             )}
-        </>
+            {isLoading && !agenda && (
+              <Skeleton className="h-[560px] rounded-2xl" />
+            )}
+            {agenda && (
+              <AgendaTimeline
+                agenda={agenda}
+                columns={columns}
+                showBarber={view === 'week' && !barberFilter}
+                canEdit={isStaff}
+                canManageBlocks
+                ready={!isPlaceholderData}
+                select={(a) => {
+                  setSelected(a)
+                  setRecords(null)
+                }}
+                removeBlock={(id) =>
+                  confirm('Remover bloqueio?', () =>
+                    api.delete(`/operations/blocks/${id}`),
+                  )
+                }
+                move={moveAppointment}
+                create={(slot) => book(undefined, slot)}
+              />
+            )}
+            {agenda &&
+              agenda.appointments.some((a) =>
+                ['CANCELLED', 'NO_SHOW'].includes(a.status),
+              ) && (
+                <details className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm shadow-soft">
+                  <summary className="cursor-pointer font-medium text-zinc-700">
+                    Cancelamentos e ausências
+                  </summary>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {agenda.appointments
+                      .filter((a) => ['CANCELLED', 'NO_SHOW'].includes(a.status))
+                      .map((a) => (
+                        <button
+                          key={a.id}
+                          className="rounded-lg bg-zinc-100 px-2.5 py-1.5 text-zinc-600 hover:bg-zinc-200"
+                          onClick={() => setSelected(a)}
+                        >
+                          {format(new Date(a.startsAt), 'dd/MM')} {time(a.startsAt)}{' '}
+                          · {a.client.name} · {statusLabels[a.status]}
+                        </button>
+                      ))}
+                  </div>
+                </details>
+              )}
+          </div>
+          <aside className="hidden space-y-4 xl:block">
+            <MiniCalendar date={date} week={view === 'week'} onPick={setDate} />
+            {agenda && (
+              <AgendaSummary agenda={agenda} barberFilter={barberFilter || undefined} />
+            )}
+          </aside>
+        </div>
       )}
 
       {tab === 'growth' && (
@@ -1290,19 +1472,31 @@ export function OperationsPage() {
           )}
         </section>
       )}
+      <AnimatePresence>
       {selectedFresh && (
-        <section
+        <motion.section
+          key="appointment-drawer"
+          initial={{ opacity: 0, x: 32 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 32 }}
+          transition={{ type: 'spring', stiffness: 420, damping: 36 }}
           role="dialog"
           aria-label="Detalhes do atendimento"
-          className="fixed inset-y-4 right-4 left-4 md:left-auto md:w-[440px] z-40 overflow-y-auto rounded-2xl border bg-white p-5 space-y-4 shadow-2xl"
+          className="fixed inset-y-4 right-4 left-4 md:left-auto md:w-[440px] z-40 overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 space-y-4 shadow-lift"
         >
           <div className="flex justify-between">
             <div>
-              <h2 className="font-bold">
-                {selectedFresh.client.name} · {time(selectedFresh.startsAt)}
+              <h2 className="text-lg font-bold text-zinc-900">
+                {selectedFresh.client.name}
               </h2>
-              <p className="text-sm text-zinc-500">
-                {statusLabels[selectedFresh.status]} ·{' '}
+              <p className="text-sm first-letter:uppercase text-zinc-500">
+                {format(new Date(selectedFresh.startsAt), "EEEE, d 'de' MMMM", { locale: ptBR })}{' '}
+                · {time(selectedFresh.startsAt)}–{time(selectedFresh.endsAt)}
+              </p>
+              <p className="mt-1.5 flex items-center gap-2 text-sm text-zinc-600">
+                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-700">
+                  {statusLabels[selectedFresh.status]}
+                </span>
                 {selectedFresh.barber.name}
               </p>
             </div>
@@ -1481,12 +1675,16 @@ export function OperationsPage() {
               )}
             </div>
           )}
+          {isStaff && <AppointmentExtras appointment={selectedFresh} />}
           {isStaff && (
             <div className="border-t pt-4 space-y-3">
               <h3 className="font-semibold">Comanda</h3>
               <p className="text-sm">
                 Serviços: {money(selectedFresh.totalPrice)} · Desconto:{' '}
-                {money(selectedFresh.discount)} · Recebido:{' '}
+                {money(selectedFresh.discount)}
+                {Number(selectedFresh.subscriptionCovered) > 0 &&
+                  ` · Assinatura: −${money(Number(selectedFresh.subscriptionCovered))}`}{' '}
+                · Recebido:{' '}
                 {money(
                   selectedFresh.payments
                     .filter((p) => !p.refundedAt)
@@ -1515,7 +1713,8 @@ export function OperationsPage() {
                 Saldo:{' '}
                 {money(
                   Number(selectedFresh.totalPrice) -
-                    Number(selectedFresh.discount) +
+                    Number(selectedFresh.discount) -
+                    Number(selectedFresh.subscriptionCovered ?? 0) +
                     selectedFresh.items.reduce(
                       (sum, i) => sum + Number(i.unitPrice) * i.quantity,
                       0,
@@ -1643,8 +1842,9 @@ export function OperationsPage() {
               ))}
             </div>
           )}
-        </section>
+        </motion.section>
       )}
+      </AnimatePresence>
       {form && (
         <ActionForm spec={form} close={() => setForm(null)} saved={saved} />
       )}

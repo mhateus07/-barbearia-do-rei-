@@ -34,6 +34,7 @@ export interface BarberCommission {
   totalRevenue: number
   commission: number
   appointmentsCount: number
+  openAdvances?: number
 }
 
 export interface Service {
@@ -157,6 +158,7 @@ export interface CommissionPayment {
   totalRevenue: number
   commissionAmount: number
   commissionRate: number
+  advancesDeducted?: number | string
   notes?: string
   paidAt: string
   createdAt: string

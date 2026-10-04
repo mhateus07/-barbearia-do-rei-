@@ -25,13 +25,13 @@ function StatCard({
     <div className={`rounded-2xl border p-5 ${accent ? 'bg-amber-500 border-amber-400' : 'bg-white border-zinc-200'}`}>
       <div className="flex items-start justify-between">
         <div>
-          <p className={`text-xs font-medium uppercase tracking-wide ${accent ? 'text-amber-100' : 'text-zinc-500'}`}>
+          <p className={`text-xs font-medium uppercase tracking-wide ${accent ? 'text-white/85' : 'text-zinc-500'}`}>
             {title}
           </p>
           <p className={`mt-2 text-3xl font-bold ${accent ? 'text-white' : 'text-zinc-800'}`}>
             {value}
           </p>
-          {sub && <p className={`mt-1 text-xs ${accent ? 'text-amber-200' : 'text-zinc-400'}`}>{sub}</p>}
+          {sub && <p className={`mt-1 text-xs ${accent ? 'text-white/70' : 'text-zinc-400'}`}>{sub}</p>}
         </div>
         <div className={`rounded-xl p-2.5 ${accent ? 'bg-amber-400/40' : 'bg-zinc-100'}`}>
           <Icon className={`h-5 w-5 ${accent ? 'text-white' : 'text-zinc-500'}`} />

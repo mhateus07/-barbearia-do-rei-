@@ -1,26 +1,54 @@
-import { OperationsPage } from '../pages/operations/OperationsPage'
-import { OfferPage } from '../pages/operations/OfferPage'
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { PrivateRoute } from './PrivateRoute'
 import { AdminLayout } from '../components/layout/AdminLayout'
 import { LoginPage } from '../pages/LoginPage'
-import { DashboardPage } from '../pages/dashboard/DashboardPage'
-import { BarbersPage } from '../pages/barbers/BarbersPage'
-import { ServicesPage } from '../pages/services/ServicesPage'
-import { ClientsPage } from '../pages/clients/ClientsPage'
-import { AppointmentsPage } from '../pages/appointments/AppointmentsPage'
-import { FinancesPage } from '../pages/finances/FinancesPage'
-import { ShowcasePage } from '../pages/showcase/ShowcasePage'
-import { SettingsPage } from '../pages/settings/SettingsPage'
-import { BookingPage } from '../pages/booking/BookingPage'
+
+// Cada tela é baixada só quando aberta, para o painel carregar mais rápido.
+const page = <T extends Record<string, React.ComponentType>>(
+  load: () => Promise<T>,
+  name: keyof T,
+) => lazy(async () => ({ default: (await load())[name] }))
+
+const OperationsPage = page(() => import('../pages/operations/OperationsPage'), 'OperationsPage')
+const OfferPage = page(() => import('../pages/operations/OfferPage'), 'OfferPage')
+const DashboardPage = page(() => import('../pages/dashboard/DashboardPage'), 'DashboardPage')
+const BarbersPage = page(() => import('../pages/barbers/BarbersPage'), 'BarbersPage')
+const ServicesPage = page(() => import('../pages/services/ServicesPage'), 'ServicesPage')
+const ClientsPage = page(() => import('../pages/clients/ClientsPage'), 'ClientsPage')
+const AppointmentsPage = page(() => import('../pages/appointments/AppointmentsPage'), 'AppointmentsPage')
+const FinancesPage = page(() => import('../pages/finances/FinancesPage'), 'FinancesPage')
+const ShowcasePage = page(() => import('../pages/showcase/ShowcasePage'), 'ShowcasePage')
+const SettingsPage = page(() => import('../pages/settings/SettingsPage'), 'SettingsPage')
+const BookingPage = page(() => import('../pages/booking/BookingPage'), 'BookingPage')
+const PayPage = page(() => import('../pages/public/PayPage'), 'PayPage')
+const ManagePage = page(() => import('../pages/public/ManagePage'), 'ManagePage')
+const SubscriptionsPage = page(() => import('../pages/subscriptions/SubscriptionsPage'), 'SubscriptionsPage')
+const CashPage = page(() => import('../pages/cash/CashPage'), 'CashPage')
+
+const publicFallback = <div className="min-h-dvh bg-zinc-950" />
 
 export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/oferta" element={<OfferPage />} />
-        <Route path="/agendar" element={<BookingPage />} />
+        <Route
+          path="/oferta"
+          element={<Suspense fallback={publicFallback}><OfferPage /></Suspense>}
+        />
+        <Route
+          path="/agendar"
+          element={<Suspense fallback={publicFallback}><BookingPage /></Suspense>}
+        />
+        <Route
+          path="/pagar/:token"
+          element={<Suspense fallback={publicFallback}><PayPage /></Suspense>}
+        />
+        <Route
+          path="/meu-horario/:token"
+          element={<Suspense fallback={publicFallback}><ManagePage /></Suspense>}
+        />
         <Route element={<PrivateRoute />}>
           <Route element={<AdminLayout />}>
             <Route path="/" element={<Navigate to="/operacao" replace />} />
@@ -31,6 +59,8 @@ export function AppRouter() {
             <Route path="/clientes" element={<ClientsPage />} />
             <Route path="/agendamentos" element={<AppointmentsPage />} />
             <Route path="/financeiro" element={<FinancesPage />} />
+            <Route path="/assinaturas" element={<SubscriptionsPage />} />
+            <Route path="/caixa" element={<CashPage />} />
             <Route path="/vitrine" element={<ShowcasePage />} />
             <Route path="/configuracoes" element={<SettingsPage />} />
           </Route>

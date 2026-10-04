@@ -26,7 +26,7 @@ export function OfferPage() {
   }
   return (
     <main className="min-h-screen bg-zinc-100 grid place-items-center p-6">
-      <div className="max-w-md rounded-2xl bg-white p-8 space-y-4 shadow-sm">
+      <div className="max-w-md rounded-2xl bg-white p-8 space-y-4 shadow-xs">
         <h1 className="text-2xl font-bold">Uma vaga para você</h1>
         {error ? (
           <p>Oferta expirada ou indisponível.</p>

@@ -1,27 +1,33 @@
-import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Suspense, useState } from 'react'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
+import { PageSkeleton } from '../ui/Skeleton'
 
 export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { pathname } = useLocation()
 
   return (
-    <div className="flex h-screen overflow-hidden bg-zinc-50">
+    <div className="flex h-dvh overflow-hidden bg-zinc-950">
       {/* Overlay mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          className="fixed inset-0 z-40 animate-fade-in bg-black/50 backdrop-blur-sm md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="app-surface flex flex-1 flex-col overflow-hidden bg-zinc-50 text-zinc-900 md:my-2 md:mr-2 md:rounded-2xl">
         <Header onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <Outlet />
+          <Suspense fallback={<PageSkeleton />}>
+            <div key={pathname} className="animate-pop-in">
+              <Outlet />
+            </div>
+          </Suspense>
         </main>
       </div>
     </div>
