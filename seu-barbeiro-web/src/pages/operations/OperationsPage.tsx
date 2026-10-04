@@ -1195,22 +1195,45 @@ export function OperationsPage() {
                       · {u.isActive ? 'Ativo' : 'Inativo'}
                     </p>
                   </div>
-                  {u.id !== admin?.id && (
+                  <div className="flex gap-2 items-start">
                     <button
                       className={buttonClass}
                       onClick={() =>
-                        confirm(
-                          `${u.isActive ? 'Desativar' : 'Ativar'} acesso de ${u.name}?`,
-                          () =>
+                        setForm({
+                          title: `Trocar senha de ${u.name}`,
+                          fields: [
+                            {
+                              key: 'password',
+                              label: 'Nova senha (mínimo 10 caracteres)',
+                              type: 'password',
+                            },
+                          ],
+                          submit: (v) =>
                             api.patch(`/operations/users/${u.id}`, {
-                              isActive: !u.isActive,
+                              password: v.password,
                             }),
-                        )
+                        })
                       }
                     >
-                      {u.isActive ? 'Desativar' : 'Ativar'}
+                      Trocar senha
                     </button>
-                  )}
+                    {u.id !== admin?.id && (
+                      <button
+                        className={buttonClass}
+                        onClick={() =>
+                          confirm(
+                            `${u.isActive ? 'Desativar' : 'Ativar'} acesso de ${u.name}?`,
+                            () =>
+                              api.patch(`/operations/users/${u.id}`, {
+                                isActive: !u.isActive,
+                              }),
+                          )
+                        }
+                      >
+                        {u.isActive ? 'Desativar' : 'Ativar'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </section>
