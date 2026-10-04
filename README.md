@@ -109,6 +109,24 @@ se o provedor não respeitar o cabeçalho `Idempotency-Key`.
   não faz upload nem gerencia armazenamento de imagens. Use armazenamento privado
   apropriado para conteúdo restrito.
 
+## Pix, assinaturas e caixa
+
+- **Mercado Pago**: o dono cola o Access Token em Configurações → Pix e cliente. O token
+  fica só no servidor. O aviso de pagamento chega em
+  `PUBLIC_WEB_URL/api/v1/webhooks/mercadopago/<salão>` e o pagamento é sempre
+  reconsultado na API; se o aviso não chegar, a situação é atualizada quando a página do
+  Pix é consultada e pelo worker antes de liberar o horário.
+- **Sinal**: só no agendamento online. O horário fica reservado até o prazo; sem
+  pagamento, o atendimento é cancelado e o Pix cancelado no Mercado Pago. Sinal pago
+  vira um recebimento Pix na comanda. Devoluções continuam sendo feitas no provedor.
+- **Assinaturas**: a mensalidade é gerada alguns dias antes do vencimento e enviada pelo
+  WhatsApp. Sem pagamento após o vencimento a assinatura fica em atraso. Na comanda,
+  "Usar assinatura" abate os serviços cobertos; a comissão continua sobre o valor do serviço.
+- **Vales e caixa**: vales entram como despesa na hora e são descontados no pagamento da
+  comissão. O caixa considera recebimentos em dinheiro, estornos, reforços e sangrias.
+- **Avisos push**: exigem `VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY` (o `deploy.sh` gera).
+  No iPhone, o painel precisa estar instalado na tela inicial.
+
 ## Atualização de instalação existente
 
 Faça backup e ensaie a atualização em uma cópia antes do deploy. A migração inclui

@@ -42,6 +42,18 @@ agenda visual e escalas, financeiro, retorno, reativação, lista de espera e fi
 - [ ] Cadastrar serviços, profissionais e horários; o banco de produção começou vazio.
 - [ ] Configurar e validar o provedor real de WhatsApp.
 - [ ] Realizar piloto e conferir as regras comerciais com a equipe.
+- [ ] Colar o Access Token de produção do Mercado Pago (Configurações → Pix e cliente) e escolher a regra do sinal.
+- [ ] Cadastrar os planos de assinatura e ativar os avisos no celular da equipe (sino no topo do painel).
+
+## Evolução de 04/10/2026
+
+- [x] Visual novo (tema claro/escuro, agenda dia/semana com arrastar) e tela de login nova
+- [x] Sinal via Pix (Mercado Pago) com liberação automática do horário
+- [x] Assinaturas com mensalidade Pix, uso na comanda e inadimplência
+- [x] Link do cliente para confirmar, remarcar e cancelar
+- [x] Vales descontados na comissão e caixa com sangria/fechamento
+- [x] Profissional bloqueia a própria agenda; avisos push e app instalável
+- [x] 30 testes de integração aprovados; fluxo público de agendamento com Pix conferido no navegador
 
 A demonstração usa dados fictícios e mantém o envio automático desativado.
 Pagamentos são registros internos; não há cobrança Pix/cartão integrada.

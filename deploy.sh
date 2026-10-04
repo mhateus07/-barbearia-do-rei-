@@ -62,6 +62,18 @@ EOF
     FIRST=1
   fi
 
+  # Chaves das notificações push (VAPID): geradas uma vez e mantidas no .env.
+  if ! grep -q '^VAPID_PUBLIC_KEY=' .env; then
+    echo "  → Gerando chaves das notificações push..."
+    KEYS=$(docker run --rm node:24-alpine node -e "
+      const e = require('crypto').createECDH('prime256v1'); e.generateKeys();
+      const k = e.getPrivateKey(); const p = Buffer.concat([Buffer.alloc(32 - k.length), k]);
+      console.log(e.getPublicKey('base64url') + ' ' + p.toString('base64url'))" < /dev/null)
+    umask 077
+    printf 'VAPID_PUBLIC_KEY=%s\nVAPID_PRIVATE_KEY=%s\nVAPID_SUBJECT=https://%s\n' \
+      "${KEYS% *}" "${KEYS#* }" "$APP_DOMAIN" >> .env
+  fi
+
   if [ -n "$(docker compose ps -q postgres 2>/dev/null)" ]; then
     echo "  → Backup do banco..."
     mkdir -p backups && chmod 700 backups

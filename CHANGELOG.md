@@ -1,5 +1,33 @@
 # Changelog — Seu Barbeiro
 
+## [04/10/2026] — Visual novo e 7 funcionalidades para a equipe
+
+### Visual
+- Tailwind 4 com tema central (`src/index.css`), fontes Inter e Plus Jakarta Sans embutidas, sombras e animações
+- Modo **claro, escuro ou do sistema** no painel (seletor no topo)
+- Avisos rápidos (Sonner), telas de carregamento, painel do atendimento com animação (Motion)
+- Telas carregadas sob demanda; restos do modelo do Vite removidos; ícone novo
+- **Agenda**: visão Dia e Semana, calendário pequeno, cores por situação e por profissional, linha da hora atual, faixa fora da escala, arrastar para reagendar e clicar no horário livre para agendar
+- **Tela de login** nova (foto, destaques do produto, mostrar senha, link para o cliente agendar)
+
+### Novas funcionalidades
+- **Sinal via Pix (Mercado Pago)**: no agendamento online o cliente paga o sinal pelo QR Code; sem pagamento no prazo o horário é liberado e o Pix cancelado. Configurável em Configurações → Pix e cliente (todos, só quem faltou, % ou valor fixo, prazo)
+- **Assinaturas (clube do corte)**: planos com usos por mês e serviços incluídos, mensalidade por Pix enviada pelo WhatsApp alguns dias antes do vencimento, baixa manual, inadimplência automática e "Usar assinatura" na comanda
+- **Link do cliente** (`/meu-horario`): confirmar, remarcar ou cancelar sozinho, respeitando a antecedência mínima; vai na confirmação e no lembrete do WhatsApp
+- **Vales do barbeiro**: lançados em Financeiro → Comissões e descontados automaticamente no pagamento da comissão (do mais antigo ao mais novo, enquanto couberem)
+- **Caixa**: abertura com troco, reforço, sangria, dinheiro esperado, recebido por forma de pagamento e fechamento com diferença
+- **Profissional bloqueia a própria agenda** (e só a dele)
+- **Avisos no celular (push) e app instalável (PWA)**: novo agendamento online, cliente confirmou/remarcou/cancelou, sinal e mensalidade pagos
+
+### Técnico
+- Migração `20261004000000_professional_features` (somente adições; um único caixa aberto garantido no banco)
+- Webhook `POST /api/v1/webhooks/mercadopago/:salon`: o pagamento é sempre reconsultado na API do Mercado Pago
+- O token do Mercado Pago nunca volta ao navegador
+- `deploy.sh` gera as chaves VAPID das notificações quando faltam no `.env`
+- Testes: 9 novos (Mercado Pago simulado por servidor local), 30 no total; a suíte roda em sequência
+
+---
+
 ## [03/10/2026] — Seu Barbeiro no ar
 
 ### Novo nome e domínio
