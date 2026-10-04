@@ -619,7 +619,7 @@ export function OperationsPage() {
     <div className="max-w-[1500px] mx-auto space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 md:text-3xl">
+          <h1 className="text-xl font-extrabold tracking-tight text-zinc-900 md:text-3xl">
             Agenda e operação
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
@@ -629,14 +629,14 @@ export function OperationsPage() {
         {isStaff && (
           <button
             onClick={() => book()}
-            className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 shadow-soft transition-all hover:bg-amber-400 hover:shadow-lift active:scale-[0.98]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl sm:w-auto bg-amber-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 shadow-soft transition-all hover:bg-amber-400 hover:shadow-lift active:scale-[0.98]"
           >
             <Plus size={16} strokeWidth={2.5} /> Novo atendimento
           </button>
         )}
       </header>
       <nav
-        className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-2xl border border-zinc-200 bg-white p-1 shadow-soft"
+        className="no-scrollbar flex w-fit max-w-full gap-1 overflow-x-auto rounded-2xl border border-zinc-200 bg-white p-1 shadow-soft"
         aria-label="Áreas de operação"
       >
         {[
@@ -710,24 +710,25 @@ export function OperationsPage() {
                   <ChevronRight size={18} />
                 </button>
               </div>
-              <h2 className="mr-auto font-display text-base font-bold first-letter:uppercase text-zinc-900 md:text-lg">
+              <h2 className="mr-auto min-w-0 flex-1 truncate font-display text-base font-bold first-letter:uppercase text-zinc-900 sm:flex-none md:text-lg">
                 {periodLabel}
               </h2>
+              <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
               <input
                 aria-label="Ir para a data"
                 type="date"
                 value={date}
                 onChange={(e) => e.currentTarget.value && setDate(e.currentTarget.value)}
-                className="rounded-xl border border-zinc-200 bg-white px-2.5 py-1.5 text-sm text-zinc-700 shadow-soft xl:hidden"
+                className="w-full min-w-0 rounded-xl border border-zinc-200 bg-white px-2.5 py-1.5 text-sm text-zinc-700 shadow-soft sm:w-auto xl:hidden"
               />
               {isStaff && (agenda?.barbers.length || 0) > 1 && (
                 <select
                   aria-label="Filtrar profissional"
                   value={barberFilter}
                   onChange={(e) => setBarberFilter(e.currentTarget.value)}
-                  className="rounded-xl border border-zinc-200 bg-white px-2.5 py-1.5 text-sm text-zinc-700 shadow-soft"
+                  className="w-full min-w-0 rounded-xl border border-zinc-200 bg-white px-2.5 py-1.5 text-sm text-zinc-700 shadow-soft sm:w-auto"
                 >
-                  <option value="">Todos os profissionais</option>
+                  <option value="">Toda a equipe</option>
                   {agenda?.barbers.map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.name}
@@ -751,7 +752,7 @@ export function OperationsPage() {
                     role="radio"
                     aria-checked={view === id}
                     onClick={() => setView(id)}
-                    className={`rounded-lg px-3 py-1 text-sm font-medium transition-all ${view === id ? 'bg-amber-500 text-zinc-950 shadow-soft' : 'text-zinc-500 hover:text-zinc-900'}`}
+                    className={`flex-1 rounded-lg px-3 py-1 text-sm font-medium transition-all ${view === id ? 'bg-amber-500 text-zinc-950 shadow-soft' : 'text-zinc-500 hover:text-zinc-900'}`}
                   >
                     {label}
                   </button>
@@ -759,7 +760,7 @@ export function OperationsPage() {
               </div>
               {(isStaff || (agenda?.barbers.length ?? 0) > 0) && (
                 <button
-                  className={buttonClass}
+                  className={`${buttonClass} justify-center`}
                   onClick={() =>
                     setForm({
                       title: 'Bloquear horário',
@@ -798,6 +799,7 @@ export function OperationsPage() {
                   <Ban size={15} /> Bloquear horário
                 </button>
               )}
+              </div>
             </div>
             {myCommission && (
               <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -872,7 +874,7 @@ export function OperationsPage() {
 
       {tab === 'growth' && (
         <div className="space-y-5">
-          <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
             {[
               {
                 label: 'Convites neste mês',
@@ -891,9 +893,9 @@ export function OperationsPage() {
                 value: `${growth?.metrics.returnCount ?? 0} / ${growth?.metrics.completed ?? 0}`,
               },
             ].map((m) => (
-              <div key={m.label} className="bg-white border rounded-2xl p-4">
-                <p className="text-xs text-zinc-500">{m.label}</p>
-                <p className="text-2xl font-bold mt-2">{m.value}</p>
+              <div key={m.label} className="min-w-0 bg-white border rounded-2xl p-4">
+                <p className="text-xs leading-tight text-zinc-500">{m.label}</p>
+                <p className="tabular truncate text-xl font-bold mt-2 sm:text-2xl">{m.value}</p>
               </div>
             ))}
           </div>

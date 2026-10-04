@@ -22,7 +22,7 @@ export function AdminLayout() {
 
       <div className="app-surface flex flex-1 flex-col overflow-hidden bg-zinc-50 text-zinc-900 md:my-2 md:mr-2 md:rounded-2xl">
         <Header onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:p-6">
           <Suspense fallback={<PageSkeleton />}>
             <div key={pathname} className="animate-pop-in">
               <Outlet />

@@ -155,14 +155,14 @@ export function SubscriptionsPage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 md:text-3xl">
+          <h1 className="text-xl font-extrabold tracking-tight text-zinc-900 md:text-3xl">
             Assinaturas
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
             Clube do corte: o cliente paga por mês e usa no salão. Cobrança por Pix pelo WhatsApp.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
           {isOwner && (
             <Button variant="ghost" className="border border-zinc-200 bg-white" onClick={() => setPlanForm(emptyPlan)}>
               <Crown className="h-4 w-4 text-amber-500" /> Novo plano
@@ -174,21 +174,21 @@ export function SubscriptionsPage() {
         </div>
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {[
           { label: 'Assinantes ativos', value: metrics.active, icon: Users, tone: 'bg-emerald-100 text-emerald-700' },
           { label: 'Receita recorrente / mês', value: formatCurrency(metrics.mrr), icon: Wallet, tone: 'bg-amber-100 text-amber-700' },
           { label: 'Em atraso', value: metrics.late, icon: AlertTriangle, tone: 'bg-red-100 text-red-700' },
           { label: 'Aguardando 1º pagamento', value: metrics.pending, icon: Repeat, tone: 'bg-sky-100 text-sky-700' },
         ].map(({ label, value, icon: Icon, tone }) => (
-          <div key={label} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-soft">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-500">{label}</p>
-              <span className={`grid h-9 w-9 place-items-center rounded-xl ${tone}`}>
+          <div key={label} className="min-w-0 rounded-2xl border border-zinc-200 bg-white p-4 shadow-soft sm:p-5">
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-xs font-medium leading-tight text-zinc-500 sm:text-sm">{label}</p>
+              <span className={`hidden h-9 w-9 shrink-0 place-items-center rounded-xl sm:grid ${tone}`}>
                 <Icon className="h-4 w-4" />
               </span>
             </div>
-            <p className="tabular mt-2 font-display text-2xl font-bold text-zinc-900">{value}</p>
+            <p className="tabular mt-2 truncate font-display text-xl font-bold text-zinc-900 sm:text-2xl">{value}</p>
           </div>
         ))}
       </section>

@@ -2,34 +2,31 @@ import { getSalon } from '../api/salon'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/auth-state'
-import {
-  Scissors,
-  Mail,
-  Lock,
-  ArrowRight,
-  Eye,
-  EyeOff,
-  CalendarDays,
-  QrCode,
-  Repeat,
-  Wallet,
-  BellRing,
-  Store,
-} from 'lucide-react'
+import { Scissors, Mail, Lock, ArrowRight, Eye, EyeOff, Store } from 'lucide-react'
 
-const PHOTO = '/login/fundo.jpg'
-const TOWEL = '/login/toalha.jpg'
-const DESIGN = '/login/desenho.jpg'
-
-const features = [
-  { icon: CalendarDays, title: 'Agenda inteligente', text: 'Dia e semana, arrastar para remarcar' },
-  { icon: QrCode, title: 'Sinal via Pix', text: 'O cliente paga ao agendar e falta menos' },
-  { icon: Repeat, title: 'Clube de assinatura', text: 'Receita previsível todo mês' },
-  { icon: Wallet, title: 'Caixa e comissões', text: 'Vales, sangrias e fechamento do dia' },
+// Prévia ilustrativa da agenda, desenhada com os mesmos elementos do painel.
+const preview = [
+  { time: '09:00', client: 'Carlos R.', service: 'Corte + barba', pro: 'Diego', status: 'Concluído', tone: 'bg-emerald-500/10 text-emerald-300' },
+  { time: '10:30', client: 'Thiago C.', service: 'Corte masculino', pro: 'Rafael', status: 'Em atendimento', tone: 'bg-sky-500/10 text-sky-300' },
+  { time: '11:15', client: 'Bruno M.', service: 'Barba', pro: 'Diego', status: 'Confirmado', tone: 'bg-amber-500/10 text-amber-300' },
+  { time: '14:00', client: 'Lucas A.', service: 'Corte + sobrancelha', pro: 'Rafael', status: 'Agendado', tone: 'bg-white/5 text-zinc-400' },
 ]
 
+const modules = ['Agenda', 'Clientes', 'Pix', 'Assinaturas', 'Caixa', 'Comissões']
+
 const field =
-  'w-full rounded-xl border border-white/10 bg-white/[0.04] py-3 pl-10 pr-4 text-sm text-white placeholder-zinc-500 outline-hidden transition-all focus:border-amber-400/70 focus:bg-white/[0.06] focus:ring-4 focus:ring-amber-500/15'
+  'w-full rounded-lg border border-white/10 bg-zinc-900 py-2.5 pl-10 pr-4 text-sm text-white placeholder-zinc-500 outline-hidden transition-colors focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'
+
+function Brand() {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="grid h-8 w-8 place-items-center rounded-lg bg-amber-500 text-zinc-950">
+        <Scissors className="h-4 w-4" strokeWidth={2.5} />
+      </div>
+      <span className="font-display text-base font-bold tracking-tight">Seu Barbeiro</span>
+    </div>
+  )
+}
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -64,213 +61,196 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-dvh bg-zinc-950 font-sans text-white">
-      {/* Painel da marca */}
-      <aside className="relative hidden w-[52%] overflow-hidden lg:block">
-        <img
-          src={PHOTO}
-          alt=""
-          fetchPriority="high"
-          decoding="async"
-          className="absolute inset-0 h-full w-full scale-105 object-cover"
+    <div className="flex min-h-dvh bg-zinc-950 font-sans text-white">
+      {/* Painel do produto */}
+      <aside className="relative hidden w-[55%] flex-col justify-between overflow-hidden border-r border-white/[0.06] bg-zinc-900/40 p-12 lg:flex xl:p-16">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:linear-gradient(rgb(255_255_255/0.04)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.04)_1px,transparent_1px)] [background-size:32px_32px] [mask-image:linear-gradient(to_bottom,black,transparent_85%)]"
         />
-        <div className="absolute inset-0 bg-linear-to-t from-zinc-950 via-zinc-950/75 to-zinc-950/30" />
-        <div className="absolute inset-0 bg-linear-to-r from-transparent to-zinc-950/90" />
 
-        <div className="relative flex h-full flex-col justify-between p-12 xl:p-14">
-          <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-linear-to-br from-amber-300 to-amber-600 text-zinc-950 shadow-lg shadow-amber-500/30">
-              <Scissors className="h-5 w-5" strokeWidth={2.5} />
+        <div className="relative">
+          <Brand />
+        </div>
+
+        <div className="relative max-w-xl">
+          <h2 className="text-balance font-display text-4xl font-bold leading-tight tracking-tight text-zinc-50 xl:text-[2.75rem]">
+            Gestão para barbearias e salões
+          </h2>
+          <p className="mt-4 max-w-md text-base leading-relaxed text-zinc-400">
+            Agenda, clientes, cobranças e caixa no mesmo painel, no computador do balcão ou no
+            celular.
+          </p>
+
+          <div className="mt-10 overflow-hidden rounded-xl border border-white/10 bg-zinc-950 shadow-2xl shadow-black/40">
+            <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3.5">
+              <div>
+                <p className="text-sm font-semibold text-zinc-100">Agenda de hoje</p>
+                <p className="text-xs text-zinc-500">4 atendimentos · 2 profissionais</p>
+              </div>
+              <div className="flex rounded-md border border-white/10 p-0.5 text-xs">
+                <span className="rounded bg-white/10 px-2 py-0.5 font-medium text-zinc-100">Dia</span>
+                <span className="px-2 py-0.5 text-zinc-500">Semana</span>
+              </div>
             </div>
-            <span className="font-display text-lg font-bold tracking-tight">Seu Barbeiro</span>
-          </div>
-
-          <div className="max-w-lg">
-            <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-              Gestão completa para barbearias e salões
-            </p>
-            <h2 className="font-display text-5xl font-extrabold leading-[1.05] tracking-tight xl:text-6xl">
-              Não é só corte,
-              <br />
-              <span className="bg-linear-to-r from-amber-200 via-amber-400 to-amber-500 bg-clip-text text-transparent">
-                é cuidado.
-              </span>
-            </h2>
-            <p className="mt-5 max-w-md text-lg leading-relaxed text-zinc-300">
-              Agenda, clientes, Pix, assinaturas e caixa num só lugar, do balcão ao celular.
-            </p>
-
-            <ul className="mt-9 grid grid-cols-2 gap-3">
-              {features.map(({ icon: Icon, title, text }) => (
-                <li
-                  key={title}
-                  className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-md"
-                >
-                  <Icon className="h-5 w-5 text-amber-400" />
-                  <p className="mt-3 text-sm font-semibold">{title}</p>
-                  <p className="mt-0.5 text-xs leading-snug text-zinc-400">{text}</p>
+            <ul className="divide-y divide-white/[0.06]">
+              {preview.map((row) => (
+                <li key={row.time} className="grid grid-cols-[3.25rem_1fr_auto] items-center gap-4 px-5 py-3 text-sm">
+                  <span className="tabular font-medium text-zinc-400">{row.time}</span>
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium text-zinc-100">{row.client}</span>
+                    <span className="block truncate text-xs text-zinc-500">
+                      {row.service} · {row.pro}
+                    </span>
+                  </span>
+                  <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${row.tone}`}>
+                    {row.status}
+                  </span>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="flex items-end justify-between gap-6">
-            <div className="flex w-80 items-center gap-3 rounded-2xl border border-white/10 bg-zinc-900/70 p-3 shadow-2xl backdrop-blur-xl">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-500 text-zinc-950">
-                <BellRing className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 text-sm leading-tight">
-                <p className="font-semibold">Novo agendamento online</p>
-                <p className="truncate text-xs text-zinc-400">Corte + barba · hoje 14:00 · sinal pago</p>
-              </div>
-            </div>
-            <div className="flex -space-x-4">
-              {[TOWEL, DESIGN].map((src) => (
-                <img
-                  key={src}
-                  src={src}
-                  alt=""
-                  className="h-20 w-20 rounded-2xl border-2 border-zinc-950 object-cover shadow-xl"
-                />
-              ))}
-            </div>
-          </div>
+          <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-sm text-zinc-500">
+            {modules.map((m) => (
+              <li key={m} className="flex items-center gap-2">
+                <span className="h-1 w-1 rounded-full bg-zinc-600" />
+                {m}
+              </li>
+            ))}
+          </ul>
         </div>
+
+        <p className="relative text-xs text-zinc-600">© {new Date().getFullYear()} Seu Barbeiro</p>
       </aside>
 
       {/* Formulário */}
-      <main className="relative flex flex-1 items-center justify-center overflow-hidden px-5 py-10 sm:px-8">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-40 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-amber-500/15 blur-3xl"
-        />
-        <div className="relative w-full max-w-sm animate-pop-in">
-          <div className="mb-9">
-            <div className="mb-7 flex items-center gap-3 lg:hidden">
-              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-linear-to-br from-amber-300 to-amber-600 text-zinc-950 shadow-lg shadow-amber-500/30">
-                <Scissors className="h-5 w-5" strokeWidth={2.5} />
-              </div>
-              <span className="font-display text-lg font-bold">Seu Barbeiro</span>
-            </div>
-            <h1 className="font-display text-3xl font-extrabold tracking-tight">
-              Bem-vindo de volta
-            </h1>
-            <p className="mt-1.5 text-sm text-zinc-400">
-              Entre para ver a agenda de hoje.
-            </p>
-          </div>
+      <main className="flex flex-1 flex-col px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:px-8">
+        <div className="lg:hidden">
+          <Brand />
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {editSalon ? (
+        <div className="flex flex-1 items-center justify-center py-10">
+          <div className="w-full max-w-sm">
+            <div className="mb-8">
+              <h1 className="font-display text-2xl font-bold tracking-tight">Entrar no painel</h1>
+              <p className="mt-1.5 text-sm text-zinc-400">
+                Use o e-mail e a senha da sua conta no salão.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {editSalon ? (
+                <label className="block space-y-1.5">
+                  <span className="text-sm font-medium text-zinc-300">Identificador do salão</span>
+                  <div className="relative">
+                    <Store className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                    <input
+                      required
+                      pattern="[a-z0-9\-]+"
+                      title="Use letras minúsculas, números e hífen"
+                      autoCapitalize="none"
+                      value={salon}
+                      onChange={(e) => setSalon(e.target.value.toLowerCase())}
+                      placeholder="ex.: seu-barbeiro"
+                      className={field}
+                    />
+                  </div>
+                </label>
+              ) : (
+                <div className="flex items-center justify-between rounded-lg border border-white/10 bg-zinc-900/60 px-3.5 py-2.5 text-sm">
+                  <span className="flex min-w-0 items-center gap-2 text-zinc-400">
+                    <Store className="h-4 w-4 shrink-0" />
+                    Salão <strong className="truncate font-semibold text-white">{salon}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setEditSalon(true)}
+                    className="text-xs font-semibold text-amber-400 hover:text-amber-300"
+                  >
+                    Trocar
+                  </button>
+                </div>
+              )}
+
               <label className="block space-y-1.5">
-                <span className="text-sm font-medium text-zinc-300">Identificador do salão</span>
+                <span className="text-sm font-medium text-zinc-300">E-mail</span>
                 <div className="relative">
-                  <Store className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                  <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
                   <input
-                    required
-                    pattern="[a-z0-9\-]+"
-                    title="Use letras minúsculas, números e hífen"
+                    type="email"
+                    autoComplete="username"
                     autoCapitalize="none"
-                    value={salon}
-                    onChange={(e) => setSalon(e.target.value.toLowerCase())}
-                    placeholder="ex.: seu-barbeiro"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="voce@seusalao.com"
+                    required
                     className={field}
                   />
                 </div>
               </label>
-            ) : (
-              <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-sm">
-                <span className="flex items-center gap-2 text-zinc-400">
-                  <Store className="h-4 w-4" />
-                  Salão <strong className="font-semibold text-white">{salon}</strong>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setEditSalon(true)}
-                  className="text-xs font-semibold text-amber-400 hover:text-amber-300"
+
+              <label className="block space-y-1.5">
+                <span className="text-sm font-medium text-zinc-300">Senha</span>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Sua senha"
+                    required
+                    className={`${field} pr-11`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-zinc-500 transition-colors hover:text-zinc-200"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </label>
+
+              {error && (
+                <div
+                  key={attempt}
+                  role="alert"
+                  className="animate-pop-in rounded-lg border border-red-500/25 bg-red-500/10 px-3.5 py-2.5 text-sm text-red-300"
                 >
-                  Trocar
-                </button>
-              </div>
-            )}
-
-            <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-zinc-300">E-mail</span>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-                <input
-                  type="email"
-                  autoComplete="username"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="voce@seusalao.com"
-                  required
-                  className={field}
-                />
-              </div>
-            </label>
-
-            <label className="block space-y-1.5">
-              <span className="text-sm font-medium text-zinc-300">Senha</span>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Sua senha"
-                  required
-                  className={`${field} pr-11`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-zinc-500 transition-colors hover:text-zinc-200"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </label>
-
-            {error && (
-              <div
-                key={attempt}
-                role="alert"
-                className="animate-pop-in rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-300"
-              >
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="group mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3.5 text-sm font-bold text-zinc-950 shadow-lg shadow-amber-500/25 transition-all hover:bg-amber-400 hover:shadow-amber-400/30 active:scale-[0.99] disabled:opacity-60"
-            >
-              {loading ? (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-950 border-t-transparent" />
-              ) : (
-                <>
-                  Entrar
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </>
+                  {error}
+                </div>
               )}
-            </button>
-          </form>
 
-          <div className="mt-10 border-t border-white/10 pt-6 text-center text-sm text-zinc-500">
-            É cliente?{' '}
-            <Link
-              to={`/agendar?salon=${encodeURIComponent(salon || getSalon())}`}
-              className="font-semibold text-amber-400 hover:text-amber-300"
-            >
-              Agende seu horário
-            </Link>
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400 disabled:opacity-60"
+              >
+                {loading ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-950 border-t-transparent" />
+                ) : (
+                  <>
+                    Entrar
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            </form>
           </div>
         </div>
+
+        <p className="text-center text-sm text-zinc-500">
+          É cliente?{' '}
+          <Link
+            to={`/agendar?salon=${encodeURIComponent(salon || getSalon())}`}
+            className="font-semibold text-amber-400 hover:text-amber-300"
+          >
+            Agende seu horário
+          </Link>
+        </p>
       </main>
     </div>
   )

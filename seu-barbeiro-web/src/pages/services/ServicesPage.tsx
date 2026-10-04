@@ -25,7 +25,7 @@ export function ServicesPage() {
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-800">Serviços</h1>
+          <h1 className="text-xl font-bold text-zinc-800 md:text-2xl">Serviços</h1>
           <p className="text-sm text-zinc-500 mt-0.5">{data.length} cadastrado(s)</p>
         </div>
         <button

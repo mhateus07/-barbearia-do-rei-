@@ -683,7 +683,7 @@ export function SettingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-800">Configurações</h1>
+          <h1 className="text-xl font-bold text-zinc-800 md:text-2xl">Configurações</h1>
           <p className="text-sm text-zinc-500 mt-0.5">
             Gerencie informações, horários e integrações
           </p>

@@ -103,14 +103,14 @@ function StatCard({
   }
   const t = textVariants[variant]
   return (
-    <div className={`rounded-2xl border p-5 ${variants[variant]}`}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className={`text-xs font-medium uppercase tracking-wide ${t.title}`}>{title}</p>
-          <p className={`mt-2 text-2xl font-bold ${t.value}`}>{value}</p>
-          {sub && <p className={`mt-1 text-xs ${t.sub}`}>{sub}</p>}
+    <div className={`min-w-0 rounded-2xl border p-4 sm:p-5 ${variants[variant]}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className={`text-[11px] font-medium uppercase leading-tight tracking-wide sm:text-xs ${t.title}`}>{title}</p>
+          <p className={`tabular mt-2 truncate text-lg font-bold sm:text-2xl ${t.value}`}>{value}</p>
+          {sub && <p className={`mt-1 truncate text-xs ${t.sub}`}>{sub}</p>}
         </div>
-        <div className={`rounded-xl p-2.5 ${t.icon}`}>
+        <div className={`hidden shrink-0 rounded-xl p-2.5 sm:block ${t.icon}`}>
           <Icon className="h-5 w-5" />
         </div>
       </div>
@@ -169,7 +169,7 @@ function SummaryTab({ from, to }: { from: string; to: string }) {
   return (
     <div className="space-y-5">
       {/* Cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard title="Receita do Período" value={formatCurrency(data?.totalIncome ?? 0)} sub="pagamentos recebidos" icon={TrendingUp} variant="income" />
         <StatCard title="Despesas Pagas" value={formatCurrency(data?.totalExpenses ?? 0)} sub="no período" icon={TrendingDown} variant="expense" />
         <StatCard title="Saldo" value={formatCurrency(data?.balance ?? 0)} sub="receita − despesas" icon={Wallet} variant={(data?.balance ?? 0) >= 0 ? 'default' : 'expense'} />
@@ -1142,25 +1142,25 @@ export function FinancesPage() {
           <h1 className="text-xl md:text-2xl font-bold text-zinc-800">Financeiro</h1>
           <p className="text-sm text-zinc-500 mt-0.5">Controle de receitas, despesas e fluxo de caixa</p>
         </div>
-        <div className="flex flex-wrap items-end gap-2">
+        <div className="grid grid-cols-2 items-end gap-2 sm:flex sm:flex-wrap">
           {(activeTab === 'summary' || activeTab === 'commissions') && (
             <>
-              <div className="flex flex-col gap-0.5">
+              <div className="flex min-w-0 flex-col gap-0.5">
                 <label className="text-[10px] text-zinc-400 uppercase tracking-wide">De</label>
                 <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
-                  className="rounded-lg border border-zinc-200 px-2.5 py-1.5 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400" />
+                  className="w-full min-w-0 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400" />
               </div>
-              <div className="flex flex-col gap-0.5">
+              <div className="flex min-w-0 flex-col gap-0.5">
                 <label className="text-[10px] text-zinc-400 uppercase tracking-wide">Até</label>
                 <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
-                  className="rounded-lg border border-zinc-200 px-2.5 py-1.5 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400" />
+                  className="w-full min-w-0 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-sm text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-amber-400" />
               </div>
             </>
           )}
           <button
             onClick={handleExportPDF}
             disabled={exporting}
-            className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-700 transition-colors disabled:opacity-50"
+            className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-700 transition-colors disabled:opacity-50"
           >
             <FileDown className="h-4 w-4 text-zinc-500" />
             {exporting ? 'Gerando...' : 'Exportar PDF'}
@@ -1169,7 +1169,7 @@ export function FinancesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="overflow-x-auto pb-1">
+      <div className="no-scrollbar -mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
       <div className="flex gap-1 rounded-xl bg-zinc-100 p-1 w-fit min-w-full sm:min-w-0">
         {TABS.map((tab) => {
           const Icon = tab.icon

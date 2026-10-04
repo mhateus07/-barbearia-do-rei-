@@ -66,7 +66,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       `}
     >
       {/* Logo */}
-      <div className="px-5 py-5">
+      <div className="px-5 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
         <div className="flex items-center gap-3">
           {identity?.logo ? (
             <img
@@ -90,6 +90,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           {/* Botão fechar no mobile */}
           <button
             onClick={onClose}
+            aria-label="Fechar menu"
             className="md:hidden rounded-lg p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
           >
             <X className="h-5 w-5" />
@@ -168,7 +169,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-4 space-y-1">
+      <div className="px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-1">
         <p className="text-[10px] text-zinc-600 leading-snug">
           {identity?.address}
         </p>

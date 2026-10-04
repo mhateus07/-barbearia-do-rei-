@@ -101,7 +101,7 @@ export function CashPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 md:text-3xl">Caixa</h1>
+          <h1 className="text-xl font-extrabold tracking-tight text-zinc-900 md:text-3xl">Caixa</h1>
           <p className="mt-1 text-sm text-zinc-500">
             Abertura, sangrias, reforços e conferência do dinheiro na gaveta.
           </p>
@@ -124,7 +124,7 @@ export function CashPage() {
       {isLoading ? (
         <Skeleton className="h-48 rounded-2xl" />
       ) : !cash ? (
-        <section className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-white p-8 shadow-soft">
+        <section className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-white p-5 shadow-soft sm:p-8">
           <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-amber-100 blur-2xl" aria-hidden />
           <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">

@@ -22,18 +22,18 @@ function StatCard({
   accent?: boolean
 }) {
   return (
-    <div className={`rounded-2xl border p-5 ${accent ? 'bg-amber-500 border-amber-400' : 'bg-white border-zinc-200'}`}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className={`text-xs font-medium uppercase tracking-wide ${accent ? 'text-white/85' : 'text-zinc-500'}`}>
+    <div className={`min-w-0 rounded-2xl border p-4 sm:p-5 ${accent ? 'bg-amber-500 border-amber-400' : 'bg-white border-zinc-200'}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className={`text-[11px] font-medium uppercase leading-tight tracking-wide sm:text-xs ${accent ? 'text-white/85' : 'text-zinc-500'}`}>
             {title}
           </p>
-          <p className={`mt-2 text-3xl font-bold ${accent ? 'text-white' : 'text-zinc-800'}`}>
+          <p className={`tabular mt-2 truncate text-xl font-bold sm:text-2xl lg:text-3xl ${accent ? 'text-white' : 'text-zinc-800'}`}>
             {value}
           </p>
-          {sub && <p className={`mt-1 text-xs ${accent ? 'text-white/70' : 'text-zinc-400'}`}>{sub}</p>}
+          {sub && <p className={`mt-1 truncate text-xs ${accent ? 'text-white/70' : 'text-zinc-400'}`}>{sub}</p>}
         </div>
-        <div className={`rounded-xl p-2.5 ${accent ? 'bg-amber-400/40' : 'bg-zinc-100'}`}>
+        <div className={`hidden shrink-0 rounded-xl p-2.5 sm:block ${accent ? 'bg-amber-400/40' : 'bg-zinc-100'}`}>
           <Icon className={`h-5 w-5 ${accent ? 'text-white' : 'text-zinc-500'}`} />
         </div>
       </div>
@@ -89,14 +89,14 @@ export function DashboardPage() {
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-zinc-800">Dashboard</h1>
+        <h1 className="text-xl font-bold text-zinc-800 md:text-2xl">Dashboard</h1>
         <p className="text-sm text-zinc-500 mt-0.5">
           {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
         </p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard title="Receita do Dia" value={formatCurrency(summary?.revenueToday ?? 0)} icon={DollarSign} accent />
         <StatCard title="Agendamentos" value={summary?.totalAppointments ?? 0} sub="hoje" icon={CalendarDays} />
         <StatCard title="Concluídos" value={summary?.completed ?? 0} sub="atendimentos" icon={CheckCircle2} />

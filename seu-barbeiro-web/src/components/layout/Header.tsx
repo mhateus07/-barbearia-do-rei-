@@ -43,6 +43,9 @@ export function Header({ onMenuClick }: HeaderProps) {
       toast.error(error instanceof Error ? error.message : 'Não foi possível ativar.')
     }
   }
+  const themeIndex = Math.max(0, themes.findIndex((t) => t.id === preference))
+  const currentTheme = themes[themeIndex]
+  const nextTheme = themes[(themeIndex + 1) % themes.length]
   const today = new Date().toLocaleDateString('pt-BR', {
     weekday: 'long',
     day: 'numeric',
@@ -55,7 +58,7 @@ export function Header({ onMenuClick }: HeaderProps) {
     .join('')
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-zinc-200/80 bg-white/75 px-4 py-3 backdrop-blur-xl md:px-6">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-zinc-200/80 bg-white/75 px-3 pb-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] backdrop-blur-xl md:px-6 md:py-3">
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
@@ -67,7 +70,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         <p className="hidden text-sm first-letter:uppercase text-zinc-500 sm:block">{today}</p>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         {push.state !== 'unsupported' && push.state !== 'loading' && (
           <button
             onClick={togglePush}
@@ -87,10 +90,18 @@ export function Header({ onMenuClick }: HeaderProps) {
             )}
           </button>
         )}
+        <button
+          onClick={() => setPreference(nextTheme.id)}
+          aria-label={`${currentTheme.label}. Trocar para ${nextTheme.label.toLowerCase()}`}
+          title={currentTheme.label}
+          className="rounded-xl p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 sm:hidden"
+        >
+          <currentTheme.icon className="h-4 w-4" />
+        </button>
         <div
           role="radiogroup"
           aria-label="Tema"
-          className="flex items-center rounded-xl bg-zinc-100 p-0.5"
+          className="hidden items-center rounded-xl bg-zinc-100 p-0.5 sm:flex"
         >
           {themes.map(({ id, label, icon: Icon }) => (
             <button
@@ -111,7 +122,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           ))}
         </div>
 
-        <div className="flex items-center gap-2.5 rounded-xl py-1 pl-1 pr-2 sm:pr-3">
+        <div className="flex items-center gap-2.5 rounded-xl py-1 pl-1 pr-1 sm:pr-3">
           <div className="grid h-8 w-8 place-items-center rounded-full bg-linear-to-br from-amber-400 to-amber-600 text-xs font-bold text-white shadow-soft">
             {initials}
           </div>
@@ -125,7 +136,8 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         <button
           onClick={logout}
-          className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800"
+          aria-label="Sair"
+          className="flex items-center gap-1.5 rounded-xl p-2 text-sm sm:px-2.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800"
         >
           <LogOut className="h-4 w-4" />
           <span className="hidden sm:block">Sair</span>
