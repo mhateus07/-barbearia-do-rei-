@@ -37,6 +37,8 @@ agenda visual e escalas, financeiro, retorno, reativação, lista de espera e fi
 
 - [x] Produção no ar em 03/10/2026: https://seubarbeiro.impulsiodigital.com (VPS Contabo,
   Docker + Traefik), migrações aplicadas, HTTPS ativo e acesso do dono criado.
+- [ ] Trocar a senha inicial do dono (Agenda e operação → Equipe e serviços → Acessos da
+  equipe → Trocar senha) e apagar `/root/seu-barbeiro-acesso-inicial.txt` na VPS.
 - [ ] Cadastrar serviços, profissionais e horários; o banco de produção começou vazio.
 - [ ] Configurar e validar o provedor real de WhatsApp.
 - [ ] Realizar piloto e conferir as regras comerciais com a equipe.

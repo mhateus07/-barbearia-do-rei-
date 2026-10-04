@@ -19,6 +19,8 @@
 - `npm audit fix` na API e no painel
 - Rotas públicas com tratamento de erros único: mensagens amigáveis, falhas internas ocultadas; JSON malformado retorna 400
 - CSP libera imagens HTTPS externas (logos e fotos)
+- `deploy.sh`: o `docker compose exec` do backup consumia o restante do script remoto e o build nunca rodava (saía com sucesso); corrigido com `< /dev/null`
+- Painel: botão **Trocar senha** em Agenda e operação → Equipe e serviços → Acessos da equipe (a API já aceitava, faltava a opção)
 
 ### Organização
 - O sistema paralelo `saas-multi-tenant` foi arquivado na tag `arquivo/saas-multi-tenant` e removido da Contabo (backup em `/root/arquivo/`); só a `main` é desenvolvida
@@ -115,6 +117,7 @@
 - **Repositório**: https://github.com/mhateus07/-barbearia-do-rei-
 
 ## Próximos passos planejados
+- Trocar a senha inicial do dono pelo painel e apagar `/root/seu-barbeiro-acesso-inicial.txt` na VPS
 - Cadastrar serviços, profissionais e horários em produção
 - Configurar o provedor de WhatsApp e validar os lembretes
 - Recuperar os dados antigos da Barbearia do Rei, se a Hostinger tiver backup
