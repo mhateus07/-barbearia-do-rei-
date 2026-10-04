@@ -323,9 +323,8 @@ export function OperationsPage() {
     isOwner = admin?.role === 'OWNER'
   const [tab, setTab] = useState('agenda'),
     [date, setDate] = useState(localDate),
-    [view, setView] = useState<'day' | 'week'>(() =>
-      window.matchMedia('(min-width: 1024px)').matches ? 'week' : 'day',
-    ),
+    // Dia (uma coluna por profissional) é o mais legível com a agenda cheia.
+    [view, setView] = useState<'day' | 'week'>('day'),
     [barberFilter, setBarberFilter] = useState(''),
     [form, setForm] = useState<FormSpec | null>(null)
   const rangeStart =

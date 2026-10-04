@@ -127,6 +127,22 @@ se o provedor não respeitar o cabeçalho `Idempotency-Key`.
 - **Avisos push**: exigem `VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY` (o `deploy.sh` gera).
   No iPhone, o painel precisa estar instalado na tela inicial.
 
+## Dados de demonstração
+
+`scripts/demo-data.cjs` transforma um salão vazio numa barbearia em funcionamento, com
+dados fictícios: 4 profissionais, 9 serviços, 72 clientes, 60 dias de histórico e 14 de
+agenda, recebimentos, despesas, comissões, vales, caixas fechados, planos e assinantes,
+lista de espera e fichas técnicas. WhatsApp e Pix não são ligados e os telefones usam a
+faixa 9 0000-xxxx, que não é atribuída.
+
+```sh
+# No servidor (dentro do container do app)
+docker compose exec -T app node scripts/demo-data.cjs criar        # só com o salão vazio
+docker compose exec -T app node scripts/demo-data.cjs limpar --sim # apaga tudo, menos acessos e configurações
+```
+
+Rode `limpar --sim` antes de começar a usar o salão de verdade.
+
 ## Atualização de instalação existente
 
 Faça backup e ensaie a atualização em uma cópia antes do deploy. A migração inclui

@@ -39,7 +39,9 @@ agenda visual e escalas, financeiro, retorno, reativação, lista de espera e fi
   Docker + Traefik), migrações aplicadas, HTTPS ativo e acesso do dono criado.
 - [ ] Trocar a senha inicial do dono (Agenda e operação → Equipe e serviços → Acessos da
   equipe → Trocar senha) e apagar `/root/seu-barbeiro-acesso-inicial.txt` na VPS.
-- [ ] Cadastrar serviços, profissionais e horários; o banco de produção começou vazio.
+- [ ] Produção está com **dados fictícios de demonstração** (04/10/2026). Antes do uso real, rodar
+  `docker compose exec -T app node scripts/demo-data.cjs limpar --sim` e cadastrar serviços,
+  profissionais e horários verdadeiros.
 - [ ] Configurar e validar o provedor real de WhatsApp.
 - [ ] Realizar piloto e conferir as regras comerciais com a equipe.
 - [ ] Colar o Access Token de produção do Mercado Pago (Configurações → Pix e cliente) e escolher a regra do sinal.

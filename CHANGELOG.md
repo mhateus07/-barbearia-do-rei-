@@ -19,6 +19,10 @@
 - **Profissional bloqueia a própria agenda** (e só a dele)
 - **Avisos no celular (push) e app instalável (PWA)**: novo agendamento online, cliente confirmou/remarcou/cancelou, sinal e mensalidade pagos
 
+### Demonstração
+- `scripts/demo-data.cjs` (`criar` / `limpar --sim`): o salão principal em produção foi preenchido com uma barbearia fictícia em funcionamento para apresentação
+- A agenda passa a abrir no modo Dia (uma coluna por profissional)
+
 ### Técnico
 - Migração `20261004000000_professional_features` (somente adições; um único caixa aberto garantido no banco)
 - Webhook `POST /api/v1/webhooks/mercadopago/:salon`: o pagamento é sempre reconsultado na API do Mercado Pago
