@@ -12,14 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Seu Barbeiro" />
     <title>Seu Barbeiro</title>
-    <script>
-      // Aplica o tema salvo antes da primeira pintura para evitar piscar.
-      try {
-        var t = localStorage.getItem('sb-theme')
-        if (t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches))
-          document.documentElement.dataset.theme = 'dark'
-      } catch (e) {}
-    </script>
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>
