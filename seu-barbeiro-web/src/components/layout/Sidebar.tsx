@@ -4,6 +4,7 @@ import { bookingLink } from '../../api/salon'
 import { useAuth } from '../../contexts/auth-state'
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { BrandMark } from '../ui/BrandMark'
 import {
   LayoutDashboard,
   CalendarDays,
@@ -75,9 +76,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               className="h-10 w-10 rounded-xl object-cover ring-1 ring-white/10"
             />
           ) : (
-            <div className="h-10 w-10 rounded-xl bg-linear-to-br from-amber-300 to-amber-600 text-zinc-950 grid place-items-center shadow-lg shadow-amber-500/20">
-              <Scissors className="h-5 w-5" />
-            </div>
+            <BrandMark className="h-10 w-10" />
           )}
           <div className="flex-1">
             <p className="font-display font-bold text-white text-sm leading-tight">

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Scissors } from 'lucide-react'
+import { BrandMark } from '../../components/ui/BrandMark'
 
 /** Moldura escura das páginas abertas pelo cliente (link do WhatsApp). */
 export function PublicShell({ title, children }: { title?: string; children: ReactNode }) {
@@ -11,9 +11,7 @@ export function PublicShell({ title, children }: { title?: string; children: Rea
       />
       <header className="relative border-b border-zinc-800/80">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-5 py-4">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-linear-to-br from-amber-300 to-amber-600 text-zinc-950">
-            <Scissors className="h-4 w-4" strokeWidth={2.5} />
-          </div>
+          <BrandMark className="h-9 w-9" />
           <p className="font-display font-bold">{title || 'Seu horário'}</p>
         </div>
       </header>

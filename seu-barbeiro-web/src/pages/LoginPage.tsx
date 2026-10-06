@@ -2,7 +2,8 @@ import { getSalon } from '../api/salon'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/auth-state'
-import { Scissors, Mail, Lock, ArrowRight, Eye, EyeOff, Store } from 'lucide-react'
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Store } from 'lucide-react'
+import { BrandMark } from '../components/ui/BrandMark'
 
 // Prévia ilustrativa da agenda, desenhada com os mesmos elementos do painel.
 const preview = [
@@ -20,9 +21,7 @@ const field =
 function Brand() {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="grid h-8 w-8 place-items-center rounded-lg bg-amber-500 text-zinc-950">
-        <Scissors className="h-4 w-4" strokeWidth={2.5} />
-      </div>
+      <BrandMark className="h-8 w-8" />
       <span className="font-display text-base font-bold tracking-tight">Seu Barbeiro</span>
     </div>
   )
