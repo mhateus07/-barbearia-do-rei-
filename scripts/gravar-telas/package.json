@@ -1,0 +1,8 @@
+{
+  "name": "gravar-telas",
+  "private": true,
+  "description": "Grava os vídeos da página de apresentação (seu-barbeiro-web/public/videos) a partir de uma cópia local.",
+  "dependencies": {
+    "playwright": "1.57.0"
+  }
+}

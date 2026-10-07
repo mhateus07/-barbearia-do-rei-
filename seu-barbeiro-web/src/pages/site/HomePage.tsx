@@ -4,9 +4,9 @@ import { Check, ChevronDown } from 'lucide-react'
 import { useAuth } from '../../contexts/auth-state'
 import { BrandLogo, BrandMark } from '../../components/ui/BrandMark'
 import { LossCalculator } from './LossCalculator'
+import { ScreenVideo } from './ScreenVideo'
+import { videos } from './videos'
 import {
-  AgendaMock,
-  BookingMock,
   BrowserFrame,
   CashMock,
   MiniList,
@@ -37,7 +37,11 @@ const FLOW: { step: string; title: string; text: string; visual: ReactNode }[] =
     text: 'Escolhe o serviço, o profissional e um horário livre, no celular. Sem baixar aplicativo e sem criar conta. Você manda o link no WhatsApp ou coloca na bio do Instagram.',
     visual: (
       <PhoneFrame className="mx-auto w-[60%] max-w-[250px]">
-        <BookingMock />
+        <ScreenVideo
+          video={videos.agendamento}
+          label="Cliente escolhendo serviço, profissional e horário no celular até o horário confirmado"
+          className="block h-full w-full object-cover object-top"
+        />
       </PhoneFrame>
     ),
   },
@@ -245,10 +249,22 @@ export function HomePage() {
           <div className="relative mx-auto mt-14 w-full max-w-6xl px-4">
             <div className="relative sm:pr-[12%]">
               <BrowserFrame url="seubarbeiro.impulsiodigital.com/operacao" className="-mb-24 sm:-mb-40">
-                <AgendaMock />
+                <div className="aspect-[16/9] overflow-hidden bg-zinc-50">
+                  <ScreenVideo
+                    video={videos.agenda}
+                    label="Agenda do dia: um horário livre vira atendimento e a comanda de outro cliente é aberta"
+                    priority
+                    className="block h-full w-full object-cover"
+                  />
+                </div>
               </BrowserFrame>
               <PhoneFrame className="absolute -bottom-28 right-4 hidden w-[26%] max-w-[230px] sm:block">
-                <BookingMock />
+                <ScreenVideo
+                  video={videos.agendamento}
+                  label="Cliente agendando pelo celular"
+                  priority
+                  className="block h-full w-full object-cover object-top"
+                />
               </PhoneFrame>
             </div>
           </div>
