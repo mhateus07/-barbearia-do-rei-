@@ -25,8 +25,8 @@ export function OfferPage() {
     }
   }
   return (
-    <main className="min-h-screen bg-zinc-100 grid place-items-center p-6">
-      <div className="max-w-md rounded-2xl bg-white p-8 space-y-4 shadow-xs">
+    <main className="min-h-dvh bg-zinc-50 grid place-items-center p-6 text-zinc-900">
+      <div className="max-w-md rounded-2xl border border-zinc-200 bg-white p-8 space-y-4">
         <h1 className="text-2xl font-bold">Uma vaga para você</h1>
         {error ? (
           <p>Oferta expirada ou indisponível.</p>
@@ -40,7 +40,7 @@ export function OfferPage() {
             <button
               disabled={busy || done}
               onClick={accept}
-              className="rounded-xl bg-amber-500 px-5 py-3 disabled:opacity-50"
+              className="rounded-xl bg-amber-500 px-5 py-3 font-semibold text-white hover:bg-amber-400 disabled:opacity-50"
             >
               {busy
                 ? 'Reservando…'

@@ -9,10 +9,10 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants = {
   primary:
-    'bg-amber-500 text-zinc-950 shadow-soft hover:bg-amber-400 disabled:bg-amber-300 disabled:text-zinc-600',
+    'bg-amber-500 text-white hover:bg-amber-400 disabled:bg-amber-300 disabled:text-zinc-600',
   secondary:
-    'bg-zinc-900 text-white shadow-soft hover:bg-zinc-800 disabled:bg-zinc-500',
-  danger: 'bg-red-600 text-white shadow-soft hover:bg-red-500 disabled:bg-red-300',
+    'border border-zinc-400 bg-white text-zinc-900 hover:border-zinc-900 hover:bg-zinc-50 disabled:text-zinc-400',
+  danger: 'bg-red-600 text-white hover:bg-red-500 disabled:bg-red-300',
   ghost: 'bg-transparent text-zinc-700 hover:bg-zinc-100 disabled:text-zinc-300',
 }
 
@@ -35,7 +35,7 @@ export function Button({
     <button
       {...props}
       disabled={disabled || loading}
-      className={`inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all active:scale-[0.98] disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-colors active:translate-y-px disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
     >
       {loading && <Spinner size="sm" />}
       {children}

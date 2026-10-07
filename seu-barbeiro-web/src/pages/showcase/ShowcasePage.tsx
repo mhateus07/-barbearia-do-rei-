@@ -23,7 +23,7 @@ export function ShowcasePage() {
     return <p>Não foi possível carregar a apresentação do salão.</p>
   return (
     <main className="max-w-5xl mx-auto space-y-8">
-      <section className="rounded-3xl bg-zinc-950 text-white p-8 md:p-12 space-y-4">
+      <section className="on-ink rounded-3xl bg-navalha text-espuma p-8 md:p-12 space-y-4">
         {data.info.shopLogo && (
           <img
             src={data.info.shopLogo}
@@ -32,12 +32,12 @@ export function ShowcasePage() {
           />
         )}
         <h1 className="text-4xl font-bold">{data.info.shopName}</h1>
-        <p className="text-zinc-300 max-w-xl">{data.info.shopDescription}</p>
+        <p className="text-toalha/80 max-w-xl">{data.info.shopDescription}</p>
         <a
           href={bookingLink()}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block bg-amber-500 text-zinc-950 px-5 py-3 rounded-xl font-semibold"
+          className="inline-block bg-espuma text-navalha px-5 py-3 rounded-xl font-semibold hover:bg-white"
         >
           Agendar atendimento
         </a>

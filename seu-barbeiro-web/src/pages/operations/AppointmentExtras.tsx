@@ -74,7 +74,7 @@ export function AppointmentExtras({ appointment: a }: { appointment: Appointment
             <button
               disabled={apply.isPending}
               onClick={() => apply.mutate()}
-              className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold ${sub.applied ? 'text-amber-800 hover:underline' : 'bg-amber-500 text-zinc-950 hover:bg-amber-400'}`}
+              className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold ${sub.applied ? 'text-amber-800 hover:underline' : 'bg-amber-500 text-white hover:bg-amber-400'}`}
             >
               {sub.applied ? 'Remover' : 'Usar assinatura'}
             </button>

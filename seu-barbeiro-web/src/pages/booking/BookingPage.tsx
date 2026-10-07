@@ -219,7 +219,7 @@ export function BookingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+      <div className="on-ink min-h-dvh bg-zinc-950 flex items-center justify-center">
         <Loader2 className="h-8 w-8 text-amber-500 animate-spin" />
       </div>
     )
@@ -227,7 +227,7 @@ export function BookingPage() {
 
   if (loadError)
     return (
-      <main className="p-10 text-center">
+      <main className="on-ink min-h-dvh bg-zinc-950 p-10 text-center text-espuma">
         <p>Não foi possível carregar este salão.</p>
         <button
           className="underline mt-4"
@@ -239,24 +239,24 @@ export function BookingPage() {
     )
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
+    <div className="on-ink flex min-h-dvh flex-col bg-zinc-950 text-espuma">
       {/* Header */}
-      <header className="border-b border-zinc-800 bg-zinc-900">
+      <header className="border-b border-white/10 bg-navalha">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
           <img
             src={info?.shopLogo || '/favicon.svg'}
             alt="Logo do salão"
-            className="h-10 w-10 rounded-xl object-cover"
+            className="h-11 w-11 rounded-xl object-cover ring-1 ring-white/15"
           />
           <div>
-            <p className="font-bold text-white leading-tight">
+            <p className="font-display text-[17px] font-bold leading-tight text-espuma">
               {info?.shopName ?? 'Agendamento online'}
             </p>
           </div>
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="w-full max-w-2xl mx-auto flex-1 px-4 py-6">
         {/* Step 6 — Sucesso */}
         {step === 6 && appointment?.deposit && !depositPaid && (
           <div className="py-6 animate-pop-in">
@@ -287,7 +287,7 @@ export function BookingPage() {
               </div>
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">
-              Agendamento confirmado!
+              Horário confirmado
             </h2>
             <p className="text-zinc-400 mb-8">
               Até logo, {appointment.client.name.split(' ')[0]}! Te esperamos no
@@ -411,7 +411,7 @@ export function BookingPage() {
             {step === 1 && (
               <div className="space-y-4">
                 <div className="mb-6">
-                  <h2 className="text-xl font-bold text-white">
+                  <h2 className="text-2xl font-extrabold text-espuma">
                     Escolha os serviços
                   </h2>
                   <p className="text-zinc-400 text-sm mt-1">
@@ -454,7 +454,7 @@ export function BookingPage() {
                               </span>
                             </div>
                           </div>
-                          <span className="text-amber-400 font-bold text-lg shrink-0">
+                          <span className="hora shrink-0 text-base font-medium text-espuma">
                             {formatCurrency(Number(service.price))}
                           </span>
                         </div>
@@ -484,7 +484,7 @@ export function BookingPage() {
             {step === 2 && (
               <div className="space-y-4">
                 <div className="mb-6">
-                  <h2 className="text-xl font-bold text-white">
+                  <h2 className="text-2xl font-extrabold text-espuma">
                     Escolha o profissional
                   </h2>
                   <p className="text-zinc-400 text-sm mt-1">
@@ -578,7 +578,7 @@ export function BookingPage() {
             {step === 3 && (
               <div className="space-y-6">
                 <div className="mb-6">
-                  <h2 className="text-xl font-bold text-white">
+                  <h2 className="text-2xl font-extrabold text-espuma">
                     Escolha a data
                   </h2>
                   <p className="text-zinc-400 text-sm mt-1">
@@ -675,7 +675,7 @@ export function BookingPage() {
             {step === 4 && (
               <div className="space-y-5">
                 <div className="mb-6">
-                  <h2 className="text-xl font-bold text-white">Seus dados</h2>
+                  <h2 className="text-2xl font-extrabold text-espuma">Seus dados</h2>
                   <p className="text-zinc-400 text-sm mt-1">
                     Para identificar e confirmar seu agendamento
                   </p>
@@ -758,7 +758,7 @@ export function BookingPage() {
             {step === 5 && (
               <div className="space-y-5">
                 <div className="mb-6">
-                  <h2 className="text-xl font-bold text-white">
+                  <h2 className="text-2xl font-extrabold text-espuma">
                     Confirmar agendamento
                   </h2>
                   <p className="text-zinc-400 text-sm mt-1">
@@ -892,7 +892,7 @@ export function BookingPage() {
                   ) : (
                     <>
                       <CheckCircle2 className="h-4 w-4" />
-                      Confirmar Agendamento
+                      Confirmar agendamento
                     </>
                   )}
                 </button>
@@ -901,6 +901,10 @@ export function BookingPage() {
           </>
         )}
       </div>
+
+      <footer className="mx-auto flex max-w-2xl items-center justify-center gap-2 px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-6 text-xs text-zinc-500">
+        Agendamento online por Seu Barbeiro
+      </footer>
     </div>
   )
 }

@@ -58,7 +58,7 @@ export function Header({ onMenuClick }: HeaderProps) {
     .join('')
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-zinc-200/80 bg-white/75 px-3 pb-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] backdrop-blur-xl md:px-6 md:py-3">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-zinc-200 bg-zinc-50 px-3 pb-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] md:px-6 md:py-3">
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
@@ -67,7 +67,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         >
           <Menu className="h-5 w-5" />
         </button>
-        <p className="hidden text-sm first-letter:uppercase text-zinc-500 sm:block">{today}</p>
+        <p className="hidden text-sm font-medium first-letter:uppercase text-zinc-600 sm:block">{today}</p>
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2">
@@ -76,7 +76,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             onClick={togglePush}
             aria-label={push.state === 'on' ? 'Desligar avisos neste aparelho' : 'Receber avisos neste aparelho'}
             title={push.state === 'on' ? 'Avisos ligados neste aparelho' : 'Receber avisos de novos agendamentos'}
-            className={`relative rounded-xl p-2 transition-colors ${push.state === 'on' ? 'text-amber-600 hover:bg-amber-50' : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800'}`}
+            className={`relative rounded-xl p-2 transition-colors ${push.state === 'on' ? 'text-zinc-900 hover:bg-zinc-100' : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800'}`}
           >
             {push.state === 'on' ? (
               <BellRing className="h-4 w-4" />
@@ -86,7 +86,7 @@ export function Header({ onMenuClick }: HeaderProps) {
               <Bell className="h-4 w-4" />
             )}
             {push.state === 'off' && (
-              <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-amber-500" />
+              <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-accent" />
             )}
           </button>
         )}
@@ -101,7 +101,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         <div
           role="radiogroup"
           aria-label="Tema"
-          className="hidden items-center rounded-xl bg-zinc-100 p-0.5 sm:flex"
+          className="hidden items-center rounded-xl border border-zinc-200 bg-zinc-100 p-0.5 sm:flex"
         >
           {themes.map(({ id, label, icon: Icon }) => (
             <button
@@ -111,9 +111,9 @@ export function Header({ onMenuClick }: HeaderProps) {
               aria-label={label}
               title={label}
               onClick={() => setPreference(id)}
-              className={`rounded-[10px] p-1.5 transition-all ${
+              className={`rounded-lg p-1.5 transition-colors ${
                 preference === id
-                  ? 'bg-white text-zinc-900 shadow-soft'
+                  ? 'bg-white text-zinc-900 shadow-[0_1px_2px_rgb(21_35_63/0.12)]'
                   : 'text-zinc-400 hover:text-zinc-700'
               }`}
             >
@@ -123,7 +123,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-2.5 rounded-xl py-1 pl-1 pr-1 sm:pr-3">
-          <div className="grid h-8 w-8 place-items-center rounded-full bg-linear-to-br from-amber-400 to-amber-600 text-xs font-bold text-white shadow-soft">
+          <div className="grid h-8 w-8 place-items-center rounded-full bg-zinc-900 font-display text-xs font-bold text-white">
             {initials}
           </div>
           <div className="hidden leading-tight sm:block">

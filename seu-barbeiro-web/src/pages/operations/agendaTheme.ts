@@ -8,28 +8,28 @@ export const statusLabels: Record<string, string> = {
 }
 
 export const statusStyles: Record<string, string> = {
-  SCHEDULED: 'border-l-amber-500 bg-amber-50 hover:bg-amber-100',
-  CONFIRMED: 'border-l-sky-500 bg-sky-50 hover:bg-sky-100',
-  IN_PROGRESS: 'border-l-violet-500 bg-violet-50 hover:bg-violet-100',
-  COMPLETED: 'border-l-emerald-500 bg-emerald-50 hover:bg-emerald-100',
+  SCHEDULED: 'border-amber-200 bg-amber-100 hover:border-amber-300',
+  CONFIRMED: 'border-emerald-200 bg-emerald-50 hover:border-emerald-300',
+  IN_PROGRESS: 'border-yellow-700/30 bg-yellow-100 hover:border-yellow-700/50',
+  COMPLETED: 'border-zinc-200 bg-zinc-100 hover:border-zinc-300',
 }
 
 export const statusDots: Record<string, string> = {
-  SCHEDULED: 'bg-amber-500',
-  CONFIRMED: 'bg-sky-500',
-  IN_PROGRESS: 'bg-violet-500',
-  COMPLETED: 'bg-emerald-500',
+  SCHEDULED: 'bg-amber-100 ring-1 ring-amber-300',
+  CONFIRMED: 'bg-emerald-50 ring-1 ring-emerald-300',
+  IN_PROGRESS: 'bg-yellow-100 ring-1 ring-yellow-700/40',
+  COMPLETED: 'bg-zinc-100 ring-1 ring-zinc-300',
 }
 
 const PALETTE = [
-  '#f59e0b',
-  '#0ea5e9',
-  '#8b5cf6',
-  '#10b981',
-  '#f43f5e',
-  '#14b8a6',
-  '#f97316',
-  '#6366f1',
+  '#3e6aa8',
+  '#2a8256',
+  '#c0782a',
+  '#7a5ca8',
+  '#b83a1e',
+  '#2b8a8f',
+  '#8a90a0',
+  '#15233f',
 ]
 
 /** Cor fixa por profissional, na ordem em que aparecem na agenda. */

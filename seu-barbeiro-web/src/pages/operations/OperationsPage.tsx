@@ -231,7 +231,7 @@ function ActionForm({
     }
   }
   return (
-    <div className="fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-zinc-950/40 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-zinc-950/55 p-4">
       <section
         ref={dialog}
         onKeyDown={dialogKey}
@@ -306,7 +306,7 @@ function ActionForm({
           )}
           <button
             disabled={busy}
-            className="w-full rounded-xl bg-amber-500 p-3 font-semibold text-zinc-950 shadow-soft transition-all hover:bg-amber-400 active:scale-[0.99] disabled:opacity-50"
+            className="w-full rounded-xl bg-amber-500 p-3 font-semibold text-white transition-colors hover:bg-amber-400 active:translate-y-px disabled:opacity-50"
           >
             {busy ? 'Salvando…' : 'Confirmar'}
           </button>
@@ -629,7 +629,7 @@ export function OperationsPage() {
         {isStaff && (
           <button
             onClick={() => book()}
-            className="flex w-full items-center justify-center gap-2 rounded-xl sm:w-auto bg-amber-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 shadow-soft transition-all hover:bg-amber-400 hover:shadow-lift active:scale-[0.98]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl sm:w-auto bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-amber-400 active:scale-[0.98]"
           >
             <Plus size={16} strokeWidth={2.5} /> Novo atendimento
           </button>
@@ -752,7 +752,7 @@ export function OperationsPage() {
                     role="radio"
                     aria-checked={view === id}
                     onClick={() => setView(id)}
-                    className={`flex-1 rounded-lg px-3 py-1 text-sm font-medium transition-all ${view === id ? 'bg-amber-500 text-zinc-950 shadow-soft' : 'text-zinc-500 hover:text-zinc-900'}`}
+                    className={`flex-1 rounded-lg px-3 py-1 text-sm font-medium transition-all ${view === id ? 'bg-white text-zinc-900 shadow-[0_1px_2px_rgb(21_35_63/0.12)]' : 'text-zinc-500 hover:text-zinc-900'}`}
                   >
                     {label}
                   </button>
@@ -1609,7 +1609,7 @@ export function OperationsPage() {
                 )}
                 {selectedFresh.status === 'COMPLETED' && (
                   <button
-                    className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold"
+                    className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white"
                     onClick={() => book(selectedFresh)}
                   >
                     Agendar retorno

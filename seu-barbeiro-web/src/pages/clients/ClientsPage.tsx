@@ -34,7 +34,7 @@ export function ClientsPage() {
         </div>
         <button
           onClick={() => { setEditing(null); setModalOpen(true) }}
-          className="flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-3 py-2.5 md:px-4 text-sm font-semibold text-white transition-colors shadow-xs shadow-amber-500/25 whitespace-nowrap"
+          className="flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-3 py-2.5 md:px-4 text-sm font-semibold text-white transition-colors whitespace-nowrap"
         >
           <Plus className="h-4 w-4" />
           <span className="hidden sm:inline">Novo Cliente</span>

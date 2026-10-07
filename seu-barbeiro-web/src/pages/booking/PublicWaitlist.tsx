@@ -67,7 +67,7 @@ export function PublicWaitlist({
               required
               minLength={2}
               name="name"
-              className="block w-full mt-1 p-3 rounded-xl bg-zinc-900 border border-zinc-700"
+              className="block w-full mt-1 p-3 rounded-xl bg-zinc-900 border border-zinc-700 text-espuma outline-hidden focus:border-amber-500"
             />
           </label>
           <label className="block text-sm text-zinc-300">
@@ -76,7 +76,7 @@ export function PublicWaitlist({
               required
               name="phone"
               type="tel"
-              className="block w-full mt-1 p-3 rounded-xl bg-zinc-900 border border-zinc-700"
+              className="block w-full mt-1 p-3 rounded-xl bg-zinc-900 border border-zinc-700 text-espuma outline-hidden focus:border-amber-500"
             />
           </label>
           <label className="flex items-start gap-2 text-xs text-zinc-400">

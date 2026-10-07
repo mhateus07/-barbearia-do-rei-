@@ -124,11 +124,10 @@ export function CashPage() {
       {isLoading ? (
         <Skeleton className="h-48 rounded-2xl" />
       ) : !cash ? (
-        <section className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-white p-5 shadow-soft sm:p-8">
-          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-amber-100 blur-2xl" aria-hidden />
-          <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+        <section className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-white p-5 sm:p-8">
+                    <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
-              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-zinc-900 text-amber-400">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-navalha text-espuma">
                 <Landmark className="h-7 w-7" />
               </div>
               <div>
@@ -164,13 +163,12 @@ export function CashPage() {
       ) : (
         <>
           <section className="grid gap-4 md:grid-cols-[1.3fr_1fr]">
-            <div className="relative overflow-hidden rounded-3xl bg-neutral-900 p-6 text-neutral-50 ring-1 ring-neutral-800 shadow-lift">
-              <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-amber-500/20 blur-3xl" aria-hidden />
-              <p className="flex items-center gap-2 text-sm text-neutral-400">
-                <Banknote className="h-4 w-4 text-amber-400" /> Dinheiro esperado na gaveta
+            <div className="on-ink relative overflow-hidden rounded-3xl bg-navalha p-6 text-espuma">
+                            <p className="label-caps flex items-center gap-2 text-toalha">
+                <Banknote className="h-4 w-4" /> Dinheiro esperado na gaveta
               </p>
-              <p className="tabular mt-2 font-display text-4xl font-extrabold">{formatCurrency(cash.expected)}</p>
-              <p className="mt-1 text-xs text-neutral-500">Aberto em {dateTime(cash.openedAt)}</p>
+              <p className="tabular mt-3 font-display text-[40px] leading-[44px] font-extrabold">{formatCurrency(cash.expected)}</p>
+              <p className="mt-2 text-xs text-zinc-500">Aberto em {dateTime(cash.openedAt)}</p>
               <dl className="mt-6 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                 {[
                   ['Troco inicial', cash.openingAmount],
@@ -178,15 +176,15 @@ export function CashPage() {
                   ['Reforços', cash.supplies],
                   ['Sangrias', -cash.withdrawals],
                 ].map(([label, value]) => (
-                  <div key={label as string} className="rounded-xl bg-neutral-50/5 p-3">
-                    <dt className="text-xs text-neutral-400">{label}</dt>
-                    <dd className="tabular font-semibold">{formatCurrency(value as number)}</dd>
+                  <div key={label as string} className="rounded-xl border border-white/10 p-3">
+                    <dt className="text-xs text-zinc-500">{label}</dt>
+                    <dd className="hora mt-0.5 text-sm font-medium">{formatCurrency(value as number)}</dd>
                   </div>
                 ))}
               </dl>
             </div>
-            <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-soft">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+            <div className="rounded-3xl border border-zinc-200 bg-white p-6">
+              <p className="label-caps text-zinc-500">
                 Recebido desde a abertura
               </p>
               <ul className="mt-3 space-y-2.5">

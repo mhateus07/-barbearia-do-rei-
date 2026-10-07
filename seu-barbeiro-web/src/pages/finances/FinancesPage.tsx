@@ -41,10 +41,10 @@ const METHOD_LABELS: Record<PaymentMethod, string> = {
 }
 
 const METHOD_COLORS: Record<PaymentMethod, string> = {
-  CASH: '#10b981',
-  PIX: '#3b82f6',
-  CREDIT_CARD: '#8b5cf6',
-  DEBIT_CARD: '#f59e0b',
+  CASH: 'var(--color-emerald-500)',
+  PIX: 'var(--color-sky-400)',
+  CREDIT_CARD: 'var(--color-amber-300)',
+  DEBIT_CARD: 'var(--color-amber-500)',
 }
 
 const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
@@ -91,23 +91,23 @@ function StatCard({
 }) {
   const variants = {
     default: 'bg-white border-zinc-200',
-    income: 'bg-emerald-500 border-emerald-400',
-    expense: 'bg-red-500 border-red-400',
-    warning: 'bg-amber-500 border-amber-400',
+    income: 'bg-white border-zinc-200',
+    expense: 'bg-white border-zinc-200',
+    warning: 'bg-navalha border-navalha',
   }
   const textVariants = {
-    default: { title: 'text-zinc-500', value: 'text-zinc-800', sub: 'text-zinc-400', icon: 'bg-zinc-100 text-zinc-500' },
-    income: { title: 'text-white/85', value: 'text-white', sub: 'text-white/70', icon: 'bg-emerald-400/40 text-white' },
-    expense: { title: 'text-white/85', value: 'text-white', sub: 'text-white/70', icon: 'bg-red-400/40 text-white' },
-    warning: { title: 'text-white/85', value: 'text-white', sub: 'text-white/70', icon: 'bg-amber-400/40 text-white' },
+    default: { title: 'text-zinc-500', value: 'text-zinc-900', sub: 'text-zinc-500', icon: 'bg-zinc-100 text-zinc-600' },
+    income: { title: 'text-zinc-500', value: 'text-emerald-700', sub: 'text-zinc-500', icon: 'bg-emerald-50 text-emerald-700' },
+    expense: { title: 'text-zinc-500', value: 'text-red-700', sub: 'text-zinc-500', icon: 'bg-red-50 text-red-700' },
+    warning: { title: 'text-toalha', value: 'text-espuma', sub: 'text-toalha/75', icon: 'bg-espuma/10 text-toalha' },
   }
   const t = textVariants[variant]
   return (
     <div className={`min-w-0 rounded-2xl border p-4 sm:p-5 ${variants[variant]}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className={`text-[11px] font-medium uppercase leading-tight tracking-wide sm:text-xs ${t.title}`}>{title}</p>
-          <p className={`tabular mt-2 truncate text-lg font-bold sm:text-2xl ${t.value}`}>{value}</p>
+          <p className={`label-caps truncate ${t.title}`}>{title}</p>
+          <p className={`tabular mt-2.5 truncate font-display text-xl font-extrabold sm:text-[28px] ${t.value}`}>{value}</p>
           {sub && <p className={`mt-1 truncate text-xs ${t.sub}`}>{sub}</p>}
         </div>
         <div className={`hidden shrink-0 rounded-xl p-2.5 sm:block ${t.icon}`}>
@@ -123,7 +123,7 @@ function StatCard({
 const CashFlowTooltip = ({ active, payload, label }: { active?: boolean; payload?: readonly { name?: string; value?: number | string; color?: string }[]; label?: string | number }) => {
   if (active && payload?.length) {
     return (
-      <div className="rounded-xl bg-zinc-900 border border-zinc-700 px-3 py-2 shadow-xl text-xs space-y-1">
+      <div className="rounded-xl border border-zinc-200 bg-white px-3 py-2 shadow-lift text-xs space-y-1">
         <p className="text-zinc-400 mb-1">{label}</p>
         {payload.map((p) => (
           <p key={p.name} style={{ color: p.color }} className="font-medium">
@@ -158,7 +158,7 @@ function SummaryTab({ from, to }: { from: string; to: string }) {
   const methodData = Object.entries(data?.incomeByMethod ?? {}).map(([method, value]) => ({
     name: METHOD_LABELS[method as PaymentMethod] ?? method,
     value,
-    color: METHOD_COLORS[method as PaymentMethod] ?? '#6b7280',
+    color: METHOD_COLORS[method as PaymentMethod] ?? 'var(--color-zinc-400)',
   }))
 
   const categoryData = Object.entries(data?.expensesByCategory ?? {}).map(([cat, value]) => ({
@@ -189,20 +189,20 @@ function SummaryTab({ from, to }: { from: string; to: string }) {
             <AreaChart data={cashFlowData}>
               <defs>
                 <linearGradient id="gradIncome" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  <stop offset="5%" stopColor="var(--color-emerald-500)" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="var(--color-emerald-500)" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gradExpenses" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                  <stop offset="5%" stopColor="var(--color-red-500)" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="var(--color-red-500)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#a1a1aa' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#a1a1aa' }} axisLine={false} tickLine={false} tickFormatter={(v) => `R$${v}`} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-zinc-200)" />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--color-zinc-500)' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: 'var(--color-zinc-500)' }} axisLine={false} tickLine={false} tickFormatter={(v) => `R$${v}`} />
               <Tooltip content={<CashFlowTooltip />} />
-              <Area type="monotone" dataKey="income" name="income" stroke="#10b981" fill="url(#gradIncome)" strokeWidth={2} />
-              <Area type="monotone" dataKey="expenses" name="expenses" stroke="#ef4444" fill="url(#gradExpenses)" strokeWidth={2} />
+              <Area type="monotone" dataKey="income" name="income" stroke="var(--color-emerald-500)" fill="url(#gradIncome)" strokeWidth={2} />
+              <Area type="monotone" dataKey="expenses" name="expenses" stroke="var(--color-red-500)" fill="url(#gradExpenses)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         )}

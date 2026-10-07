@@ -189,14 +189,14 @@ export function AgendaTimeline({
   return (
     <div
       ref={scroller}
-      className="relative max-h-[calc(100dvh-260px)] min-h-[420px] overflow-auto rounded-2xl border border-zinc-200 bg-white shadow-soft"
+      className="relative max-h-[calc(100dvh-260px)] min-h-[420px] overflow-auto rounded-2xl border border-zinc-200 bg-white"
       aria-label="Grade de horários"
     >
       <div
-        className="sticky top-0 z-30 grid border-b border-zinc-200 bg-white/90 backdrop-blur-md"
+        className="sticky top-0 z-30 grid border-b border-zinc-200 bg-white"
         style={grid}
       >
-        <div className="sticky left-0 z-10 bg-white/90" />
+        <div className="sticky left-0 z-10 bg-white" />
         {columns.map((c) => {
           const count = active.filter((a) => inColumn(a, c)).length
           return (
@@ -214,13 +214,13 @@ export function AgendaTimeline({
               ) : (
                 <>
                   <span
-                    className={`text-[11px] font-semibold uppercase tracking-wide ${c.today ? 'text-amber-600' : 'text-zinc-500'}`}
+                    className={`text-[11px] font-semibold uppercase tracking-wide ${c.today ? 'text-zinc-900' : 'text-zinc-500'}`}
                   >
                     {c.title}
                   </span>
                   <span
                     className={`grid h-8 w-8 place-items-center rounded-full font-display text-base font-bold ${
-                      c.today ? 'bg-amber-500 text-zinc-950' : 'text-zinc-900'
+                      c.today ? 'bg-amber-500 text-white' : 'text-zinc-900'
                     }`}
                   >
                     {c.subtitle}
@@ -249,7 +249,7 @@ export function AgendaTimeline({
           {hours.map((h) => (
             <span
               key={h}
-              className="tabular absolute right-2 -translate-y-1/2 text-[11px] font-medium text-zinc-400"
+              className="hora absolute right-2 -translate-y-1/2 text-[11px] text-zinc-500"
               style={{ top: (h - start) * PX }}
             >
               {h === start ? '' : hhmm(h)}
@@ -427,7 +427,7 @@ export function AgendaTimeline({
                     }}
                     onClick={() => select(a)}
                     title={`${a.client.name} · ${services} · ${statusLabels[a.status]}${canMove ? ' · arraste para reagendar' : ''}`}
-                    className={`group absolute z-10 overflow-hidden rounded-lg border border-l-[3px] border-zinc-200/70 px-2 py-1 text-left shadow-soft transition-[box-shadow,transform] hover:z-20 hover:shadow-lift ${statusStyles[a.status] || 'border-l-zinc-400 bg-zinc-50'} ${canMove ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                    className={`group absolute z-10 overflow-hidden rounded-lg border px-2 py-1 text-left transition-[border-color,box-shadow] hover:z-20 active:shadow-lift ${statusStyles[a.status] || 'border-zinc-200 bg-zinc-50'} ${canMove ? 'cursor-grab active:cursor-grabbing' : ''}`}
                     style={{
                       top: (p.top - start) * PX + 1,
                       height: h,
@@ -435,7 +435,7 @@ export function AgendaTimeline({
                       width: `calc(${100 / p.lanes}% - 8px)`,
                     }}
                   >
-                    <p className="tabular flex items-center gap-1 truncate text-[10px] font-semibold text-zinc-500">
+                    <p className="hora flex items-center gap-1 truncate text-[10px] font-medium text-zinc-600">
                       {showBarber && (
                         <span
                           className="h-1.5 w-1.5 shrink-0 rounded-full"
@@ -446,7 +446,7 @@ export function AgendaTimeline({
                     </p>
                     {a.depositAmount && !a.depositPaidAt && (
                       <span
-                        className="absolute right-1 top-1 rounded bg-amber-500 px-1 text-[9px] font-bold leading-4 text-zinc-950 shadow-soft"
+                        className="absolute right-1 top-1 rounded bg-amber-500 px-1 text-[9px] font-bold leading-4 text-white"
                         title="Aguardando sinal Pix"
                       >
                         PIX
@@ -483,8 +483,8 @@ export function AgendaTimeline({
                   style={{ top: (nowMinute - start) * PX }}
                   aria-hidden
                 >
-                  <span className="-ml-1 h-2 w-2 rounded-full bg-red-500" />
-                  <span className="h-px flex-1 bg-red-500" />
+                  <span className="-ml-1 h-2 w-2 rounded-full bg-accent" />
+                  <span className="h-0.5 flex-1 bg-accent" />
                 </div>
               )}
             </div>

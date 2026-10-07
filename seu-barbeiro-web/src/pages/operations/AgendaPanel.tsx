@@ -83,7 +83,7 @@ export function MiniCalendar({
               aria-pressed={isSelected}
               className={`tabular mx-auto grid h-8 w-8 place-items-center rounded-full text-xs transition-colors ${
                 isSelected
-                  ? 'bg-amber-500 font-bold text-zinc-950'
+                  ? 'bg-amber-500 font-bold text-white'
                   : inWeek
                     ? 'bg-amber-100 font-semibold text-amber-800'
                     : isToday

@@ -1,23 +1,125 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/inter';
-@import '@fontsource-variable/plus-jakarta-sans';
+@import '@fontsource-variable/archivo/wdth.css';
+@import '@fontsource-variable/hanken-grotesk';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
 
 /*
-  Tema do Seu Barbeiro. As telas usam a escala `zinc` para superfícies e textos
-  e `amber` como cor da marca. No modo escuro, essas escalas são remapeadas
-  dentro de `.app-surface` (área de conteúdo do painel), então todas as telas
-  ganham o tema sem duplicar classes. A barra lateral e as páginas públicas
-  ficam fora desse escopo e mantêm o visual escuro próprio.
+  Tema do Seu Barbeiro, a partir de identidade-visual/ (guia de marca e tokens).
+
+  As telas usam as classes `zinc` e `amber` do Tailwind. Em vez de reescrever
+  cada tela, as escalas são redefinidas com as cores da marca:
+  - `zinc` vira a escala neutra da marca: do papel Espuma (`zinc-50`) ao
+    Azul Navalha (`zinc-900`), passando por `line` (200) e `ink-muted` (500);
+  - `amber` vira `brand`: o Azul Navalha nas ações principais (500) e os azuis
+    Toalha nos fundos suaves (50–300);
+  - `emerald`/`green`, `red`, `yellow`, `sky`/`blue` viram `success`,
+    `danger`, `warning` e os azuis de apoio.
+  O vermelho do poste fica em `poste` (formas) e `accent` (linha da hora atual,
+  contadores, link de destaque). Nunca é botão nem indica erro.
+
+  Superfícies escuras (barra lateral, páginas do cliente, painel da tela de
+  entrada) usam a classe `on-ink`, que troca o `brand` pelo azul claro da marca.
+  O tema escuro do painel remapeia as escalas dentro de `.app-surface`.
 */
 @theme {
-  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Plus Jakarta Sans Variable', 'Inter Variable', ui-sans-serif, sans-serif;
+  --font-sans: 'Hanken Grotesk Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Archivo Variable', 'Arial Narrow', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 16px -4px rgb(0 0 0 / 0.08);
-  --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.06), 0 12px 32px -8px rgb(0 0 0 / 0.18);
+  --color-navalha: #15233f;
+  --color-espuma: #f5f4f0;
+  --color-toalha: #c9daee;
+  --color-poste: #d8462a;
+  --color-accent: #b83a1e;
+
+  --color-white: #fff;
+  --color-zinc-50: #f6f5f2;
+  --color-zinc-100: #ecebe6;
+  --color-zinc-200: #dcdad3;
+  --color-zinc-300: #c3c4c8;
+  --color-zinc-400: #8a90a0;
+  --color-zinc-500: #5a6377;
+  --color-zinc-600: #454f66;
+  --color-zinc-700: #323d58;
+  --color-zinc-800: #26324f;
+  --color-zinc-900: #15233f;
+  --color-zinc-950: #0e1526;
+
+  --color-neutral-50: var(--color-zinc-50);
+  --color-neutral-400: var(--color-zinc-400);
+  --color-neutral-500: var(--color-zinc-500);
+  --color-neutral-800: var(--color-zinc-800);
+  --color-neutral-900: var(--color-zinc-900);
+  --color-gray-100: var(--color-zinc-100);
+  --color-gray-200: var(--color-zinc-200);
+  --color-gray-700: var(--color-zinc-600);
+
+  --color-amber-50: #eef3fa;
+  --color-amber-100: #dce7f4;
+  --color-amber-200: #c9daee;
+  --color-amber-300: #a9c3e6;
+  --color-amber-400: #233661;
+  --color-amber-500: #15233f;
+  --color-amber-600: #15233f;
+  --color-amber-700: #15233f;
+  --color-amber-800: #0e1526;
+  --color-amber-900: #0e1526;
+
+  --color-emerald-50: #e3f1e8;
+  --color-emerald-100: #d3e9db;
+  --color-emerald-200: #b3d9c1;
+  --color-emerald-300: #7fc39c;
+  --color-emerald-400: #3f9c6c;
+  --color-emerald-500: #2a8256;
+  --color-emerald-600: #1c6b45;
+  --color-emerald-700: #1c6b45;
+  --color-emerald-800: #145234;
+  --color-green-50: var(--color-emerald-50);
+  --color-green-100: var(--color-emerald-100);
+  --color-green-200: var(--color-emerald-200);
+  --color-green-500: var(--color-emerald-500);
+  --color-green-600: var(--color-emerald-600);
+  --color-green-700: var(--color-emerald-700);
+
+  --color-red-50: #fbe5e7;
+  --color-red-100: #f7d4d8;
+  --color-red-200: #eeb2ba;
+  --color-red-300: #e48995;
+  --color-red-400: #d2566a;
+  --color-red-500: #bb2d43;
+  --color-red-600: #a3192c;
+  --color-red-700: #a3192c;
+  --color-red-800: #7e1222;
+
+  --color-yellow-100: #fbf0d9;
+  --color-yellow-700: #8a5300;
+
+  --color-sky-50: #eef3fa;
+  --color-sky-100: #dce7f4;
+  --color-sky-200: #c9daee;
+  --color-sky-300: #a9c3e6;
+  --color-sky-400: #6f93c6;
+  --color-sky-500: #3e6aa8;
+  --color-sky-600: #2f5790;
+  --color-sky-700: #2a4f86;
+  --color-blue-50: var(--color-sky-50);
+  --color-blue-100: var(--color-sky-100);
+  --color-blue-500: var(--color-sky-500);
+  --color-blue-700: var(--color-sky-700);
+
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 14px;
+  --radius-3xl: 16px;
+
+  /* Cartões parados têm só a borda; sombra é para o que flutua. */
+  --shadow-soft: 0 1px 0 rgb(21 35 63 / 0.03);
+  --shadow-lift: 0 1px 2px rgb(21 35 63 / 0.06), 0 4px 14px -6px rgb(21 35 63 / 0.14),
+    0 18px 40px -16px rgb(21 35 63 / 0.22);
 
   --animate-fade-in: fade-in 160ms ease-out;
-  --animate-pop-in: pop-in 180ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  --animate-pop-in: pop-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --animate-slide-in: slide-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --animate-shimmer: shimmer 1.4s ease-in-out infinite;
 
@@ -25,7 +127,7 @@
     from { opacity: 0; }
   }
   @keyframes pop-in {
-    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+    from { opacity: 0; transform: translateY(6px); }
   }
   @keyframes slide-in {
     from { opacity: 0; transform: translateX(24px); }
@@ -53,15 +155,21 @@
   body {
     margin: 0;
     font-family: var(--font-sans);
-    font-feature-settings: 'cv11', 'ss01';
     background: var(--color-zinc-50);
+    color: var(--color-zinc-900);
   }
 
+  /* Archivo largo (112), como letreiro de fachada. */
   h1,
   h2,
-  h3 {
+  h3,
+  .font-display {
     font-family: var(--font-display);
-    letter-spacing: -0.015em;
+    font-stretch: 112%;
+    letter-spacing: -0.01em;
+  }
+  h1 {
+    font-weight: 760;
   }
 
   button:not(:disabled),
@@ -75,12 +183,29 @@
   }
 
   ::selection {
-    background: color-mix(in oklab, var(--color-amber-400) 35%, transparent);
+    background: var(--color-amber-200);
+    color: var(--color-zinc-900);
   }
 }
 
 @utility tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Horários e valores em coluna, como num livro-caixa. */
+@utility hora {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+/* Rótulo em caixa alta, o único lugar com caixa alta. */
+@utility label-caps {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 @utility skeleton {
@@ -89,65 +214,84 @@
   animation: var(--animate-shimmer);
 }
 
+/* Superfícies em Azul Navalha: `brand` vira o azul claro e o texto escuro. */
+.on-ink {
+  color-scheme: dark;
+
+  --color-zinc-500: #8f98ad;
+  --color-zinc-600: #6e7894;
+
+  --color-amber-50: rgb(169 195 230 / 0.08);
+  --color-amber-100: rgb(169 195 230 / 0.14);
+  --color-amber-200: rgb(169 195 230 / 0.24);
+  --color-amber-300: #d4e1f3;
+  --color-amber-400: #c2d4ee;
+  --color-amber-500: #a9c3e6;
+  --color-amber-600: #a9c3e6;
+  --color-amber-700: #c9daee;
+  --color-amber-800: #dce7f4;
+
+  --color-accent: #ff8466;
+}
+
 /* Modo escuro do painel */
 :root[data-theme='dark'] .app-surface {
   color-scheme: dark;
 
-  --color-white: #17171a;
+  --color-white: #162039;
   --color-black: #000;
-  --color-zinc-50: #0e0e10;
-  --color-zinc-100: #212125;
-  --color-zinc-200: #2c2c31;
-  --color-zinc-300: #3c3c43;
-  --color-zinc-400: #71717a;
-  --color-zinc-500: #a1a1aa;
-  --color-zinc-600: #b6b6be;
-  --color-zinc-700: #d4d4d8;
-  --color-zinc-800: #e4e4e7;
-  --color-zinc-900: #f4f4f5;
-  --color-zinc-950: #fafafa;
-  --color-gray-100: var(--color-zinc-100);
-  --color-gray-200: var(--color-zinc-200);
-  --color-gray-700: var(--color-zinc-700);
+  --color-zinc-50: #0e1526;
+  --color-zinc-100: #1b2742;
+  --color-zinc-200: #2a3654;
+  --color-zinc-300: #3b4868;
+  --color-zinc-400: #7c869c;
+  --color-zinc-500: #a3abbc;
+  --color-zinc-600: #b8bfcc;
+  --color-zinc-700: #cfd4de;
+  --color-zinc-800: #e1e4ea;
+  --color-zinc-900: #edeff3;
+  --color-zinc-950: #f7f8fa;
 
-  --color-amber-50: rgb(245 158 11 / 0.1);
-  --color-amber-100: rgb(245 158 11 / 0.16);
-  --color-amber-200: rgb(245 158 11 / 0.28);
-  --color-amber-600: #fbbf24;
-  --color-amber-700: #fcd34d;
-  --color-amber-800: #fde68a;
-  --color-yellow-100: rgb(234 179 8 / 0.16);
-  --color-yellow-700: #fde047;
+  --color-amber-50: rgb(169 195 230 / 0.08);
+  --color-amber-100: rgb(169 195 230 / 0.14);
+  --color-amber-200: rgb(169 195 230 / 0.26);
+  --color-amber-300: #6f8fbc;
+  --color-amber-400: #c2d4ee;
+  --color-amber-500: #a9c3e6;
+  --color-amber-600: #a9c3e6;
+  --color-amber-700: #c9daee;
+  --color-amber-800: #dce7f4;
+  --color-yellow-100: #33260c;
+  --color-yellow-700: #f2be5c;
 
-  --color-red-50: rgb(239 68 68 / 0.12);
-  --color-red-100: rgb(239 68 68 / 0.18);
-  --color-red-200: rgb(239 68 68 / 0.3);
-  --color-red-700: #fca5a5;
-  --color-red-800: #fecaca;
+  --color-red-50: #3a1520;
+  --color-red-100: #461a27;
+  --color-red-200: #5c2232;
+  --color-red-500: #ff8592;
+  --color-red-600: #ff9aa5;
+  --color-red-700: #ff9aa5;
+  --color-red-800: #ffc4ca;
 
-  --color-emerald-50: rgb(16 185 129 / 0.12);
-  --color-emerald-100: rgb(16 185 129 / 0.18);
-  --color-emerald-200: rgb(16 185 129 / 0.3);
-  --color-emerald-700: #6ee7b7;
-  --color-emerald-800: #a7f3d0;
-  --color-green-50: rgb(34 197 94 / 0.12);
-  --color-green-100: rgb(34 197 94 / 0.18);
-  --color-green-200: rgb(34 197 94 / 0.3);
-  --color-green-700: #86efac;
+  --color-emerald-50: #163325;
+  --color-emerald-100: #1b3d2c;
+  --color-emerald-200: #22503a;
+  --color-emerald-500: #6cc795;
+  --color-emerald-600: #7fd4a4;
+  --color-emerald-700: #7fd4a4;
+  --color-emerald-800: #b0e6c8;
 
-  --color-sky-50: rgb(14 165 233 / 0.12);
-  --color-sky-100: rgb(14 165 233 / 0.18);
-  --color-sky-200: rgb(14 165 233 / 0.3);
-  --color-sky-700: #7dd3fc;
-  --color-blue-50: rgb(59 130 246 / 0.12);
-  --color-blue-100: rgb(59 130 246 / 0.18);
-  --color-blue-700: #93c5fd;
+  --color-sky-50: #1e2d4d;
+  --color-sky-100: #22345a;
+  --color-sky-200: #2c4170;
+  --color-sky-700: #a9c3e6;
   --color-violet-50: rgb(139 92 246 / 0.12);
   --color-violet-100: rgb(139 92 246 / 0.18);
   --color-violet-700: #c4b5fd;
 
-  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px -4px rgb(0 0 0 / 0.5);
-  --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.5), 0 12px 32px -8px rgb(0 0 0 / 0.7);
+  --color-accent: #ff8466;
+
+  --shadow-soft: 0 1px 0 rgb(0 0 0 / 0.2);
+  --shadow-lift: 0 1px 2px rgb(0 0 0 / 0.4), 0 16px 36px -12px rgb(0 0 0 / 0.6);
 
   background: var(--color-zinc-50);
   color: var(--color-zinc-800);
@@ -166,9 +310,48 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
 @utility no-scrollbar {
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* Controle deslizante da calculadora: trilho preenchido em Azul Navalha até o valor. */
+.faixa-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    var(--color-navalha) var(--pct, 50%),
+    var(--color-zinc-200) var(--pct, 50%)
+  );
+  cursor: pointer;
+}
+.faixa-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 2px solid var(--color-navalha);
+  box-shadow: 0 1px 3px rgb(21 35 63 / 0.25);
+}
+.faixa-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 2px solid var(--color-navalha);
 }

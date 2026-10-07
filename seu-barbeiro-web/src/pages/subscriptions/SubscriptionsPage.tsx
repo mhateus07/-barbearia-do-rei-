@@ -202,10 +202,9 @@ export function SubscriptionsPage() {
             {plans.map((p) => (
               <article
                 key={p.id}
-                className={`relative overflow-hidden rounded-2xl border p-5 shadow-soft transition-shadow hover:shadow-lift ${p.isActive ? 'border-zinc-200 bg-white' : 'border-dashed border-zinc-300 bg-zinc-50 opacity-70'}`}
+                className={`relative overflow-hidden rounded-2xl border p-5 shadow-soft ${p.isActive ? 'border-zinc-200 bg-white' : 'border-dashed border-zinc-300 bg-zinc-50 opacity-70'}`}
               >
-                <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-amber-100/70 blur-xl" aria-hidden />
-                <div className="relative">
+                                <div className="relative">
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-display text-lg font-bold text-zinc-900">{p.name}</p>
                     {isOwner && (
