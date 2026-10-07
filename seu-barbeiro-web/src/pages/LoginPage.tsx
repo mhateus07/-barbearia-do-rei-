@@ -170,7 +170,9 @@ export function LoginPage() {
     <div className="flex min-h-dvh bg-zinc-50 font-sans text-zinc-900">
       {/* Painel da marca */}
       <aside className="on-ink hidden w-[56%] flex-col justify-between gap-10 bg-navalha px-12 py-10 lg:flex xl:px-16 xl:py-12">
-        <BrandLogo negative size="lg" className="self-start" />
+        <Link to="/" aria-label="Seu Barbeiro, apresentação" className="self-start">
+          <BrandLogo negative size="lg" />
+        </Link>
 
         <div className="max-w-[34rem]">
           <h2 className="text-balance text-[36px] font-bold leading-[42px] text-espuma">
@@ -193,7 +195,9 @@ export function LoginPage() {
       {/* Formulário */}
       <main className="flex flex-1 flex-col">
         <div className="on-ink bg-navalha px-5 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-8 lg:hidden">
-          <BrandLogo negative />
+          <Link to="/" aria-label="Seu Barbeiro, apresentação">
+            <BrandLogo negative />
+          </Link>
         </div>
 
         <div className="flex flex-1 items-center justify-center px-5 py-10 sm:px-8">

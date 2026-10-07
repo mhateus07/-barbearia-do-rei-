@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Check, ChevronDown } from 'lucide-react'
+import { useAuth } from '../../contexts/auth-state'
 import { BrandLogo, BrandMark } from '../../components/ui/BrandMark'
 import { LossCalculator } from './LossCalculator'
 import {
@@ -177,6 +178,9 @@ function SectionHeader({ title, children }: { title: string; children?: ReactNod
 }
 
 export function HomePage() {
+  // Quem já tem sessão aberta vê a apresentação também, com atalho para o painel.
+  const { isAuthenticated } = useAuth()
+  const panel = isAuthenticated ? { to: '/operacao', label: 'Abrir painel' } : { to: '/login', label: 'Entrar' }
   return (
     <div className="flex min-h-dvh flex-col bg-white text-zinc-900">
       {/* Cabeçalho */}
@@ -193,10 +197,10 @@ export function HomePage() {
           </div>
           <div className="ml-auto flex items-center gap-2">
             <Link
-              to="/login"
+              to={panel.to}
               className="rounded-lg px-3 py-2 text-[15px] font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
             >
-              Entrar
+              {panel.label}
             </Link>
             <a
               href={WHATSAPP_URL}
@@ -397,7 +401,7 @@ export function HomePage() {
           </div>
           <div className="flex flex-col gap-2 text-sm">
             <p className="mb-1 font-semibold text-white">Já é cliente?</p>
-            <Link to="/login" className="text-white/60 hover:text-white">Entrar no painel</Link>
+            <Link to={panel.to} className="text-white/60 hover:text-white">{isAuthenticated ? 'Abrir painel' : 'Entrar no painel'}</Link>
             <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-white">
               Falar no WhatsApp
             </a>

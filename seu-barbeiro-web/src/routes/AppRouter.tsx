@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { PrivateRoute } from './PrivateRoute'
 import { AdminLayout } from '../components/layout/AdminLayout'
 import { LoginPage } from '../pages/LoginPage'
-import { useAuth } from '../contexts/auth-state'
 
 // Cada tela é baixada só quando aberta, para o painel carregar mais rápido.
 const page = <T extends Record<string, React.ComponentType>>(
@@ -30,23 +29,16 @@ const HomePage = page(() => import('../pages/site/HomePage'), 'HomePage')
 
 const publicFallback = <div className="min-h-dvh bg-zinc-950" />
 
-/** Raiz do site: apresentação para visitantes, agenda para quem já entrou. */
-function HomeRoute() {
-  const { isAuthenticated } = useAuth()
-  if (isAuthenticated) return <Navigate to="/operacao" replace />
-  return (
-    <Suspense fallback={<div className="min-h-dvh bg-navalha" />}>
-      <HomePage />
-    </Suspense>
-  )
-}
-
 export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<HomeRoute />} />
+        {/* Raiz do site: a apresentação abre sempre, como no Pedeli. */}
+        <Route
+          path="/"
+          element={<Suspense fallback={<div className="min-h-dvh bg-navalha" />}><HomePage /></Suspense>}
+        />
         <Route
           path="/oferta"
           element={<Suspense fallback={publicFallback}><OfferPage /></Suspense>}
