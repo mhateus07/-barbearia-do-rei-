@@ -5,6 +5,7 @@ import {
 } from './scheduling'
 import { AppointmentStatus } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
+import { parseDay } from '../../utils/dates'
 import {
   CreateAppointmentInput,
   UpdateAppointmentInput,
@@ -52,8 +53,8 @@ export async function listAppointments(filters: {
     where.startsAt = { gte: start, lte: end }
   } else if (from || to) {
     where.startsAt = {
-      ...(from ? { gte: new Date(from) } : {}),
-      ...(to ? { lte: new Date(to) } : {}),
+      ...(from ? { gte: parseDay(from) } : {}),
+      ...(to ? { lte: parseDay(to, true) } : {}),
     }
   }
 

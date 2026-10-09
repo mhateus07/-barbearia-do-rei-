@@ -8,7 +8,7 @@ import { getDashboardSummary, getDashboardStats } from '../../api/dashboard.api'
 import { Spinner } from '../../components/ui/Spinner'
 import { Badge } from '../../components/ui/Badge'
 import { formatCurrency } from '../../utils/formatCurrency'
-import { formatTime } from '../../utils/formatDate'
+import { formatTime, parseDayKey, todayKey } from '../../utils/formatDate'
 import { statusConfig } from '../../utils/appointmentStatus'
 import type { AppointmentStatus } from '../../types'
 
@@ -63,7 +63,7 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
 }
 
 export function DashboardPage() {
-  const today = new Date().toISOString().split('T')[0]
+  const today = todayKey()
 
   const { data: summary, isLoading } = useQuery({
     queryKey: ['dashboard-summary', today],
@@ -85,7 +85,7 @@ export function DashboardPage() {
   }
 
   const revenueData = stats?.revenueByDay?.slice(-7).map((d) => ({
-    name: new Date(d.date).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }),
+    name: parseDayKey(d.date).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }),
     value: d.total,
   })) ?? []
 

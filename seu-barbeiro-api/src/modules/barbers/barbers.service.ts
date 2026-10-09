@@ -1,4 +1,5 @@
 import { prisma } from '../../lib/prisma'
+import { parseDay } from '../../utils/dates'
 import { CreateBarberInput, UpdateBarberInput } from './barbers.schema'
 
 export async function listBarbers(isActive?: boolean) {
@@ -34,8 +35,8 @@ export async function getBarberAppointments(id: string, from?: string, to?: stri
     where: {
       barberId: id,
       startsAt: {
-        gte: from ? new Date(from) : undefined,
-        lte: to ? new Date(to) : undefined,
+        gte: from ? parseDay(from) : undefined,
+        lte: to ? parseDay(to, true) : undefined,
       },
     },
     include: {

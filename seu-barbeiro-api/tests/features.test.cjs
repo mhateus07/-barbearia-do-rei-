@@ -573,4 +573,38 @@ test('novas funcionalidades', async (t) => {
     assert.equal((await request(`/subscriptions/${sub.id}/cancel`, { method: 'POST', token: owner })).status, 200)
     assert.equal((await request('/subscriptions', { token: pro })).status, 403)
   })
+
+  await t.test('receita do painel = financeiro, agrupada no dia de Brasília', async () => {
+    // 22h30 em Brasília já é o dia seguinte em UTC.
+    const from = new Date('2020-03-10T00:00:00-03:00')
+    const to = new Date('2020-03-12T00:00:00-03:00')
+    await db.payment.deleteMany({ where: { paidAt: { gte: from, lt: to } } })
+    await db.payment.create({
+      data: { amount: 80, method: 'PIX', paidAt: new Date('2020-03-10T22:30:00-03:00') },
+    })
+    await db.payment.create({
+      data: {
+        amount: 30,
+        method: 'CASH',
+        paidAt: new Date('2020-03-10T09:00:00-03:00'),
+        refundedAt: new Date('2020-03-11T10:00:00-03:00'),
+      },
+    })
+    const summary = await request('/dashboard/summary?date=2020-03-10', { token: owner })
+    assert.equal(summary.data.data.revenueToday, 110)
+    const finances = await request('/finances/summary?from=2020-03-10&to=2020-03-10', {
+      token: owner,
+    })
+    assert.equal(finances.data.data.totalIncome, 110)
+    const stats = await request('/dashboard/stats?from=2020-03-10&to=2020-03-11', { token: owner })
+    assert.deepEqual(stats.data.data.revenueByDay, [
+      { date: '2020-03-10', total: 110 },
+      { date: '2020-03-11', total: -30 },
+    ])
+    const flow = await request('/finances/summary?from=2020-03-10&to=2020-03-11', { token: owner })
+    assert.deepEqual(
+      flow.data.data.cashFlowByDay.map((d) => [d.date, d.income]),
+      [['2020-03-10', 110], ['2020-03-11', -30]],
+    )
+  })
 })

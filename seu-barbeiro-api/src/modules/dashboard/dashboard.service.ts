@@ -1,14 +1,16 @@
 import { AppointmentStatus } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
+import { dayKey, parseDay } from '../../utils/dates'
+import { listCashEntries } from '../finances/finances.service'
 
 export async function getDashboardSummary(date?: string) {
-  const targetDate = date ? new Date(`${date}T00:00:00`) : new Date()
+  const targetDate = date ? parseDay(date) : new Date()
   const start = new Date(targetDate)
   start.setHours(0, 0, 0, 0)
   const end = new Date(targetDate)
   end.setHours(23, 59, 59, 999)
 
-  const [appointments, upcoming] = await Promise.all([
+  const [appointments, upcoming, cashEntries] = await Promise.all([
     prisma.appointment.findMany({
       where: { startsAt: { gte: start, lte: end } },
       include: {
@@ -31,12 +33,15 @@ export async function getDashboardSummary(date?: string) {
       orderBy: { startsAt: 'asc' },
       take: 5,
     }),
+    listCashEntries(start, end),
   ])
 
   const completed = appointments.filter((a) => a.status === AppointmentStatus.COMPLETED)
   const cancelled = appointments.filter((a) => a.status === AppointmentStatus.CANCELLED)
   const noShow = appointments.filter((a) => a.status === AppointmentStatus.NO_SHOW)
-  const revenueToday = completed.reduce((sum, a) => sum + Number(a.totalPrice), 0)
+  // Receita = dinheiro que entrou no dia, igual ao financeiro (já com
+  // desconto, assinatura, produtos e estornos), não o preço de tabela.
+  const revenueToday = cashEntries.reduce((sum, p) => sum + p.amount, 0)
 
   return {
     totalAppointments: appointments.length,
@@ -49,25 +54,31 @@ export async function getDashboardSummary(date?: string) {
 }
 
 export async function getDashboardStats(from?: string, to?: string) {
-  const startDate = from ? new Date(from) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-  const endDate = to ? new Date(to) : new Date()
+  const startDate = from ? parseDay(from) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  startDate.setHours(0, 0, 0, 0)
+  const endDate = to ? parseDay(to, true) : new Date()
 
-  const appointments = await prisma.appointment.findMany({
-    where: {
-      startsAt: { gte: startDate, lte: endDate },
-      status: AppointmentStatus.COMPLETED,
-    },
-    include: {
-      services: { include: { service: { select: { id: true, name: true } } } },
-      barber: { select: { id: true, name: true } },
-    },
-  })
+  const [appointments, cashEntries] = await Promise.all([
+    prisma.appointment.findMany({
+      where: {
+        startsAt: { gte: startDate, lte: endDate },
+        status: AppointmentStatus.COMPLETED,
+      },
+      include: {
+        services: { include: { service: { select: { id: true, name: true } } } },
+        barber: { select: { id: true, name: true } },
+      },
+    }),
+    listCashEntries(startDate, endDate),
+  ])
 
-  // Receita por dia
+  // Receita por dia, com todos os dias do período (dia sem entrada fica com zero)
   const revenueByDay: Record<string, number> = {}
-  appointments.forEach((a) => {
-    const day = a.startsAt.toISOString().split('T')[0]
-    revenueByDay[day] = (revenueByDay[day] || 0) + Number(a.totalPrice)
+  for (const day = new Date(startDate); day <= endDate; day.setDate(day.getDate() + 1))
+    revenueByDay[dayKey(day)] = 0
+  cashEntries.forEach((p) => {
+    const day = dayKey(p.paidAt)
+    revenueByDay[day] = (revenueByDay[day] || 0) + p.amount
   })
 
   // Top serviços

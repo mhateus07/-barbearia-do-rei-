@@ -5,7 +5,7 @@ import { listAppointments, updateAppointmentStatus } from '../../api/appointment
 import { Badge } from '../../components/ui/Badge'
 import { AppointmentFormModal } from './AppointmentFormModal'
 import type { Appointment, AppointmentStatus } from '../../types'
-import { formatTime } from '../../utils/formatDate'
+import { formatTime, todayKey } from '../../utils/formatDate'
 import { formatCurrency } from '../../utils/formatCurrency'
 
 const STATUS_OPTIONS: { value: AppointmentStatus | ''; label: string }[] = [
@@ -28,7 +28,7 @@ export function AppointmentsPage() {
   const qc = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
-  const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0])
+  const [filterDate, setFilterDate] = useState(todayKey)
   const [filterStatus, setFilterStatus] = useState<AppointmentStatus | ''>('')
 
   const { data, isLoading } = useQuery({

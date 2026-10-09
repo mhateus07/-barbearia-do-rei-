@@ -1,6 +1,7 @@
 import { runSchedule } from '../appointments/scheduling'
 import { ExpenseStatus } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
+import { dayKey, parseDay } from '../../utils/dates'
 import {
   CreatePaymentInput,
   CreateExpenseInput,
@@ -24,8 +25,8 @@ export async function listPayments(filters: {
 
   if (from || to) {
     where.paidAt = {
-      ...(from ? { gte: new Date(from) } : {}),
-      ...(to ? { lte: new Date(`${to}T23:59:59`) } : {}),
+      ...(from ? { gte: parseDay(from) } : {}),
+      ...(to ? { lte: parseDay(to, true) } : {}),
     }
   }
 
@@ -125,8 +126,8 @@ export async function listExpenses(filters: {
 
   if (from || to) {
     where.dueDate = {
-      ...(from ? { gte: new Date(from) } : {}),
-      ...(to ? { lte: new Date(`${to}T23:59:59`) } : {}),
+      ...(from ? { gte: parseDay(from) } : {}),
+      ...(to ? { lte: parseDay(to, true) } : {}),
     }
   }
 
@@ -360,8 +361,8 @@ export async function listCommissionPayments(
   if (barberId) where.barberId = barberId
   if (from || to) {
     where.paidAt = {
-      ...(from ? { gte: new Date(from) } : {}),
-      ...(to ? { lte: new Date(`${to}T23:59:59`) } : {}),
+      ...(from ? { gte: parseDay(from) } : {}),
+      ...(to ? { lte: parseDay(to, true) } : {}),
     }
   }
 
@@ -374,22 +375,39 @@ export async function listCommissionPayments(
 
 // ─── FINANCIAL SUMMARY ───────────────────────────────────────────────────────
 
+/**
+ * Entradas de caixa do período: cada pagamento conta no dia em que foi pago e,
+ * se estornado, sai (valor negativo) no dia do estorno. É a mesma conta da
+ * receita do painel e do financeiro.
+ */
+export async function listCashEntries(fromDate: Date, toDate: Date) {
+  const rows = await prisma.payment.findMany({
+    where: {
+      OR: [
+        { paidAt: { gte: fromDate, lte: toDate } },
+        { refundedAt: { gte: fromDate, lte: toDate } },
+      ],
+    },
+    select: { amount: true, method: true, paidAt: true, refundedAt: true },
+  })
+  return rows.flatMap((p) => [
+    ...(p.paidAt >= fromDate && p.paidAt <= toDate
+      ? [{ amount: Number(p.amount), method: p.method, paidAt: p.paidAt }]
+      : []),
+    ...(p.refundedAt && p.refundedAt >= fromDate && p.refundedAt <= toDate
+      ? [{ amount: -Number(p.amount), method: p.method, paidAt: p.refundedAt }]
+      : []),
+  ])
+}
+
 export async function getFinancialSummary(from?: string, to?: string) {
   const fromDate = from
     ? new Date(`${from}T00:00:00`)
     : new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   const toDate = to ? new Date(`${to}T23:59:59`) : new Date()
 
-  const [paymentRows, expenses, pendingExpenses] = await Promise.all([
-    prisma.payment.findMany({
-      where: {
-        OR: [
-          { paidAt: { gte: fromDate, lte: toDate } },
-          { refundedAt: { gte: fromDate, lte: toDate } },
-        ],
-      },
-      select: { amount: true, method: true, paidAt: true, refundedAt: true },
-    }),
+  const [payments, expenses, pendingExpenses] = await Promise.all([
+    listCashEntries(fromDate, toDate),
     prisma.expense.findMany({
       where: {
         status: ExpenseStatus.PAID,
@@ -403,14 +421,6 @@ export async function getFinancialSummary(from?: string, to?: string) {
     }),
   ])
 
-  const payments = paymentRows.flatMap((p) => [
-    ...(p.paidAt >= fromDate && p.paidAt <= toDate
-      ? [{ amount: Number(p.amount), method: p.method, paidAt: p.paidAt }]
-      : []),
-    ...(p.refundedAt && p.refundedAt >= fromDate && p.refundedAt <= toDate
-      ? [{ amount: -Number(p.amount), method: p.method, paidAt: p.refundedAt }]
-      : []),
-  ])
   const totalIncome = payments.reduce((sum, p) => sum + Number(p.amount), 0)
   const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0)
   const balance = totalIncome - totalExpenses
@@ -446,13 +456,13 @@ export async function getFinancialSummary(from?: string, to?: string) {
   const dayMap: Record<string, { income: number; expenses: number }> = {}
 
   for (const p of payments) {
-    const day = new Date(p.paidAt).toISOString().split('T')[0]
+    const day = dayKey(p.paidAt)
     if (!dayMap[day]) dayMap[day] = { income: 0, expenses: 0 }
     dayMap[day].income += Number(p.amount)
   }
 
   for (const e of expenses) {
-    const day = new Date(e.paidAt!).toISOString().split('T')[0]
+    const day = dayKey(e.paidAt!)
     if (!dayMap[day]) dayMap[day] = { income: 0, expenses: 0 }
     dayMap[day].expenses += Number(e.amount)
   }

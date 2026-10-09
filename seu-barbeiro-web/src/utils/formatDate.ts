@@ -15,3 +15,13 @@ export function formatTime(date: string | Date): string {
   const d = typeof date === 'string' ? parseISO(date) : date
   return format(d, 'HH:mm')
 }
+
+/** Dia de hoje como "AAAA-MM-DD" no fuso do aparelho (toISOString daria o dia em UTC). */
+export function todayKey(): string {
+  return format(new Date(), 'yyyy-MM-dd')
+}
+
+/** "AAAA-MM-DD" como data local; new Date("2026-10-09") cairia no dia 8 no Brasil. */
+export function parseDayKey(day: string): Date {
+  return parseISO(day)
+}

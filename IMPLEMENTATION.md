@@ -55,8 +55,9 @@ agenda visual e escalas, financeiro, retorno, reativação, lista de espera e fi
 - [x] Link do cliente para confirmar, remarcar e cancelar
 - [x] Vales descontados na comissão e caixa com sangria/fechamento
 - [x] Profissional bloqueia a própria agenda; avisos push e app instalável
-- [x] 30 testes de integração aprovados; fluxo público de agendamento com Pix conferido no navegador
+- [x] 31 testes de integração aprovados; fluxo público de agendamento com Pix conferido no navegador
 
 A demonstração usa dados fictícios e mantém o envio automático desativado.
-Pagamentos são registros internos; não há cobrança Pix/cartão integrada.
+Recebimentos da comanda são registros internos; o Pix integrado (Mercado Pago) cobre só o
+sinal do agendamento e a mensalidade das assinaturas, e não há cartão integrado.
 Fotos nas fichas são links com consentimento; não há armazenamento de uploads.

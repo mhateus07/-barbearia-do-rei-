@@ -30,6 +30,7 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Spinner } from '../../components/ui/Spinner'
 import { formatCurrency } from '../../utils/formatCurrency'
+import { parseDayKey, todayKey } from '../../utils/formatDate'
 
 // ─── LABELS ──────────────────────────────────────────────────────────────────
 
@@ -75,7 +76,7 @@ function getFirstDayOfMonth() {
 }
 
 function today() {
-  return new Date().toISOString().split('T')[0]
+  return todayKey()
 }
 
 // ─── STAT CARD ───────────────────────────────────────────────────────────────
@@ -149,7 +150,7 @@ function SummaryTab({ from, to }: { from: string; to: string }) {
   }
 
   const cashFlowData = (data?.cashFlowByDay ?? []).map((d) => ({
-    name: new Date(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+    name: parseDayKey(d.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
     income: d.income,
     expenses: d.expenses,
     balance: d.balance,
@@ -1077,7 +1078,7 @@ async function exportPDF(from: string, to: string) {
     startY: 57,
     head: [['Data', 'Receita', 'Despesas', 'Saldo']],
     body: summary.cashFlowByDay.map((d) => [
-      new Date(d.date).toLocaleDateString('pt-BR'),
+      parseDayKey(d.date).toLocaleDateString('pt-BR'),
       fmt(d.income),
       fmt(d.expenses),
       fmt(d.balance),

@@ -72,8 +72,11 @@ processo (padrão `America/Sao_Paulo`). Para fusos diferentes, use processos sep
 - Concluir credita fidelidade uma única vez. Resgates concorrentes não deixam saldo
   negativo. Atendimentos encerrados não podem voltar a estados anteriores.
 - Recebimentos aceitam sinal e divisão entre meios, com limite pelo saldo. O sistema
-  registra o pagamento; não processa cobranças Pix/cartão. Estornos são registros
+  registra o pagamento; o único Pix cobrado pelo sistema é o do sinal e o das
+  assinaturas (ver abaixo), e cartão não é processado. Estornos são registros
   integrais: a devolução real é feita no provedor/caixa.
+- Receita, no painel e no financeiro, é o que entrou: pagamentos no dia em que foram
+  feitos, menos estornos no dia do estorno, sempre no fuso `SALON_TIMEZONE`.
 - Comissões usam a taxa registrada na reserva e o valor de serviços após desconto.
   Produtos não geram comissão nesta versão. Pagamento de comissão gera despesa e
   impede sobreposição de períodos já pagos.
