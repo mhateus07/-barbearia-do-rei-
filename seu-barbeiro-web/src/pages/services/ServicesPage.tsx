@@ -33,7 +33,7 @@ export function ServicesPage() {
           className="flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2.5 text-sm font-semibold text-white transition-colors"
         >
           <Plus className="h-4 w-4" />
-          Novo Serviço
+          Novo serviço
         </button>
       </div>
 

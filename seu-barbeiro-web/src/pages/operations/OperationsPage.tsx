@@ -150,7 +150,7 @@ const statusLabels: Record<string, string> = {
   IN_PROGRESS: 'Em atendimento',
   COMPLETED: 'Concluído',
   CANCELLED: 'Cancelado',
-  NO_SHOW: 'Não compareceu',
+  NO_SHOW: 'Faltou',
 }
 const money = (v: number) => formatCurrency(Number(v))
 const iso = (value: string) => new Date(value).toISOString()
@@ -1603,7 +1603,7 @@ export function OperationsPage() {
                         )
                       }
                     >
-                      Não compareceu
+                      Faltou
                     </button>
                   </>
                 )}

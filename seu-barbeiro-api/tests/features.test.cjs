@@ -607,4 +607,17 @@ test('novas funcionalidades', async (t) => {
       [['2020-03-10', 110], ['2020-03-11', -30]],
     )
   })
+
+  await t.test('excluir agendamento cancela e mantém o registro', async () => {
+    await db.settings.update({ where: { key: 'deposit_mode' }, data: { value: 'off' } })
+    const r = await book(day(23), '09:00')
+    assert.equal(r.status, 201)
+    const removed = await request(`/appointments/${r.data.id}`, { method: 'DELETE', token: owner })
+    assert.equal(removed.status, 200)
+    assert.equal((await db.appointment.findUnique({ where: { id: r.data.id } })).status, 'CANCELLED')
+    // O horário volta a ficar livre.
+    assert.equal((await book(day(23), '09:00')).status, 201)
+    const again = await request(`/appointments/${r.data.id}`, { method: 'DELETE', token: owner })
+    assert.equal(again.status, 400)
+  })
 })

@@ -75,7 +75,7 @@ function InfoTab({
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5 col-span-2">
           <label className="text-xs font-medium text-zinc-600">
-            Nome da Barbearia
+            Nome da barbearia
           </label>
           <Input
             value={form.shop_name}
@@ -128,7 +128,7 @@ function InfoTab({
       <div className="flex justify-end">
         <Button onClick={() => onSave(form)}>
           <Save className="h-4 w-4 mr-1.5" />
-          Salvar Informações
+          Salvar informações
         </Button>
       </div>
     </div>
@@ -242,7 +242,7 @@ function HoursTab({
       <div className="flex justify-end">
         <Button onClick={handleSave}>
           <Save className="h-4 w-4 mr-1.5" />
-          Salvar Horários
+          Salvar horários
         </Button>
       </div>
     </div>
@@ -278,7 +278,7 @@ function LoyaltyTab({
       {/* Toggle */}
       <div className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-5 py-4">
         <div>
-          <p className="font-medium text-zinc-800">Programa de Fidelidade</p>
+          <p className="font-medium text-zinc-800">Programa de fidelidade</p>
           <p className="text-xs text-zinc-500 mt-0.5">
             Clientes acumulam pontos a cada atendimento concluído
           </p>
@@ -383,7 +383,7 @@ function LoyaltyTab({
       <div className="flex justify-end">
         <Button onClick={() => onSave(form)}>
           <Save className="h-4 w-4 mr-1.5" />
-          Salvar Fidelidade
+          Salvar fidelidade
         </Button>
       </div>
     </div>
@@ -529,7 +529,7 @@ function WhatsAppTab({
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-zinc-600">
-              Nome da Instância
+              Nome da instância
             </label>
             <Input
               value={form.whatsapp_instance}
@@ -614,7 +614,7 @@ function WhatsAppTab({
               ) : (
                 <Send className="h-4 w-4 mr-1.5" />
               )}
-              Enviar Teste
+              Enviar teste
             </Button>
             <Button
               onClick={handleSendReminders}
@@ -626,7 +626,7 @@ function WhatsAppTab({
               ) : (
                 <RefreshCw className="h-4 w-4 mr-1.5" />
               )}
-              Enviar Lembretes Agora
+              Enviar lembretes agora
             </Button>
           </div>
           {reminderResult && (

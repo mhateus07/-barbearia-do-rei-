@@ -52,6 +52,3 @@ export async function updateAppointment(
   return data.data
 }
 
-export async function deleteAppointment(id: string): Promise<void> {
-  await api.delete(`/appointments/${id}`)
-}

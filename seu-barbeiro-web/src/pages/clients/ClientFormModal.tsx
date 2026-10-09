@@ -45,7 +45,7 @@ export function ClientFormModal({ open, onClose, client }: Props) {
   })
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar Cliente' : 'Novo Cliente'}>
+    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar cliente' : 'Novo cliente'}>
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
         <Input label="Nome *" {...register('name', { required: 'Obrigatório' })} error={errors.name?.message} />
         <Input label="Telefone *" {...register('phone', { required: 'Obrigatório' })} placeholder="(11) 99999-9999" error={errors.phone?.message} />

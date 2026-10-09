@@ -146,7 +146,7 @@
 - **Frontend**: React + Vite + Tailwind CSS 3 + React Query + Recharts + jsPDF
 - **Produção**: VPS Contabo 173.212.208.109 (`/opt/seu-barbeiro`, Docker + Easypanel/Traefik) — https://seubarbeiro.impulsiodigital.com
 - **Domínios/DNS**: Hostinger (impulsiodigital.com)
-- **Repositório**: https://github.com/mhateus07/-barbearia-do-rei-
+- **Repositório**: https://github.com/mhateus07/seu-barbeiro
 
 ## Próximos passos planejados
 - Trocar a senha inicial do dono pelo painel e apagar `/root/seu-barbeiro-acesso-inicial.txt` na VPS

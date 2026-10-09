@@ -22,6 +22,7 @@ import {
   Repeat,
   Landmark,
 } from 'lucide-react'
+import { formatPhone } from '../../utils/formatPhone'
 
 const navItems = [
   { to: '/operacao', label: 'Agenda e operação', icon: CalendarDays },
@@ -168,7 +169,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       {/* Rodapé */}
       <div className="space-y-1 border-t border-white/10 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
         {identity?.address && <p className="text-[11px] leading-snug text-zinc-500">{identity.address}</p>}
-        {identity?.phone && <p className="hora text-[11px] text-zinc-500">{identity.phone}</p>}
+        {identity?.phone && <p className="hora text-[11px] text-zinc-500">{formatPhone(identity.phone)}</p>}
         {identity?.logo && (
           <p className="pt-1 text-[11px] text-zinc-500">Feito com Seu Barbeiro</p>
         )}

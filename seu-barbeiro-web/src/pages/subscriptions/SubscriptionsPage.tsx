@@ -36,6 +36,7 @@ import { Modal } from '../../components/ui/Modal'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { formatCurrency } from '../../utils/formatCurrency'
 import { formatDate } from '../../utils/formatDate'
+import { formatPhone } from '../../utils/formatPhone'
 
 const statusInfo: Record<Subscription['status'], { label: string; tone: string }> = {
   ACTIVE: { label: 'Ativa', tone: 'bg-emerald-50 text-emerald-700' },
@@ -555,7 +556,7 @@ function NewSubscriptionModal({
                         onClick={() => setClient({ id: c.id, name: c.name })}
                         className="w-full px-3 py-2 text-left text-sm text-zinc-800 hover:bg-zinc-50"
                       >
-                        {c.name} <span className="text-xs text-zinc-400">{c.phone}</span>
+                        {c.name} <span className="text-xs text-zinc-400">{formatPhone(c.phone)}</span>
                       </button>
                     </li>
                   ))}

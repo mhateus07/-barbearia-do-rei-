@@ -4,6 +4,7 @@ import { Plus, Pencil, UserX, Scissors } from 'lucide-react'
 import { listBarbers, deleteBarber } from '../../api/barbers.api'
 import { BarberFormModal } from './BarberFormModal'
 import type { Barber } from '../../types'
+import { formatPhone } from '../../utils/formatPhone'
 
 export function BarbersPage() {
   const qc = useQueryClient()
@@ -34,7 +35,7 @@ export function BarbersPage() {
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-zinc-800 md:text-2xl">Barbeiros</h1>
+          <h1 className="text-xl font-bold text-zinc-800 md:text-2xl">Profissionais</h1>
           <p className="text-sm text-zinc-500 mt-0.5">{data.length} cadastrado(s)</p>
         </div>
         <button
@@ -42,7 +43,7 @@ export function BarbersPage() {
           className="flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2.5 text-sm font-semibold text-white transition-colors"
         >
           <Plus className="h-4 w-4" />
-          Novo Barbeiro
+          Novo profissional
         </button>
       </div>
 
@@ -55,8 +56,8 @@ export function BarbersPage() {
       ) : data.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 py-16 text-zinc-400">
           <Scissors className="h-8 w-8 mb-3 text-zinc-300" />
-          <p className="font-medium">Nenhum barbeiro cadastrado</p>
-          <p className="text-sm mt-1">Clique em "Novo Barbeiro" para começar</p>
+          <p className="font-medium">Nenhum profissional cadastrado</p>
+          <p className="text-sm mt-1">Clique em "Novo profissional" para começar</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -76,7 +77,7 @@ export function BarbersPage() {
                 </div>
               </div>
               <div className="space-y-1.5 text-sm text-zinc-500 mb-4">
-                {barber.phone && <p>{barber.phone}</p>}
+                {barber.phone && <p>{formatPhone(barber.phone)}</p>}
                 {barber.email && <p className="truncate">{barber.email}</p>}
                 {!barber.phone && !barber.email && <p className="italic text-zinc-300">Sem contato cadastrado</p>}
                 {barber.commissionRate != null && (

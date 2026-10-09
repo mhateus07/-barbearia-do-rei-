@@ -44,7 +44,7 @@ export async function update(req: AuthRequest, res: Response) {
 export async function remove(req: AuthRequest, res: Response) {
   try {
     await deactivateBarber(req.params.id)
-    return success(res, { message: 'Barbeiro desativado com sucesso' })
+    return success(res, { message: 'Profissional desativado com sucesso' })
   } catch (err) {
     return apiError(res, (err as Error).message, 404)
   }

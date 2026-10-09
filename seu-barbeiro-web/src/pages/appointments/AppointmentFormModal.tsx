@@ -9,6 +9,7 @@ import { listBarbers } from '../../api/barbers.api'
 import { listServices } from '../../api/services.api'
 import { listClients } from '../../api/clients.api'
 import type { Appointment } from '../../types'
+import { formatPhone } from '../../utils/formatPhone'
 
 interface Props {
   open: boolean
@@ -69,7 +70,7 @@ export function AppointmentFormModal({ open, onClose, defaultDate, appointment }
   })
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar Agendamento' : 'Novo Agendamento'} size="lg">
+    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar agendamento' : 'Novo agendamento'} size="lg">
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
@@ -77,13 +78,13 @@ export function AppointmentFormModal({ open, onClose, defaultDate, appointment }
             <select {...register('clientId', { required: 'Obrigatório' })}
               className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-hidden focus:border-amber-500">
               <option value="">Selecione...</option>
-              {clients.map((c) => <option key={c.id} value={c.id}>{c.name} — {c.phone}</option>)}
+              {clients.map((c) => <option key={c.id} value={c.id}>{c.name} — {formatPhone(c.phone)}</option>)}
             </select>
             {errors.clientId && <span className="text-xs text-red-500">{errors.clientId.message}</span>}
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-zinc-700">Barbeiro *</label>
+            <label className="text-sm font-medium text-zinc-700">Profissional *</label>
             <select {...register('barberId', { required: 'Obrigatório' })}
               className="rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-hidden focus:border-amber-500">
               <option value="">Selecione...</option>
@@ -94,7 +95,7 @@ export function AppointmentFormModal({ open, onClose, defaultDate, appointment }
         </div>
 
         <Input
-          label="Data e Hora *"
+          label="Data e hora *"
           type="datetime-local"
           {...register('startsAt', { required: 'Obrigatório' })}
           error={errors.startsAt?.message}

@@ -20,6 +20,7 @@ import {
 } from '../../api/public.api'
 import { formatCurrency } from '../../utils/formatCurrency'
 import { PublicShell } from './PublicShell'
+import { formatPhone } from '../../utils/formatPhone'
 
 const statusText: Record<string, { label: string; tone: string }> = {
   SCHEDULED: { label: 'Agendado', tone: 'bg-amber-500/15 text-amber-300' },
@@ -239,7 +240,7 @@ export function ManagePage() {
         <p className="mt-5 flex items-start gap-2 rounded-2xl bg-zinc-900 p-4 text-sm text-zinc-400">
           <Clock className="mt-0.5 h-4 w-4 shrink-0" />
           Alterações pelo link podem ser feitas até {data.minNoticeHours} h antes.
-          {data.shop.phone ? ` Para mudar agora, fale com o salão: ${data.shop.phone}.` : ''}
+          {data.shop.phone ? ` Para mudar agora, fale com o salão: ${formatPhone(data.shop.phone)}.` : ''}
         </p>
       )}
 

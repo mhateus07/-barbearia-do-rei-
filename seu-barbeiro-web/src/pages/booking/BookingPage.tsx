@@ -37,7 +37,7 @@ const STEP_LABELS: Record<number, string> = {
   1: 'Serviços',
   2: 'Profissional',
   3: 'Data & Hora',
-  4: 'Seus Dados',
+  4: 'Seus dados',
   5: 'Confirmar',
 }
 
@@ -321,7 +321,7 @@ export function BookingPage() {
                 <Calendar className="h-5 w-5 text-amber-500 shrink-0" />
                 <div>
                   <p className="text-xs text-zinc-500 uppercase tracking-wide">
-                    Data e Hora
+                    Data e hora
                   </p>
                   <p className="text-white font-medium">
                     {formatDateBR(selectedDate)} às {selectedTime}
@@ -745,7 +745,7 @@ export function BookingPage() {
                     <textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Alguma preferência ou informação para o barbeiro..."
+                      placeholder="Alguma preferência ou informação para o profissional..."
                       rows={3}
                       className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-zinc-600 focus:outline-hidden focus:border-amber-500 transition-colors resize-none"
                     />
@@ -815,7 +815,7 @@ export function BookingPage() {
                     <Calendar className="h-5 w-5 text-amber-500 shrink-0" />
                     <div>
                       <p className="text-xs text-zinc-500 uppercase tracking-wide mb-0.5">
-                        Data e Hora
+                        Data e hora
                       </p>
                       <p className="text-white font-medium">
                         {formatDateBR(selectedDate)} às {selectedTime}

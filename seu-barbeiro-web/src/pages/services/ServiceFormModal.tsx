@@ -44,7 +44,7 @@ export function ServiceFormModal({ open, onClose, service }: Props) {
   })
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar Serviço' : 'Novo Serviço'}>
+    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar serviço' : 'Novo serviço'}>
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
         <Input label="Nome *" {...register('name', { required: 'Obrigatório' })} error={errors.name?.message} />
         <Input label="Descrição" {...register('description')} />

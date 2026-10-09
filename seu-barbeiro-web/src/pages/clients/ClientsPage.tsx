@@ -5,6 +5,7 @@ import { listClients, deleteClient } from '../../api/clients.api'
 import { ClientFormModal } from './ClientFormModal'
 import { ClientHistoryModal } from './ClientHistoryModal'
 import type { ClientWithLoyalty } from '../../types'
+import { formatPhone } from '../../utils/formatPhone'
 
 export function ClientsPage() {
   const qc = useQueryClient()
@@ -37,7 +38,7 @@ export function ClientsPage() {
           className="flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-3 py-2.5 md:px-4 text-sm font-semibold text-white transition-colors whitespace-nowrap"
         >
           <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Novo Cliente</span>
+          <span className="hidden sm:inline">Novo cliente</span>
           <span className="sm:hidden">Novo</span>
         </button>
       </div>
@@ -102,7 +103,7 @@ export function ClientsPage() {
                       <td className="px-5 py-3.5">
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-                            <Phone className="h-3 w-3" />{client.phone}
+                            <Phone className="h-3 w-3" />{formatPhone(client.phone)}
                           </div>
                           {client.email && (
                             <div className="flex items-center gap-1.5 text-xs text-zinc-400">
@@ -163,7 +164,7 @@ export function ClientsPage() {
                     <div>
                       <p className="font-semibold text-zinc-800 text-sm">{client.name}</p>
                       <div className="flex items-center gap-1.5 text-xs text-zinc-500 mt-0.5">
-                        <Phone className="h-3 w-3" />{client.phone}
+                        <Phone className="h-3 w-3" />{formatPhone(client.phone)}
                       </div>
                     </div>
                   </div>

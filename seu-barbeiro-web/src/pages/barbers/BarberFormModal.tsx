@@ -46,7 +46,7 @@ export function BarberFormModal({ open, onClose, barber }: Props) {
   })
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar Barbeiro' : 'Novo Barbeiro'}>
+    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar profissional' : 'Novo profissional'}>
       <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
         <Input label="Nome *" {...register('name', { required: 'Nome obrigatório' })} error={errors.name?.message} />
         <Input label="Telefone" {...register('phone')} placeholder="(11) 99999-9999" />

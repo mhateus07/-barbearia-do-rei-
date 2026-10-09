@@ -108,7 +108,7 @@ export function ClientHistoryModal({ open, onClose, client }: Props) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                  <span className="text-sm font-semibold text-amber-800">Cartão Fidelidade</span>
+                  <span className="text-sm font-semibold text-amber-800">Cartão fidelidade</span>
                 </div>
                 {loyaltyLoading ? <Spinner /> : (
                   <div className="text-right">

@@ -93,9 +93,6 @@ export async function payCommission(input: {
   barberId: string
   periodFrom: string
   periodTo: string
-  totalRevenue: number
-  commissionAmount: number
-  commissionRate: number
   notes?: string
   paidAt?: string
 }): Promise<CommissionPayment> {

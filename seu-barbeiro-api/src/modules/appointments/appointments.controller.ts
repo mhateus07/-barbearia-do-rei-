@@ -62,7 +62,7 @@ export async function updateStatus(req: AuthRequest, res: Response) {
 export async function remove(req: AuthRequest, res: Response) {
   try {
     await deleteAppointment(req.params.id)
-    return success(res, { message: 'Agendamento removido com sucesso' })
+    return success(res, { message: 'Agendamento cancelado' })
   } catch (err) {
     return apiError(res, (err as Error).message, 400)
   }

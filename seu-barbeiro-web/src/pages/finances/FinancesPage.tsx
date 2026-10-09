@@ -37,8 +37,8 @@ import { parseDayKey, todayKey } from '../../utils/formatDate'
 const METHOD_LABELS: Record<PaymentMethod, string> = {
   CASH: 'Dinheiro',
   PIX: 'Pix',
-  CREDIT_CARD: 'Cartão de Crédito',
-  DEBIT_CARD: 'Cartão de Débito',
+  CREDIT_CARD: 'Cartão de crédito',
+  DEBIT_CARD: 'Cartão de débito',
 }
 
 const METHOD_COLORS: Record<PaymentMethod, string> = {
@@ -171,17 +171,17 @@ function SummaryTab({ from, to }: { from: string; to: string }) {
     <div className="space-y-5">
       {/* Cards */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard title="Receita do Período" value={formatCurrency(data?.totalIncome ?? 0)} sub="pagamentos recebidos" icon={TrendingUp} variant="income" />
-        <StatCard title="Despesas Pagas" value={formatCurrency(data?.totalExpenses ?? 0)} sub="no período" icon={TrendingDown} variant="expense" />
+        <StatCard title="Receita do período" value={formatCurrency(data?.totalIncome ?? 0)} sub="pagamentos recebidos" icon={TrendingUp} variant="income" />
+        <StatCard title="Despesas pagas" value={formatCurrency(data?.totalExpenses ?? 0)} sub="no período" icon={TrendingDown} variant="expense" />
         <StatCard title="Saldo" value={formatCurrency(data?.balance ?? 0)} sub="receita − despesas" icon={Wallet} variant={(data?.balance ?? 0) >= 0 ? 'default' : 'expense'} />
-        <StatCard title="Contas Pendentes" value={formatCurrency(data?.totalPending ?? 0)} sub={`${formatCurrency(data?.totalOverdue ?? 0)} vencido`} icon={AlertCircle} variant="warning" />
+        <StatCard title="Contas pendentes" value={formatCurrency(data?.totalPending ?? 0)} sub={`${formatCurrency(data?.totalOverdue ?? 0)} vencido`} icon={AlertCircle} variant="warning" />
       </div>
 
       {/* Cash Flow Chart */}
       <div className="rounded-2xl border border-zinc-200 bg-white p-5">
         <div className="flex items-center gap-2 mb-5">
           <TrendingUp className="h-4 w-4 text-amber-500" />
-          <h2 className="text-sm font-semibold text-zinc-700">Fluxo de Caixa</h2>
+          <h2 className="text-sm font-semibold text-zinc-700">Fluxo de caixa</h2>
         </div>
         {cashFlowData.length === 0 ? (
           <div className="flex h-48 items-center justify-center text-sm text-zinc-400">Nenhum lançamento no período</div>
@@ -231,7 +231,7 @@ function SummaryTab({ from, to }: { from: string; to: string }) {
         </div>
 
         <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-          <h2 className="text-sm font-semibold text-zinc-700 mb-4">Despesas por Categoria</h2>
+          <h2 className="text-sm font-semibold text-zinc-700 mb-4">Despesas por categoria</h2>
           {categoryData.length === 0 ? (
             <p className="text-sm text-zinc-400 py-4 text-center">Nenhuma despesa no período</p>
           ) : (
@@ -352,7 +352,7 @@ function PaymentsTab() {
         <div className="ml-auto">
           <Button onClick={() => setShowModal(true)}>
             <Plus className="h-4 w-4 mr-1.5" />
-            Registrar Pagamento
+            Registrar pagamento
           </Button>
         </div>
       </div>
@@ -419,7 +419,7 @@ function PaymentsTab() {
       )}
 
       {/* Modal */}
-      <Modal open={showModal} onClose={() => setShowModal(false)} title="Registrar Pagamento">
+      <Modal open={showModal} onClose={() => setShowModal(false)} title="Registrar pagamento">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
@@ -435,7 +435,7 @@ function PaymentsTab() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-zinc-600">Forma de Pagamento</label>
+              <label className="text-xs font-medium text-zinc-600">Forma de pagamento</label>
               <div className="relative">
                 <select
                   value={form.method}
@@ -451,7 +451,7 @@ function PaymentsTab() {
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-zinc-600">Data do Pagamento</label>
+            <label className="text-xs font-medium text-zinc-600">Data do pagamento</label>
             <input
               type="date"
               value={form.paidAt}
@@ -599,7 +599,7 @@ function ExpensesTab() {
         <div className="ml-auto">
           <Button onClick={() => setShowModal(true)}>
             <Plus className="h-4 w-4 mr-1.5" />
-            Nova Conta
+            Nova conta
           </Button>
         </div>
       </div>
@@ -716,7 +716,7 @@ function ExpensesTab() {
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-zinc-600">Data de Vencimento</label>
+            <label className="text-xs font-medium text-zinc-600">Data de vencimento</label>
             <input
               type="date"
               required
@@ -803,9 +803,6 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
       barberId: selectedBarber.barberId,
       periodFrom: from,
       periodTo: to,
-      totalRevenue: selectedBarber.totalRevenue,
-      commissionAmount: selectedBarber.commission,
-      commissionRate: selectedBarber.commissionRate,
       notes: payNotes || undefined,
     })
   }
@@ -814,7 +811,7 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-4">
         <StatCard title="Receita Total (Concluídos)" value={formatCurrency(totalRevenue)} icon={TrendingUp} variant="income" />
-        <StatCard title="Total de Comissões" value={formatCurrency(totalCommissions)} icon={Scissors} variant="warning" />
+        <StatCard title="Total de comissões" value={formatCurrency(totalCommissions)} icon={Scissors} variant="warning" />
         <StatCard title="Comissões Pagas (período)" value={formatCurrency(totalPaid)} icon={CheckCircle2} variant="default" />
       </div>
 
@@ -828,9 +825,9 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
           <table className="w-full text-sm min-w-[560px]">
             <thead>
               <tr className="border-b border-zinc-100 bg-zinc-50">
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Barbeiro</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wide">Profissional</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-zinc-500 uppercase tracking-wide">Atendimentos</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide">Receita Gerada</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide">Receita gerada</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-zinc-500 uppercase tracking-wide">Taxa</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide">Comissão</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wide">Vales</th>
@@ -917,10 +914,10 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
               <table className="w-full text-sm min-w-[500px]">
                 <thead>
                   <tr className="border-b border-zinc-100 bg-zinc-50">
-                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Barbeiro</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Profissional</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Período</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase">Comissão Paga</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Data Pagamento</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase">Comissão paga</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Data do pagamento</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Obs</th>
                   </tr>
                 </thead>
@@ -956,7 +953,7 @@ function CommissionsTab({ from, to }: { from: string; to: string }) {
       />
 
       <p className="text-xs text-zinc-400 text-center">
-        Configure a taxa de comissão de cada barbeiro na tela de Barbeiros (botão Editar).
+        Configure a taxa de comissão de cada profissional na tela de Profissionais (botão Editar).
       </p>
 
       {/* Modal pagar comissão */}
@@ -1054,10 +1051,10 @@ async function exportPDF(from: string, to: string) {
   // Summary cards
   doc.setFontSize(10)
   const cards = [
-    ['Receita Total', fmt(summary.totalIncome)],
-    ['Despesas Pagas', fmt(summary.totalExpenses)],
+    ['Receita total', fmt(summary.totalIncome)],
+    ['Despesas pagas', fmt(summary.totalExpenses)],
     ['Saldo', fmt(summary.balance)],
-    ['Contas Pendentes', fmt(summary.totalPending)],
+    ['Contas pendentes', fmt(summary.totalPending)],
   ]
   let x = 14
   cards.forEach(([label, value]) => {
@@ -1091,10 +1088,10 @@ async function exportPDF(from: string, to: string) {
   const afterCashFlow = (doc as typeof doc & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 120
   doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
-  doc.text('Comissões dos Barbeiros', 14, afterCashFlow + 10)
+  doc.text('Comissões dos profissionais', 14, afterCashFlow + 10)
   autoTable(doc, {
     startY: afterCashFlow + 13,
-    head: [['Barbeiro', 'Atendimentos', 'Receita', 'Taxa', 'Comissão']],
+    head: [['Profissional', 'Atendimentos', 'Receita', 'Taxa', 'Comissão']],
     body: commissions.map((b) => [
       b.barberName,
       String(b.appointmentsCount),

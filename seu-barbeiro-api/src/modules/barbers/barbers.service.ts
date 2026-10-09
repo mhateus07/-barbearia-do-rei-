@@ -11,7 +11,7 @@ export async function listBarbers(isActive?: boolean) {
 
 export async function getBarberById(id: string) {
   const barber = await prisma.barber.findUnique({ where: { id } })
-  if (!barber) throw new Error('Barbeiro não encontrado')
+  if (!barber) throw new Error('Profissional não encontrado')
   return barber
 }
 

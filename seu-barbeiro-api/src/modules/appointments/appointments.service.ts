@@ -224,6 +224,8 @@ export async function updateAppointmentStatus(
   })
 }
 
+// Agendamento não é apagado: o DELETE cancela, para manter o histórico
+// (sinal, recebimentos e lista de espera dependem do registro).
 export async function deleteAppointment(id: string) {
   const appointment = await getAppointmentById(id)
   const allowed: AppointmentStatus[] = [
@@ -231,9 +233,7 @@ export async function deleteAppointment(id: string) {
     AppointmentStatus.CONFIRMED,
   ]
   if (!allowed.includes(appointment.status)) {
-    throw new Error(
-      'Apenas agendamentos com status SCHEDULED ou CONFIRMED podem ser excluídos',
-    )
+    throw new Error('Só agendamentos marcados ou confirmados podem ser cancelados')
   }
-  return prisma.appointment.delete({ where: { id } })
+  return updateAppointmentStatus(id, { status: AppointmentStatus.CANCELLED })
 }

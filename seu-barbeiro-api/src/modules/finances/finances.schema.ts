@@ -31,12 +31,10 @@ export const payExpenseSchema = z.object({
 })
 
 export const payCommissionSchema = z.object({
-  barberId: z.string().uuid('ID do barbeiro inválido'),
+  barberId: z.string().uuid('ID do profissional inválido'),
   periodFrom: z.string().min(1, 'Data inicial obrigatória'),
   periodTo: z.string().min(1, 'Data final obrigatória'),
-  totalRevenue: z.number().nonnegative(),
-  commissionAmount: z.number().nonnegative(),
-  commissionRate: z.number().min(0).max(100),
+  // Receita, comissão e taxa são sempre calculadas no servidor.
   notes: z.string().optional(),
   paidAt: z.string().optional(),
 })
